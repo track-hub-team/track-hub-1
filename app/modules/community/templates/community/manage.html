@@ -1,0 +1,437 @@
+{% extends "base_template.html" %}
+
+{% block title %}Manage {{ community.name }}{% endblock %}
+
+{% block content %}
+
+    <!-- Community Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i data-feather="settings"></i> Manage Community
+                    </h1>
+                    <p class="text-muted mb-0">{{ community.name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('community.view', community_id=community.id) }}"
+                       class="btn btn-outline-secondary">
+                        <i data-feather="eye"></i> View Community
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="manageTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="requests-tab" data-bs-toggle="tab"
+                    data-bs-target="#requests" type="button" role="tab">
+                <i data-feather="inbox"></i>
+                Pending Requests
+                {% if requests %}
+                    <span class="badge bg-primary rounded-pill ms-1">{{ requests|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab"
+                    data-bs-target="#settings" type="button" role="tab">
+                <i data-feather="sliders"></i> Settings
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="curators-tab" data-bs-toggle="tab"
+                    data-bs-target="#curators" type="button" role="tab">
+                <i data-feather="shield"></i> Curators
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="manageTabsContent">
+
+        <!-- Pending Requests Tab -->
+        <div class="tab-pane fade show active" id="requests" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Dataset Submission Requests</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if requests %}
+                                <div class="list-group list-group-flush">
+                                    {% for request in requests %}
+                                        <div class="list-group-item px-0 py-3" id="request-{{ request.id }}">
+                                            <div class="row">
+                                                <div class="col-12 col-lg-8">
+                                                    <div class="d-flex align-items-start mb-2">
+                                                        <div class="me-3">
+                                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                                 style="width: 40px; height: 40px;">
+                                                                <span class="fw-bold">
+                                                                    {{ request.requester.name[0] }}{{ request.requester.surname[0] }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1">
+                                                                {% if request.dataset %}
+                                                                    <a href="{{ request.dataset.get_uvlhub_doi() }}"
+                                                                       target="_blank"
+                                                                       class="text-decoration-none">
+                                                                        {{ request.dataset.ds_meta_data.title }}
+                                                                        <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                                                    </a>
+                                                                {% else %}
+                                                                    Dataset #{{ request.dataset_id }}
+                                                                {% endif %}
+                                                            </h6>
+                                                            <p class="text-muted small mb-2">
+                                                                Requested by <strong>{{ request.requester.name }} {{ request.requester.surname }}</strong>
+                                                                ({{ request.requester.email }})
+                                                                · {{ request.requested_at }}
+                                                            </p>
+
+                                                            {% if request.dataset %}
+                                                                <p class="text-muted small mb-2">
+                                                                    {{ request.dataset.ds_meta_data.description[:200] }}{% if request.dataset.ds_meta_data.description|length > 200 %}...{% endif %}
+                                                                </p>
+                                                                <div class="d-flex gap-3 small text-muted mb-2">
+                                                                    <span>
+                                                                        <i data-feather="file" style="width: 12px; height: 12px;"></i>
+                                                                        {{ request.dataset.get_files_count() }} files
+                                                                    </span>
+                                                                    <span>
+                                                                        <i data-feather="hard-drive" style="width: 12px; height: 12px;"></i>
+                                                                        {{ request.dataset.get_file_total_size_for_human() }}
+                                                                    </span>
+                                                                </div>
+                                                            {% endif %}
+
+                                                            {% if request.message %}
+                                                                <div class="alert alert-light border mt-2 mb-0 small">
+                                                                    <strong>Message:</strong> {{ request.message }}
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-lg-4 text-lg-end">
+                                                    <span class="badge bg-warning text-dark mb-2">{{ request.status|upper }}</span>
+                                                    <div class="btn-group d-block mt-2" role="group">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-success me-2"
+                                                                onclick="handleRequest({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, 'approve')">
+                                                            <i data-feather="check" style="width: 14px; height: 14px;"></i> Approve
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-danger"
+                                                                onclick="handleRequest({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, 'reject')">
+                                                            <i data-feather="x" style="width: 14px; height: 14px;"></i> Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                    <h5 class="text-muted">No pending requests</h5>
+                                    <p class="text-muted">
+                                        All dataset submissions have been reviewed. New requests will appear here.
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="row">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Community Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="settingsForm">
+                                <!-- Community Name -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Community Name</label>
+                                    <input type="text" class="form-control" value="{{ community.name }}" disabled>
+                                    <small class="form-text text-muted">Contact an administrator to change the community name</small>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Description</label>
+                                    <textarea class="form-control" rows="5" disabled>{{ community.description }}</textarea>
+                                    <small class="form-text text-muted">Community description editing coming soon</small>
+                                </div>
+
+                                <!-- Logo -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Current Logo</label>
+                                    <div class="mb-2">
+                                        <img src="{{ community.logo_path }}"
+                                             alt="{{ community.name }}"
+                                             class="rounded"
+                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                    </div>
+                                    <small class="form-text text-muted">Logo update functionality coming soon</small>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                                    <strong>Note:</strong> Full community editing capabilities will be available when the backend is ready.
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Quick Info</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-6 small">Community ID</dt>
+                                <dd class="col-6 small text-muted">{{ community.id }}</dd>
+
+                                <dt class="col-6 small">Slug</dt>
+                                <dd class="col-6 small text-muted">{{ community.slug }}</dd>
+
+                                <dt class="col-6 small">Created</dt>
+                                <dd class="col-6 small text-muted">{{ community.created_at }}</dd>
+
+                                <dt class="col-6 small">Updated</dt>
+                                <dd class="col-6 small text-muted">{{ community.updated_at }}</dd>
+
+                                <dt class="col-6 small">Datasets</dt>
+                                <dd class="col-6 small text-muted">{{ community.datasets_count }}</dd>
+
+                                <dt class="col-6 small">Curators</dt>
+                                <dd class="col-6 small text-muted">{{ community.curators|length }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Curators Tab -->
+        <div class="tab-pane fade" id="curators" role="tabpanel">
+            <div class="row">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Manage Curators</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                {% for curator in community.curators %}
+                                    <div class="list-group-item px-0 py-3">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                         style="width: 48px; height: 48px;">
+                                                        <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ curator.name }} {{ curator.surname }}</h6>
+                                                    <p class="text-muted small mb-0">{{ curator.email }}</p>
+                                                    {% if curator.id == community.creator_id %}
+                                                        <span class="badge bg-success mt-1">Creator</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                {% if curator.id != community.creator_id %}
+                                                    <button class="btn btn-sm btn-outline-danger" disabled>
+                                                        <i data-feather="user-minus" style="width: 14px; height: 14px;"></i> Remove
+                                                    </button>
+                                                {% else %}
+                                                    <span class="text-muted small">Cannot remove creator</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-primary" disabled>
+                                    <i data-feather="user-plus"></i> Add Curator
+                                </button>
+                                <small class="form-text text-muted d-block mt-2">
+                                    Curator management will be available when the backend is ready
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">About Curators</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="small">
+                                Curators are responsible for reviewing and approving dataset submissions to the community.
+                            </p>
+                            <h6 class="fw-bold mt-3">Curator Responsibilities:</h6>
+                            <ul class="small">
+                                <li>Review dataset submissions</li>
+                                <li>Approve or reject requests</li>
+                                <li>Ensure quality and relevance</li>
+                                <li>Maintain community guidelines</li>
+                            </ul>
+                            <h6 class="fw-bold mt-3">Permissions:</h6>
+                            <ul class="small">
+                                <li>View all pending requests</li>
+                                <li>Approve/reject datasets</li>
+                                <li>Manage community settings</li>
+                                <li>Add/remove other curators</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('community.view', community_id=community.id) }}" class="btn btn-outline-secondary">
+                <i data-feather="arrow-left"></i> Back to Community
+            </a>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Re-initialize icons when tab changes
+    const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+    });
+
+    // Handle approve/reject requests
+    function handleRequest(requestId, communityId, datasetId, action) {
+        const actionText = action === 'approve' ? 'approve' : 'reject';
+        const confirmMessage = `Are you sure you want to ${actionText} this dataset request?`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // TODO: Replace with actual API call when backend is ready
+        const url = `/api/v1/communities/${communityId}/${action}/${datasetId}`;
+
+        // Mock implementation - simulate success
+        console.log(`Would ${action} request ${requestId} for dataset ${datasetId}`);
+
+        // Show loading state
+        const requestElement = document.getElementById(`request-${requestId}`);
+        if (requestElement) {
+            requestElement.style.opacity = '0.5';
+            requestElement.style.pointerEvents = 'none';
+        }
+
+        // Simulate API call
+        setTimeout(() => {
+            // Show success message
+            alert(`Dataset ${actionText}ed successfully! (Mock)\n\nIn production, this would call:\n${url}`);
+
+            // Remove the request from the list
+            if (requestElement) {
+                requestElement.remove();
+            }
+
+            // Update badge count
+            const badge = document.querySelector('#requests-tab .badge');
+            if (badge) {
+                const currentCount = parseInt(badge.textContent);
+                const newCount = currentCount - 1;
+                if (newCount > 0) {
+                    badge.textContent = newCount;
+                } else {
+                    badge.remove();
+                    // Show empty state
+                    const listGroup = document.querySelector('#requests .list-group');
+                    if (listGroup && listGroup.children.length === 0) {
+                        listGroup.innerHTML = `
+                            <div class="text-center py-5">
+                                <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                <h5 class="text-muted">No pending requests</h5>
+                                <p class="text-muted">All dataset submissions have been reviewed.</p>
+                            </div>
+                        `;
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                    }
+                }
+            }
+        }, 500);
+
+        /* TODO: Uncomment when backend is ready
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Dataset ${actionText}ed successfully!`);
+                // Remove the request from the list
+                if (requestElement) {
+                    requestElement.remove();
+                }
+                // Update badge count
+                const badge = document.querySelector('#requests-tab .badge');
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent);
+                    badge.textContent = Math.max(0, currentCount - 1);
+                }
+            } else {
+                alert(`Error: ${data.message}`);
+                requestElement.style.opacity = '1';
+                requestElement.style.pointerEvents = 'auto';
+            }
+        })
+        .catch(error => {
+            alert(`Error: ${error.message}`);
+            requestElement.style.opacity = '1';
+            requestElement.style.pointerEvents = 'auto';
+        });
+        */
+    }
+</script>
+{% endblock %}

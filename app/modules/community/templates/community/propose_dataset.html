@@ -1,0 +1,248 @@
+{% extends "base_template.html" %}
+
+{% block title %}Propose Dataset to {{ community.name }}{% endblock %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-1">
+                <i data-feather="upload"></i> Propose Dataset
+            </h1>
+            <p class="text-muted mb-0">Submit your dataset to {{ community.name }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Form -->
+        <div class="col-12 col-lg-8">
+            <!-- Community Info Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ community.logo_path }}"
+                             alt="{{ community.name }}"
+                             class="rounded me-3"
+                             style="width: 80px; height: 80px; object-fit: cover;">
+                        <div>
+                            <h5 class="mb-1">{{ community.name }}</h5>
+                            <p class="text-muted mb-0 small">
+                                {{ community.description[:150] }}{% if community.description|length > 150 %}...{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proposal Form -->
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="file-text"></i> Dataset Proposal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="proposeForm">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Dataset Selection -->
+                        <div class="mb-4">
+                            {{ form.dataset_id.label(class="form-label fw-bold") }}
+                            <span class="text-danger">*</span>
+                            {{ form.dataset_id(class="form-select" ~ (" is-invalid" if form.dataset_id.errors else ""), id="datasetSelect") }}
+                            {% if form.dataset_id.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.dataset_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Select one of your datasets to propose to this community
+                            </small>
+                        </div>
+
+                        <!-- Dataset Preview -->
+                        <div id="datasetPreview" class="mb-4" style="display: none;">
+                            <div class="alert alert-info border">
+                                <h6 class="alert-heading mb-2">
+                                    <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                                    Dataset Preview
+                                </h6>
+                                <div id="previewContent">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message to Curators -->
+                        <div class="mb-4">
+                            {{ form.message.label(class="form-label fw-bold") }}
+                            <span class="text-muted">(Optional)</span>
+                            {{ form.message(class="form-control" ~ (" is-invalid" if form.message.errors else "")) }}
+                            {% if form.message.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.message.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                <span id="messageCharCount">0</span>/1000 characters · Explain why this dataset fits the community
+                            </small>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <a href="{{ url_for('community.view', community_id=community.id) }}"
+                               class="btn btn-outline-secondary">
+                                <i data-feather="x"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-12 col-lg-4">
+            <div class="card bg-light h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="help-circle"></i> Submission Guidelines
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="fw-bold">What happens next?</h6>
+                    <ol class="small text-muted">
+                        <li>Your proposal will be sent to the community curators</li>
+                        <li>Curators will review your dataset</li>
+                        <li>They may approve or reject your submission</li>
+                        <li>You'll be notified of the decision</li>
+                    </ol>
+
+                    <h6 class="fw-bold mt-3">Tips for a successful proposal</h6>
+                    <ul class="small text-muted">
+                        <li>Choose datasets relevant to the community's focus</li>
+                        <li>Provide a clear explanation of why your dataset fits</li>
+                        <li>Ensure your dataset has proper metadata</li>
+                        <li>Check that all files are accessible</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-3">Community Curators</h6>
+                    <div class="small">
+                        {% for curator in community.curators %}
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="me-2">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                         style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                        <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ curator.name }} {{ curator.surname }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="alert alert-warning mt-3 small">
+                        <i data-feather="alert-triangle" style="width: 16px; height: 16px;"></i>
+                        <strong>Note:</strong> Once submitted, you cannot edit your proposal. Make sure all information is correct.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('community.view', community_id=community.id) }}"
+               class="btn btn-outline-secondary">
+                <i data-feather="arrow-left"></i> Back to Community
+            </a>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Dataset data from server
+    const userDatasets = {{ datasets_json | tojson }};
+
+    // Character counter for message
+    const messageField = document.querySelector('textarea[name="message"]');
+    const charCount = document.getElementById('messageCharCount');
+
+    if (messageField && charCount) {
+        messageField.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+        // Initialize count
+        charCount.textContent = messageField.value.length;
+    }
+
+    // Dataset preview functionality
+    const datasetSelect = document.getElementById('datasetSelect');
+    const datasetPreview = document.getElementById('datasetPreview');
+    const previewContent = document.getElementById('previewContent');
+
+    if (datasetSelect) {
+        datasetSelect.addEventListener('change', function() {
+            const selectedId = parseInt(this.value);
+            const selectedDataset = userDatasets.find(d => d.id === selectedId);
+
+            if (selectedDataset) {
+                // Show preview with dataset info (using to_dict() structure)
+                const description = selectedDataset.description;
+                const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
+
+                previewContent.innerHTML = `
+                    <p class="mb-2"><strong>${selectedDataset.title}</strong></p>
+                    <p class="small mb-2">${truncatedDesc}</p>
+                    <div class="d-flex gap-3 small text-muted">
+                        <span><i data-feather="user" style="width: 12px; height: 12px;"></i> ${selectedDataset.authors.length} author(s)</span>
+                        <span><i data-feather="file" style="width: 12px; height: 12px;"></i> ${selectedDataset.files_count} file(s)</span>
+                        <span><i data-feather="calendar" style="width: 12px; height: 12px;"></i> ${new Date(selectedDataset.created_at).toLocaleDateString()}</span>
+                    </div>
+                `;
+
+                datasetPreview.style.display = 'block';
+
+                // Re-initialize icons
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            } else {
+                datasetPreview.style.display = 'none';
+            }
+        });
+
+        // Trigger on page load if there's a pre-selected value
+        if (datasetSelect.value) {
+            datasetSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Form validation feedback
+    const form = document.getElementById('proposeForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    }
+</script>
+{% endblock %}
