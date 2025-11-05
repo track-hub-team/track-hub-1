@@ -125,12 +125,12 @@
                                                     <div class="btn-group d-block mt-2" role="group">
                                                         <button type="button"
                                                                 class="btn btn-sm btn-success me-2"
-                                                                onclick="handleRequest({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, 'approve')">
+                                                                onclick="openApproveModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
                                                             <i data-feather="check" style="width: 14px; height: 14px;"></i> Approve
                                                         </button>
                                                         <button type="button"
                                                                 class="btn btn-sm btn-outline-danger"
-                                                                onclick="handleRequest({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, 'reject')">
+                                                                onclick="openRejectModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
                                                             <i data-feather="x" style="width: 14px; height: 14px;"></i> Reject
                                                         </button>
                                                     </div>
@@ -259,7 +259,8 @@
                                             </div>
                                             <div>
                                                 {% if curator.id != community.creator_id %}
-                                                    <button class="btn btn-sm btn-outline-danger" disabled>
+                                                    <button class="btn btn-sm btn-outline-danger"
+                                                            onclick="removeCurator({{ curator.id }}, '{{ curator.name }} {{ curator.surname }}')">
                                                         <i data-feather="user-minus" style="width: 14px; height: 14px;"></i> Remove
                                                     </button>
                                                 {% else %}
@@ -272,12 +273,9 @@
                             </div>
 
                             <div class="mt-4">
-                                <button class="btn btn-primary" disabled>
+                                <button class="btn btn-primary" onclick="openAddCuratorModal()">
                                     <i data-feather="user-plus"></i> Add Curator
                                 </button>
-                                <small class="form-text text-muted d-block mt-2">
-                                    Curator management will be available when the backend is ready
-                                </small>
                             </div>
                         </div>
                     </div>
@@ -321,6 +319,145 @@
         </div>
     </div>
 
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel">
+                        <i data-feather="check-circle"></i> Approve Dataset Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">You are about to approve the dataset: <strong id="approveDatasetTitle"></strong></p>
+
+                    <div class="alert alert-success">
+                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                        <strong>What happens next:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>The dataset will be added to this community</li>
+                            <li>The requester will be notified of the approval</li>
+                            <li>The dataset will be visible to all community members</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i data-feather="x"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                        <i data-feather="check"></i> Confirm Approval
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Curator Modal -->
+    <div class="modal fade" id="addCuratorModal" tabindex="-1" aria-labelledby="addCuratorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCuratorModalLabel">
+                        <i data-feather="user-plus"></i> Add Curator
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Search and select a user to add as curator to this community.</p>
+
+                    <!-- Search Input -->
+                    <div class="mb-3">
+                        <label for="curatorSearch" class="form-label fw-bold">Search user</label>
+                        <input type="text" class="form-control" id="curatorSearch"
+                               placeholder="Search by name or email...">
+                        <small class="form-text text-muted">
+                            Type at least 3 characters to search
+                        </small>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div id="curatorSearchResults" style="display: none;">
+                        <label class="form-label fw-bold">Select user:</label>
+                        <div id="curatorResultsList" class="list-group" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Results will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- No Results Message -->
+                    <div id="curatorNoResults" style="display: none;">
+                        <div class="alert alert-info small">
+                            <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                            No users found. Try a different search term.
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="curatorSearchLoading" style="display: none;">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-2 text-muted">Searching...</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                        <strong>About curators:</strong> Curators can review dataset submissions, approve or reject requests, and manage community settings.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i data-feather="x"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectModalLabel">
+                        <i data-feather="alert-triangle"></i> Reject Dataset Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">You are about to reject the dataset: <strong id="rejectDatasetTitle"></strong></p>
+
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label fw-bold">
+                            Reason for rejection <span class="text-muted">(Optional)</span>
+                        </label>
+                        <textarea class="form-control" id="rejectReason" rows="4"
+                                  placeholder="Explain why this dataset doesn't fit the community..."></textarea>
+                        <small class="form-text text-muted">
+                            <span id="rejectReasonCharCount">0</span>/500 characters · This message will be sent to the requester
+                        </small>
+                    </div>
+
+                    <div class="alert alert-warning small">
+                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                        <strong>Note:</strong> This action cannot be undone. The requester will be notified of the rejection.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i data-feather="x"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmRejectBtn">
+                        <i data-feather="x-circle"></i> Confirm Rejection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -340,20 +477,260 @@
         });
     });
 
-    // Handle approve/reject requests
-    function handleRequest(requestId, communityId, datasetId, action) {
-        const actionText = action === 'approve' ? 'approve' : 'reject';
-        const confirmMessage = `Are you sure you want to ${actionText} this dataset request?`;
+    // Modal data variables
+    let approveModalData = {
+        requestId: null,
+        communityId: null,
+        datasetId: null
+    };
 
-        if (!confirm(confirmMessage)) {
+    let rejectModalData = {
+        requestId: null,
+        communityId: null,
+        datasetId: null
+    };
+
+    // Character counter for reject reason
+    const rejectReasonField = document.getElementById('rejectReason');
+    const rejectReasonCharCount = document.getElementById('rejectReasonCharCount');
+
+    if (rejectReasonField && rejectReasonCharCount) {
+        rejectReasonField.addEventListener('input', function() {
+            const length = this.value.length;
+            rejectReasonCharCount.textContent = length;
+            // Limit to 500 characters
+            if (length > 500) {
+                this.value = this.value.substring(0, 500);
+                rejectReasonCharCount.textContent = 500;
+            }
+        });
+    }
+
+    // Re-initialize icons when modals are shown
+    const approveModal = document.getElementById('approveModal');
+    const rejectModal = document.getElementById('rejectModal');
+    const addCuratorModal = document.getElementById('addCuratorModal');
+
+    if (approveModal) {
+        approveModal.addEventListener('shown.bs.modal', function() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+    }
+
+    if (rejectModal) {
+        rejectModal.addEventListener('shown.bs.modal', function() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+
+        // Clear form when modal is hidden
+        rejectModal.addEventListener('hidden.bs.modal', function() {
+            rejectReasonField.value = '';
+            rejectReasonCharCount.textContent = '0';
+        });
+    }
+
+    if (addCuratorModal) {
+        addCuratorModal.addEventListener('shown.bs.modal', function() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            // Focus on search input
+            document.getElementById('curatorSearch').focus();
+        });
+
+        // Clear search when modal is hidden
+        addCuratorModal.addEventListener('hidden.bs.modal', function() {
+            document.getElementById('curatorSearch').value = '';
+            document.getElementById('curatorSearchResults').style.display = 'none';
+            document.getElementById('curatorNoResults').style.display = 'none';
+            document.getElementById('curatorResultsList').innerHTML = '';
+        });
+    }
+
+    // Open approve modal function
+    function openApproveModal(requestId, communityId, datasetId, datasetTitle) {
+        approveModalData = { requestId, communityId, datasetId };
+        document.getElementById('approveDatasetTitle').textContent = datasetTitle;
+        const modal = new bootstrap.Modal(document.getElementById('approveModal'));
+        modal.show();
+    }
+
+    // Open reject modal function
+    function openRejectModal(requestId, communityId, datasetId, datasetTitle) {
+        rejectModalData = { requestId, communityId, datasetId };
+        document.getElementById('rejectDatasetTitle').textContent = datasetTitle;
+        const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+        modal.show();
+    }
+
+    // Handle confirm approval
+    document.getElementById('confirmApproveBtn').addEventListener('click', function() {
+        const { requestId, communityId, datasetId } = approveModalData;
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
+        modal.hide();
+
+        // Call the approve handler
+        handleRequest(requestId, communityId, datasetId, 'approve');
+    });
+
+    // Handle confirm rejection
+    document.getElementById('confirmRejectBtn').addEventListener('click', function() {
+        const reason = rejectReasonField.value.trim();
+        const { requestId, communityId, datasetId } = rejectModalData;
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
+        modal.hide();
+
+        // Call the reject handler with reason
+        handleRequest(requestId, communityId, datasetId, 'reject', reason);
+    });
+
+    // Open add curator modal
+    function openAddCuratorModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addCuratorModal'));
+        modal.show();
+    }
+
+    // Mock users for search (TODO: Replace with API call)
+    const MOCK_USERS = [
+        { id: 10, name: "Alice", surname: "Johnson", email: "alice.johnson@uvlhub.io" },
+        { id: 11, name: "Bob", surname: "Smith", email: "bob.smith@uvlhub.io" },
+        { id: 12, name: "Carol", surname: "Williams", email: "carol.williams@uvlhub.io" },
+        { id: 13, name: "David", surname: "Brown", email: "david.brown@uvlhub.io" },
+        { id: 14, name: "Eve", surname: "Davis", email: "eve.davis@uvlhub.io" },
+    ];
+
+    // Search users
+    let searchTimeout;
+    const curatorSearchInput = document.getElementById('curatorSearch');
+    const curatorResultsList = document.getElementById('curatorResultsList');
+    const curatorSearchResults = document.getElementById('curatorSearchResults');
+    const curatorNoResults = document.getElementById('curatorNoResults');
+    const curatorSearchLoading = document.getElementById('curatorSearchLoading');
+
+    if (curatorSearchInput) {
+        curatorSearchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+
+            // Hide all states
+            curatorSearchResults.style.display = 'none';
+            curatorNoResults.style.display = 'none';
+            curatorSearchLoading.style.display = 'none';
+
+            if (query.length < 3) {
+                return;
+            }
+
+            // Show loading
+            curatorSearchLoading.style.display = 'block';
+
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                // Mock search (TODO: Replace with API call)
+                const results = MOCK_USERS.filter(user =>
+                    user.name.toLowerCase().includes(query) ||
+                    user.surname.toLowerCase().includes(query) ||
+                    user.email.toLowerCase().includes(query)
+                );
+
+                // Hide loading
+                curatorSearchLoading.style.display = 'none';
+
+                if (results.length === 0) {
+                    curatorNoResults.style.display = 'block';
+                } else {
+                    // Display results
+                    curatorResultsList.innerHTML = '';
+                    results.forEach(user => {
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                         style="width: 40px; height: 40px;">
+                                        <span class="fw-bold">${user.name[0]}${user.surname[0]}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">${user.name} ${user.surname}</div>
+                                    <small class="text-muted">${user.email}</small>
+                                </div>
+                                <div>
+                                    <i data-feather="plus-circle" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                        `;
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            addCurator(user.id, user.name, user.surname, user.email);
+                        });
+                        curatorResultsList.appendChild(item);
+                    });
+
+                    curatorSearchResults.style.display = 'block';
+
+                    // Re-initialize icons
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                }
+            }, 500);
+        });
+    }
+
+    // Add curator function
+    function addCurator(userId, name, surname, email) {
+        // TODO: Replace with API call when backend is ready
+        console.log(`Would add curator: ${userId} - ${name} ${surname} (${email})`);
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCuratorModal'));
+        modal.hide();
+
+        // Show success message (Mock)
+        alert(`Curator "${name} ${surname}" added successfully! (Mock)\n\nIn production, this would call:\nPOST /api/v1/communities/{{ community.id }}/curators/${userId}`);
+
+        // TODO: Reload curators list or add dynamically
+        location.reload();
+    }
+
+    // Remove curator function
+    function removeCurator(curatorId, curatorName) {
+        if (!confirm(`Are you sure you want to remove ${curatorName} as curator?`)) {
             return;
         }
+
+        // TODO: Replace with API call when backend is ready
+        console.log(`Would remove curator: ${curatorId} - ${curatorName}`);
+
+        // Show success message (Mock)
+        alert(`Curator "${curatorName}" removed successfully! (Mock)\n\nIn production, this would call:\nDELETE /api/v1/communities/{{ community.id }}/curators/${curatorId}`);
+
+        // TODO: Remove from list dynamically
+        location.reload();
+    }
+
+    // Handle approve/reject requests
+    function handleRequest(requestId, communityId, datasetId, action, reason = '') {
+        const actionText = action === 'approve' ? 'approve' : 'reject';
 
         // TODO: Replace with actual API call when backend is ready
         const url = `/api/v1/communities/${communityId}/${action}/${datasetId}`;
 
         // Mock implementation - simulate success
-        console.log(`Would ${action} request ${requestId} for dataset ${datasetId}`);
+        console.log(`Would ${action} request ${requestId} for dataset ${datasetId}`, reason ? `with reason: ${reason}` : '');
 
         // Show loading state
         const requestElement = document.getElementById(`request-${requestId}`);
@@ -365,7 +742,11 @@
         // Simulate API call
         setTimeout(() => {
             // Show success message
-            alert(`Dataset ${actionText}ed successfully! (Mock)\n\nIn production, this would call:\n${url}`);
+            let message = `Dataset ${actionText}ed successfully! (Mock)\n\nIn production, this would call:\n${url}`;
+            if (action === 'reject' && reason) {
+                message += `\n\nRejection reason: "${reason}"`;
+            }
+            alert(message);
 
             // Remove the request from the list
             if (requestElement) {
@@ -400,11 +781,14 @@
         }, 500);
 
         /* TODO: Uncomment when backend is ready
+        const body = action === 'reject' && reason ? JSON.stringify({ reason }) : null;
+
         fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: body
         })
         .then(response => response.json())
         .then(data => {
