@@ -1,0 +1,262 @@
+{% extends "base_template.html" %}
+
+{% block title %}{{ community.name }} - Community{% endblock %}
+
+{% block content %}
+
+    <!-- Community Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <img src="{{ community.logo_path }}"
+                                 alt="{{ community.name }}"
+                                 class="rounded"
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                        </div>
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h1 class="h3 mb-1">{{ community.name }}</h1>
+                                    <p class="text-muted mb-0">
+                                        <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                                        Created {{ community.created_at }}
+                                        {% if community.updated_at != community.created_at %}
+                                            · Updated {{ community.updated_at }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div>
+                                    {% if not current_user.is_anonymous %}
+                                        <a href="{{ url_for('community.propose_dataset', community_id=community.id) }}"
+                                           class="btn btn-primary">
+                                            <i data-feather="upload"></i> Propose Dataset
+                                        </a>
+                                        <!-- TODO: Add manage button only if user is curator -->
+                                        <a href="{{ url_for('community.manage', community_id=community.id) }}"
+                                           class="btn btn-outline-secondary">
+                                            <i data-feather="settings"></i> Manage
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <p class="mb-3">{{ community.description }}</p>
+
+                            <!-- Stats -->
+                            <div class="d-flex gap-4">
+                                <div>
+                                    <strong>{{ community.datasets_count }}</strong>
+                                    <span class="text-muted">Dataset{{ 's' if community.datasets_count != 1 else '' }}</span>
+                                </div>
+                                <div>
+                                    <strong>{{ community.curators|length }}</strong>
+                                    <span class="text-muted">Curator{{ 's' if community.curators|length != 1 else '' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content (Datasets) -->
+        <div class="col-12 col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="database"></i> Datasets in this Community
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if datasets %}
+                        <div class="list-group list-group-flush">
+                            {% for dataset in datasets %}
+                                <div class="list-group-item px-0">
+                                    <div class="row align-items-center">
+                                        <div class="col">
+                                            <h6 class="mb-1">
+                                                <a href="{{ dataset.get_uvlhub_doi() }}"
+                                                   class="text-decoration-none">
+                                                    {{ dataset.ds_meta_data.title }}
+                                                </a>
+                                            </h6>
+                                            <p class="text-muted mb-2 small">
+                                                {{ dataset.ds_meta_data.description[:200] }}{% if dataset.ds_meta_data.description|length > 200 %}...{% endif %}
+                                            </p>
+                                            <div class="d-flex gap-3 small text-muted">
+                                                <span>
+                                                    <i data-feather="user" style="width: 12px; height: 12px;"></i>
+                                                    {% if dataset.ds_meta_data.authors %}
+                                                        {{ dataset.ds_meta_data.authors[0].name }}
+                                                        {% if dataset.ds_meta_data.authors|length > 1 %}
+                                                            +{{ dataset.ds_meta_data.authors|length - 1 }} more
+                                                        {% endif %}
+                                                    {% else %}
+                                                        Unknown
+                                                    {% endif %}
+                                                </span>
+                                                <span>
+                                                    <i data-feather="file" style="width: 12px; height: 12px;"></i>
+                                                    {{ dataset.get_files_count() }} file{{ 's' if dataset.get_files_count() != 1 else '' }}
+                                                </span>
+                                                <span>
+                                                    <i data-feather="hard-drive" style="width: 12px; height: 12px;"></i>
+                                                    {{ dataset.get_file_total_size_for_human() }}
+                                                </span>
+                                                <span>
+                                                    <i data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                                                    {{ dataset.created_at.strftime('%Y-%m-%d') }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="{{ dataset.get_uvlhub_doi() }}"
+                                               class="btn btn-sm btn-outline-primary me-1"
+                                               title="View dataset">
+                                                <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                            </a>
+                                            <a href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Download dataset">
+                                                <i data-feather="download" style="width: 14px; height: 14px;"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if community.datasets_count > datasets|length %}
+                            <div class="text-center mt-3">
+                                <p class="text-muted small">
+                                    Showing {{ datasets|length }} of {{ community.datasets_count }} datasets
+                                </p>
+                                <!-- TODO: Add pagination when backend is ready -->
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="inbox" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <h5 class="text-muted">No datasets yet</h5>
+                            <p class="text-muted mb-3">
+                                This community doesn't have any datasets yet.
+                            </p>
+                            {% if not current_user.is_anonymous %}
+                                <a href="{{ url_for('community.propose_dataset', community_id=community.id) }}"
+                                   class="btn btn-primary">
+                                    <i data-feather="upload"></i> Be the first to propose a dataset
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-12 col-lg-4">
+            <!-- Curators Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="shield"></i> Curators
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if community.curators %}
+                        <div class="list-group list-group-flush">
+                            {% for curator in community.curators %}
+                                <div class="list-group-item px-0 py-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px;">
+                                                <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ curator.name }} {{ curator.surname }}</div>
+                                            <small class="text-muted">{{ curator.email }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No curators assigned</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Creator Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="user"></i> Creator
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-2">
+                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                                 style="width: 40px; height: 40px;">
+                                <span class="fw-bold">{{ community.creator.name[0] }}{{ community.creator.surname[0] }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ community.creator.name }} {{ community.creator.surname }}</div>
+                            <small class="text-muted">{{ community.creator.email }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="info"></i> Community Info
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 small">Created</dt>
+                        <dd class="col-sm-7 small text-muted">{{ community.created_at }}</dd>
+
+                        <dt class="col-sm-5 small">Last Updated</dt>
+                        <dd class="col-sm-7 small text-muted">{{ community.updated_at }}</dd>
+
+                        <dt class="col-sm-5 small">Community ID</dt>
+                        <dd class="col-sm-7 small text-muted">{{ community.id }}</dd>
+
+                        <dt class="col-sm-5 small">URL Slug</dt>
+                        <dd class="col-sm-7 small text-muted">{{ community.slug }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Communities -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <a href="{{ url_for('community.list') }}" class="btn btn-outline-secondary">
+                <i data-feather="arrow-left"></i> Back to Communities
+            </a>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>
+{% endblock %}

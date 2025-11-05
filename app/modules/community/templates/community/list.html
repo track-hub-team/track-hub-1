@@ -1,0 +1,151 @@
+{% extends "base_template.html" %}
+
+{% block title %}Communities{% endblock %}
+
+{% block content %}
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">Explore Communities</h1>
+                {% if not current_user.is_anonymous %}
+                    <a href="{{ url_for('community.create') }}" class="btn btn-primary">
+                        <i data-feather="plus"></i> Create Community
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('community.list') }}">
+                        <div class="input-group">
+                            <input type="text" name="query" class="form-control"
+                                   placeholder="Search communities by name or description..."
+                                   value="{{ query or '' }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i data-feather="search"></i> Search
+                            </button>
+                            {% if query %}
+                                <a href="{{ url_for('community.list') }}" class="btn btn-secondary">
+                                    <i data-feather="x"></i> Clear
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if query %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <p class="text-muted">
+                    {% if communities %}
+                        Found {{ communities|length }} communit{{ 'y' if communities|length == 1 else 'ies' }} matching "{{ query }}"
+                    {% else %}
+                        No communities found matching "{{ query }}"
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if communities %}
+        <div class="row">
+            {% for community in communities %}
+                <div class="col-12 col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 hover-shadow">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="{{ community.logo_path }}"
+                                     alt="{{ community.name }}"
+                                     class="rounded me-3"
+                                     style="width: 60px; height: 60px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{{ url_for('community.view', community_id=community.id) }}"
+                                           class="text-decoration-none text-dark">
+                                            {{ community.name }}
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">
+                                        <i data-feather="database" style="width: 14px; height: 14px;"></i>
+                                        {{ community.datasets_count }} dataset{{ 's' if community.datasets_count != 1 else '' }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <p class="card-text text-muted flex-grow-1">
+                                {{ community.description[:150] }}{% if community.description|length > 150 %}...{% endif %}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted">
+                                    <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                                    Created {{ community.created_at }}
+                                </small>
+                                <a href="{{ url_for('community.view', community_id=community.id) }}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    View <i data-feather="arrow-right" style="width: 14px; height: 14px;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="inbox" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                        <h5 class="card-title">No communities found</h5>
+                        <p class="card-text text-muted">
+                            {% if query %}
+                                Try a different search term or browse all communities.
+                            {% else %}
+                                Be the first to create a community!
+                            {% endif %}
+                        </p>
+                        {% if not current_user.is_anonymous and not query %}
+                            <a href="{{ url_for('community.create') }}" class="btn btn-primary mt-3">
+                                <i data-feather="plus"></i> Create Community
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Add hover effect class
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .hover-shadow {
+                transition: box-shadow 0.3s ease, transform 0.3s ease;
+            }
+            .hover-shadow:hover {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-5px);
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}
