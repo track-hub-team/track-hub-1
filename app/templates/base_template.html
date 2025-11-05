@@ -71,13 +71,15 @@ chico sundermann">
                     </a>
                 </li>
 
-                <li class="sidebar-item {{ 'active' if request.endpoint == 'zenodo.index' else '' }}">
-                    <a class="sidebar-link" href="{{ url_for('zenodo.index') }}">
-                        <i class="align-middle" data-feather="database"></i>
-                        <span class="align-middle">Fakenodo</span>
-                    </a>
+                <li class="sidebar-header">
+                    Communities
                 </li>
 
+                <li class="sidebar-item {{ 'active' if request.endpoint == 'community.list' else '' }}">
+                    <a class="sidebar-link" href="{{ url_for('community.list') }}">
+                        <i class="align-middle" data-feather="folder"></i> <span class="align-middle">Explore communities</span>
+                    </a>
+                </li>
 
                 {% if current_user.is_anonymous %}
 
