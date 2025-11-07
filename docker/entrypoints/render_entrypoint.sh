@@ -15,6 +15,15 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+# Sync uploads folder with Git repository
+if [ -n "$UPLOADS_GIT_REPO_URL" ]; then
+    echo "Synchronizing uploads folder..."
+    sh /app/scripts/sync_uploads.sh
+else
+    echo "UPLOADS_GIT_REPO_URL not set, skipping uploads sync"
+    mkdir -p "${WORKING_DIR}uploads"
+fi
+
 # Initialize migrations only if the migrations directory doesn't exist
 if [ ! -d "migrations/versions" ]; then
     # Initialize the migration repository
