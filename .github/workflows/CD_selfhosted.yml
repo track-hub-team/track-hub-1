@@ -1,0 +1,67 @@
+name: Deploy TrackHub to Proxmox (self-hosted)
+
+on:
+  push:
+    branches:
+      - trunk
+      - main
+    workfow_dispatch:
+
+jobs:
+  deploy-pre:
+    if: github.ref_name == 'trunk'
+    name: Deploy Preproduction (Docker :latest)
+    runs-on: self-hosted
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull and deploy preproduction container
+        run: |
+          IMAGE=${{ secrets.DOCKER_USER }}/trackhub-1-staging:latest
+          echo "Pulling image $IMAGE..."
+          docker pull $IMAGE
+
+          echo "Stopping and removing old container..."
+          docker stop trackhub-pre || true
+          docker rm trackhub-pre || true
+
+          echo "Launching new preproduction container..."
+          docker run -d \
+            --name trackhub-pre \
+            -p 5001:5000 \
+            --env-file /home/pabolimor/trackhub-pre.env \
+            --restart always \
+            $IMAGE
+
+  deploy-prod:
+    if: github.ref_name == 'main'
+    name: Deploy Production (Docker :<sha>)
+    runs-on: self-hosted
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull and deploy production container
+        run: |
+          IMAGE=${{ secrets.DOCKER_USER }}/trackhub-1:${{ github.sha }}
+          echo "Trying to pull $IMAGE..."
+          docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USER }}/trackhub-1:latest
+
+          echo "Stopping and removing old production container..."
+          docker stop trackhub-prod || true
+          docker rm trackhub-prod || true
+
+          echo "Launching new production container..."
+          docker run -d \
+            --name trackhub-prod \
+            -p 5000:5000 \
+            --env-file /home/pabolimor/trackhub-prod.env \
+            --restart always \
+            $IMAGE
