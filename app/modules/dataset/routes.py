@@ -513,7 +513,8 @@ def edit_dataset(dataset_id):
                 file_kind = infer_kind_from_filename(filename)
                 if file_kind != dataset.dataset_kind:
                     flash(
-                        f"File type mismatch: {filename} is {file_kind.upper()} but dataset is {dataset.dataset_kind.upper()}",
+                        f"File type mismatch: {filename} is {file_kind.upper()} "
+                        f"but dataset is {dataset.dataset_kind.upper()}",
                         "danger",
                     )
                     continue
@@ -544,7 +545,7 @@ def edit_dataset(dataset_id):
                     commit=False,
                     filename=filename,
                     title=filename,
-                    description=f"Added via edit",
+                    description="Added via edit",
                     publication_type="none",  # ✅ Valor por defecto obligatorio
                 )
 

@@ -29,11 +29,7 @@ from app.modules.dataset.repositories import (
     DSViewRecordRepository,
 )
 from app.modules.featuremodel.repositories import FeatureModelRepository, FMMetaDataRepository
-from app.modules.hubfile.repositories import (
-    HubfileDownloadRecordRepository,
-    HubfileRepository,
-    HubfileViewRecordRepository,
-)
+from app.modules.hubfile.repositories import HubfileDownloadRecordRepository, HubfileRepository
 from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
@@ -49,21 +45,21 @@ def calculate_checksum_and_size(file_path):
 
 # === Tipos de dataset (validación por extensión) ===
 class DataTypeHandler:
-    ext = None
-    name = None
+    ext: str = ""
+    name: str = ""
 
     def validate(self, filepath: str):
         return True
 
 
 class UVLHandler(DataTypeHandler):
-    ext = ".uvl"
-    name = "uvl"
+    ext: str = ".uvl"
+    name: str = "uvl"
 
 
 class GPXHandler(DataTypeHandler):
-    ext = ".gpx"
-    name = "gpx"
+    ext: str = ".gpx"
+    name: str = "gpx"
 
     def validate(self, filepath: str):
         # Validación mínima: XML válido y raíz <gpx>
@@ -95,10 +91,6 @@ class DataSetService(BaseService):
 
     def move_feature_models(self, dataset: BaseDataset):
         """Mueve los archivos de feature models desde la carpeta temporal a la definitiva."""
-        import shutil
-
-        from app.modules.auth.services import AuthenticationService
-
         current_user = AuthenticationService().get_authenticated_user()
         source_dir = current_user.temp_folder()
 

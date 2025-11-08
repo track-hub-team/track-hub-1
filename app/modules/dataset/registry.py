@@ -5,6 +5,7 @@ from typing import Type
 
 from flask_wtf import FlaskForm
 
+from app.modules.dataset.forms import GPXFeatureModelForm, UVLFeatureModelForm
 from app.modules.dataset.models import BaseDataset, GPXDataset, UVLDataset
 
 logger = logging.getLogger(__name__)
@@ -99,12 +100,6 @@ class DatasetTypeDescriptor:
         self.icon = icon  # ✅ NUEVO
         self.color = color  # ✅ NUEVO
 
-
-# ✅ IMPORTAR los formularios
-from app.modules.dataset.forms import (
-    GPXFeatureModelForm,
-    UVLFeatureModelForm,
-)
 
 # === Registro global de tipos ===
 DATASET_TYPE_REGISTRY = {

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType
+from app.modules.dataset.models import Author, DSMetaData, DSMetrics, PublicationType, UVLDataset
 from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -55,9 +55,9 @@ class DataSetSeeder(BaseSeeder):
         ]
         self.seed(authors)
 
-        # Create DataSet instances
+        # Create UVLDataset instances
         datasets = [
-            DataSet(
+            UVLDataset(
                 user_id=user1.id if i % 2 == 0 else user2.id,
                 ds_meta_data_id=seeded_ds_meta_data[i].id,
                 created_at=datetime.now(timezone.utc),
@@ -69,13 +69,13 @@ class DataSetSeeder(BaseSeeder):
         # Assume there are 12 UVL files, create corresponding FMMetaData and FeatureModel
         fm_meta_data_list = [
             FMMetaData(
-                uvl_filename=f"file{i+1}.uvl",
+                filename=f"file{i+1}.uvl",
                 title=f"Feature Model {i+1}",
                 description=f"Description for feature model {i+1}",
                 publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
                 publication_doi=f"10.1234/fm{i+1}",
                 tags="tag1, tag2",
-                uvl_version="1.0",
+                file_version="1.0",
             )
             for i in range(12)
         ]
