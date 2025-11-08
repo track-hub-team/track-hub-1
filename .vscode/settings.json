@@ -1,0 +1,10 @@
+{
+  // Jinja2 template recognition
+  "files.associations": {
+    "**/templates/**/*.html": "jinja-html"
+  },
+
+  // Disable HTML validation that conflicts with Jinja2
+  "html.validate.scripts": false,
+  "html.validate.styles": false
+}
