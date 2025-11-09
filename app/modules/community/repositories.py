@@ -104,6 +104,12 @@ class CommunityRequestRepository(BaseRepository):
             is not None
         )
 
+    def get_pending_request_by_dataset(self, community_id: int, dataset_id: int) -> Optional[CommunityRequest]:
+        """Obtener solicitud pendiente específica por comunidad y dataset"""
+        return self.model.query.filter_by(
+            community_id=community_id, dataset_id=dataset_id, status=CommunityRequest.STATUS_PENDING
+        ).first()
+
     def get_user_requests(self, user_id: int) -> List[CommunityRequest]:
         """Obtener todas las solicitudes de un usuario"""
         return self.model.query.filter_by(requester_id=user_id).order_by(self.model.requested_at.desc()).all()

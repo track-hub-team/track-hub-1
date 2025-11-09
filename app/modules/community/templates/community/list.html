@@ -76,7 +76,7 @@
                                     </h5>
                                     <small class="text-muted">
                                         <i data-feather="database" style="width: 14px; height: 14px;"></i>
-                                        {{ community.datasets_count }} dataset{{ 's' if community.datasets_count != 1 else '' }}
+                                        {{ community.get_datasets_count() }} dataset{{ 's' if community.get_datasets_count() != 1 else '' }}
                                     </small>
                                 </div>
                             </div>

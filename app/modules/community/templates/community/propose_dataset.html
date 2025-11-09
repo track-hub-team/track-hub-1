@@ -138,11 +138,11 @@
                                 <div class="me-2">
                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                          style="width: 32px; height: 32px; font-size: 0.75rem;">
-                                        <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                        <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="fw-bold">{{ curator.name }} {{ curator.surname }}</div>
+                                    <div class="fw-bold">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</div>
                                 </div>
                             </div>
                         {% endfor %}
