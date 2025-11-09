@@ -53,14 +53,16 @@ class Community(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "creator_id": self.creator_id,
-            "creator": {
-                "id": self.creator.id,
-                "email": self.creator.email,
-                "name": self.creator.profile.name if self.creator.profile else None,
-                "surname": self.creator.profile.surname if self.creator.profile else None,
-            }
-            if self.creator
-            else None,
+            "creator": (
+                {
+                    "id": self.creator.id,
+                    "email": self.creator.email,
+                    "name": self.creator.profile.name if self.creator.profile else None,
+                    "surname": self.creator.profile.surname if self.creator.profile else None,
+                }
+                if self.creator
+                else None
+            ),
             "curators": [
                 {
                     "id": curator.user.id,
@@ -204,28 +206,34 @@ class CommunityRequest(db.Model):
             "community_id": self.community_id,
             "dataset_id": self.dataset_id,
             "dataset": self.dataset.to_dict() if self.dataset else None,
-            "requester": {
-                "id": self.requester.id,
-                "email": self.requester.email,
-                "name": self.requester.profile.name if self.requester.profile else None,
-                "surname": self.requester.profile.surname if self.requester.profile else None,
-            }
-            if self.requester
-            else None,
+            "requester": (
+                {
+                    "id": self.requester.id,
+                    "email": self.requester.email,
+                    "name": self.requester.profile.name if self.requester.profile else None,
+                    "surname": self.requester.profile.surname if self.requester.profile else None,
+                }
+                if self.requester
+                else None
+            ),
             "message": self.message,
             "status": self.status,
             "requested_at": self.requested_at.isoformat() if self.requested_at else None,
             "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
-            "reviewed_by": {
-                "id": self.reviewed_by.id,
-                "email": self.reviewed_by.email,
-                "name": self.reviewed_by.profile.name if self.reviewed_by.profile else None,
-                "surname": self.reviewed_by.profile.surname if self.reviewed_by.profile else None,
-            }
-            if self.reviewed_by
-            else None,
+            "reviewed_by": (
+                {
+                    "id": self.reviewed_by.id,
+                    "email": self.reviewed_by.email,
+                    "name": self.reviewed_by.profile.name if self.reviewed_by.profile else None,
+                    "surname": self.reviewed_by.profile.surname if self.reviewed_by.profile else None,
+                }
+                if self.reviewed_by
+                else None
+            ),
             "review_comment": self.review_comment,
         }
 
     def __repr__(self):
-        return f"CommunityRequest<{self.id}:community={self.community_id},dataset={self.dataset_id},status={self.status}>"
+        return (
+            f"CommunityRequest<{self.id}:community={self.community_id},dataset={self.dataset_id},status={self.status}>"
+        )
