@@ -150,7 +150,7 @@ def approve_request(community_id, request_id):
     """Approve a dataset request (curators only)"""
     comment = request.form.get("comment", None)
 
-    success, error = community_service.approve_request(request_id, current_user.id, comment)
+    _, error = community_service.approve_request(request_id, current_user.id, comment)
 
     if error:
         flash(f"Error approving request: {error}", "error")
@@ -166,7 +166,7 @@ def reject_request(community_id, request_id):
     """Reject a dataset request (curators only)"""
     comment = request.form.get("comment", None)
 
-    success, error = community_service.reject_request(request_id, current_user.id, comment)
+    _, error = community_service.reject_request(request_id, current_user.id, comment)
 
     if error:
         flash(f"Error rejecting request: {error}", "error")
