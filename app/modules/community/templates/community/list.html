@@ -146,6 +146,40 @@
             }
         `;
         document.head.appendChild(style);
+
+        // Dynamic search - submit form after user stops typing for 500ms
+        const searchInput = document.querySelector('input[name="query"]');
+        const searchForm = document.querySelector('form[action*="community"]');
+
+        if (searchInput && searchForm) {
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function(e) {
+                // Save cursor position in sessionStorage
+                sessionStorage.setItem('communitySearchCursor', e.target.selectionStart);
+
+                // Clear previous timeout
+                clearTimeout(searchTimeout);
+
+                // Set new timeout to search after 500ms of no typing
+                searchTimeout = setTimeout(function() {
+                    searchForm.submit();
+                }, 500);
+            });
+
+            // Restore focus and cursor position after page load
+            if (searchInput.value) {
+                const savedPosition = sessionStorage.getItem('communitySearchCursor');
+                searchInput.focus();
+                if (savedPosition !== null) {
+                    const position = parseInt(savedPosition, 10);
+                    searchInput.setSelectionRange(position, position);
+                }
+            } else {
+                // Clear saved position if input is empty
+                sessionStorage.removeItem('communitySearchCursor');
+            }
+        }
     });
 </script>
 {% endblock %}

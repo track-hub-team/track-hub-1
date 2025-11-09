@@ -16,7 +16,7 @@ class CommunitySeeder(BaseSeeder):
         user1 = users[0]
         user2 = users[1] if len(users) > 1 else users[0]
 
-        # Crear 2 comunidades
+        # Crear 2 comunidades con logos en static/img/community/
         communities = [
             Community(
                 name="Software Engineering Research",
@@ -26,7 +26,7 @@ class CommunitySeeder(BaseSeeder):
                     "This community brings together researchers and practitioners working on "
                     "software product lines, feature modeling, and variability management."
                 ),
-                logo_path="https://via.placeholder.com/150/0066cc/ffffff?text=SE",
+                logo_path="/static/img/community/software-engineering.png",
                 creator_id=user1.id,
             ),
             Community(
@@ -36,7 +36,7 @@ class CommunitySeeder(BaseSeeder):
                     "Feature models for machine learning applications and AI systems. "
                     "Explore variability in ML pipelines, model configurations, and deployment strategies."
                 ),
-                logo_path="https://via.placeholder.com/150/ff6600/ffffff?text=ML",
+                logo_path="/static/img/community/machine-learning.png",
                 creator_id=user2.id,
             ),
         ]

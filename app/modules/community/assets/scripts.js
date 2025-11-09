@@ -1,1 +1,1 @@
-console.log("Hi, I am a script loaded from community module");
+console.log("Community module scripts loaded");
