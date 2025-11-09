@@ -175,12 +175,12 @@
                                         <div class="me-2">
                                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                                  style="width: 40px; height: 40px;">
-                                                <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                                <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
                                             </div>
                                         </div>
                                         <div>
-                                            <div class="fw-bold">{{ curator.name }} {{ curator.surname }}</div>
-                                            <small class="text-muted">{{ curator.email }}</small>
+                                            <div class="fw-bold">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</div>
+                                            <small class="text-muted">{{ curator.user.email }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -221,7 +221,7 @@
     <!-- Back to Communities -->
     <div class="row mt-3">
         <div class="col-12">
-            <a href="{{ url_for('community.list') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('community.list_communities') }}" class="btn btn-outline-secondary">
                 <i data-feather="arrow-left"></i> Back to Communities
             </a>
         </div>
