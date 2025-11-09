@@ -21,7 +21,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('community.list') }}">
+                    <form method="GET" action="{{ url_for('community.list_communities') }}">
                         <div class="input-group">
                             <input type="text" name="query" class="form-control"
                                    placeholder="Search communities by name or description..."
@@ -30,7 +30,7 @@
                                 <i data-feather="search"></i> Search
                             </button>
                             {% if query %}
-                                <a href="{{ url_for('community.list') }}" class="btn btn-secondary">
+                                <a href="{{ url_for('community.list_communities') }}" class="btn btn-secondary">
                                     <i data-feather="x"></i> Clear
                                 </a>
                             {% endif %}
