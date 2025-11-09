@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from app.modules.community import community_bp
 from app.modules.community.forms import CommunityForm, ProposeDatasetForm
 from app.modules.community.mock_data import MOCK_COMMUNITIES, MOCK_PENDING_REQUESTS
-from app.modules.dataset.models import DataSet
+from app.modules.dataset.models import BaseDataset
 
 
 @community_bp.route("/community", methods=["GET"])
@@ -45,7 +45,7 @@ def view(community_id):
         return redirect(url_for("community.list"))
 
     # REAL: Get actual datasets from database (simulate that they belong to this community)
-    datasets = DataSet.query.limit(3).all()
+    datasets = BaseDataset.query.limit(3).all()
 
     return render_template("community/view.html", community=community, datasets=datasets)
 
@@ -107,7 +107,7 @@ def manage(community_id):
     for req in MOCK_PENDING_REQUESTS:
         if req["community_id"] == community_id:
             # Try to get the real dataset if it exists
-            dataset = DataSet.query.get(req["dataset_id"])
+            dataset = BaseDataset.query.get(req["dataset_id"])
             if dataset:
                 req_copy = req.copy()
                 req_copy["dataset"] = dataset
@@ -133,7 +133,7 @@ def propose_dataset(community_id):
         return redirect(url_for("community.list"))
 
     # REAL: Get user's actual datasets from database
-    user_datasets = DataSet.query.filter_by(user_id=current_user.id).all()
+    user_datasets = BaseDataset.query.filter_by(user_id=current_user.id).all()
 
     if not user_datasets:
         flash("You need to have at least one dataset to propose to a community", "warning")
