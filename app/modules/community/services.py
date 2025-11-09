@@ -1,13 +1,12 @@
 import os
-from datetime import datetime
 from typing import List, Optional, Tuple
 
-from slugify import slugify
+from slugify import slugify  # type: ignore
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.modules.community.models import Community, CommunityCurator, CommunityDataset, CommunityRequest
+from app.modules.community.models import Community
 from app.modules.community.repositories import (
     CommunityCuratorRepository,
     CommunityDatasetRepository,
