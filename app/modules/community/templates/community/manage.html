@@ -246,21 +246,21 @@
                                                 <div class="me-3">
                                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                                          style="width: 48px; height: 48px;">
-                                                        <span class="fw-bold">{{ curator.name[0] }}{{ curator.surname[0] }}</span>
+                                                        <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <h6 class="mb-0">{{ curator.name }} {{ curator.surname }}</h6>
-                                                    <p class="text-muted small mb-0">{{ curator.email }}</p>
-                                                    {% if curator.id == community.creator_id %}
+                                                    <h6 class="mb-0">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</h6>
+                                                    <p class="text-muted small mb-0">{{ curator.user.email }}</p>
+                                                    {% if curator.user_id == community.creator_id %}
                                                         <span class="badge bg-success mt-1">Creator</span>
                                                     {% endif %}
                                                 </div>
                                             </div>
                                             <div>
-                                                {% if curator.id != community.creator_id %}
+                                                {% if curator.user_id != community.creator_id %}
                                                     <button class="btn btn-sm btn-outline-danger"
-                                                            onclick="removeCurator({{ curator.id }}, '{{ curator.name }} {{ curator.surname }}')">
+                                                            onclick="removeCurator({{ curator.id }}, '{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}')">
                                                         <i data-feather="user-minus" style="width: 14px; height: 14px;"></i> Remove
                                                     </button>
                                                 {% else %}
