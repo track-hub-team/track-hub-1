@@ -23,14 +23,15 @@
                 <div class="card-body">
                     <form method="GET" action="{{ url_for('community.list_communities') }}">
                         <div class="input-group">
-                            <input type="text" name="query" class="form-control"
+                            <span class="input-group-text bg-white border-end-0">
+                                <i data-feather="search"></i>
+                            </span>
+                            <input type="text" name="query" class="form-control border-start-0"
                                    placeholder="Search communities by name or description..."
-                                   value="{{ query or '' }}">
-                            <button class="btn btn-primary" type="submit">
-                                <i data-feather="search"></i> Search
-                            </button>
+                                   value="{{ query or '' }}"
+                                   autofocus>
                             {% if query %}
-                                <a href="{{ url_for('community.list_communities') }}" class="btn btn-secondary">
+                                <a href="{{ url_for('community.list_communities') }}" class="btn btn-outline-secondary">
                                     <i data-feather="x"></i> Clear
                                 </a>
                             {% endif %}
@@ -41,8 +42,8 @@
         </div>
     </div>
 
-    {% if query %}
-        <div class="row mb-3">
+    <div class="row mb-3" id="search-results-message">
+        {% if query %}
             <div class="col-12">
                 <p class="text-muted">
                     {% if communities %}
@@ -52,11 +53,11 @@
                     {% endif %}
                 </p>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 
-    {% if communities %}
-        <div class="row">
+    <div class="row" id="communities-grid">
+        {% if communities %}
             {% for community in communities %}
                 <div class="col-12 col-md-6 col-lg-4 mb-4">
                     <div class="card h-100 hover-shadow">
@@ -98,9 +99,7 @@
                     </div>
                 </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="row">
+        {% else %}
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card">
                     <div class="card-body text-center py-5">
@@ -121,8 +120,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 
 {% endblock %}
 
@@ -133,7 +132,7 @@
         feather.replace();
     }
 
-    // Add hover effect class
+    // Add hover effect class and search input styles
     document.addEventListener('DOMContentLoaded', function() {
         const style = document.createElement('style');
         style.textContent = `
@@ -144,40 +143,97 @@
                 box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
                 transform: translateY(-5px);
             }
+            /* Search input focus styles - unified border */
+            .input-group:focus-within {
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+                border-radius: 0.375rem;
+            }
+            .input-group:focus-within input.form-control {
+                box-shadow: none;
+                border-color: #dee2e6;
+            }
+            .input-group:focus-within input.form-control:focus {
+                box-shadow: none;
+                border-color: #dee2e6;
+                outline: none;
+            }
         `;
         document.head.appendChild(style);
 
-        // Dynamic search - submit form after user stops typing for 500ms
+        // Dynamic search with AJAX - no page reload
         const searchInput = document.querySelector('input[name="query"]');
         const searchForm = document.querySelector('form[action*="community"]');
+        const resultsMessage = document.getElementById('search-results-message');
+        const communitiesGrid = document.getElementById('communities-grid');
 
         if (searchInput && searchForm) {
             let searchTimeout;
 
             searchInput.addEventListener('input', function(e) {
-                // Save cursor position in sessionStorage
-                sessionStorage.setItem('communitySearchCursor', e.target.selectionStart);
+                const cursorPosition = e.target.selectionStart;
+                const query = e.target.value.trim();
 
                 // Clear previous timeout
                 clearTimeout(searchTimeout);
 
                 // Set new timeout to search after 500ms of no typing
                 searchTimeout = setTimeout(function() {
-                    searchForm.submit();
+                    performSearch(query, cursorPosition);
                 }, 500);
             });
 
-            // Restore focus and cursor position after page load
-            if (searchInput.value) {
-                const savedPosition = sessionStorage.getItem('communitySearchCursor');
-                searchInput.focus();
-                if (savedPosition !== null) {
-                    const position = parseInt(savedPosition, 10);
-                    searchInput.setSelectionRange(position, position);
+            // Prevent form submission on Enter key
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                const cursorPosition = searchInput.selectionStart;
+                performSearch(query, cursorPosition);
+            });
+
+            function performSearch(query, cursorPosition) {
+                const url = new URL(window.location.href);
+
+                if (query) {
+                    url.searchParams.set('query', query);
+                } else {
+                    url.searchParams.delete('query');
                 }
-            } else {
-                // Clear saved position if input is empty
-                sessionStorage.removeItem('communitySearchCursor');
+
+                // Update URL without reload
+                window.history.replaceState({}, '', url);
+
+                // Fetch new results
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Parse the response
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        // Update results message
+                        const newResultsMessage = doc.getElementById('search-results-message');
+                        if (newResultsMessage && resultsMessage) {
+                            resultsMessage.innerHTML = newResultsMessage.innerHTML;
+                        }
+
+                        // Update communities grid
+                        const newGrid = doc.getElementById('communities-grid');
+                        if (newGrid && communitiesGrid) {
+                            communitiesGrid.innerHTML = newGrid.innerHTML;
+                        }
+
+                        // Re-initialize feather icons
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+
+                        // Restore focus and cursor
+                        searchInput.focus();
+                        searchInput.setSelectionRange(cursorPosition, cursorPosition);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                    });
             }
         }
     });
