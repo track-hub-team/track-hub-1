@@ -1,4 +1,6 @@
-from flask import flash, redirect, render_template, request, url_for
+import os
+
+from flask import flash, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.modules.community import community_bp
@@ -172,3 +174,11 @@ def reject_request(community_id, request_id):
         flash("Request rejected.", "success")
 
     return redirect(url_for("community.manage", community_id=community_id))
+
+
+@community_bp.route("/uploads/communities/<path:filename>")
+def uploaded_file(filename):
+    """Serve uploaded community logos"""
+    working_dir = os.getenv("WORKING_DIR", "")
+    upload_dir = os.path.join(working_dir, "uploads", "communities")
+    return send_from_directory(upload_dir, filename)
