@@ -204,11 +204,11 @@
                         <div class="me-2">
                             <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
                                  style="width: 40px; height: 40px;">
-                                <span class="fw-bold">{{ community.creator.name[0] }}{{ community.creator.surname[0] }}</span>
+                                <span class="fw-bold">{{ community.creator.profile.name[0] if community.creator.profile else 'U' }}{{ community.creator.profile.surname[0] if community.creator.profile else 'U' }}</span>
                             </div>
                         </div>
                         <div>
-                            <div class="fw-bold">{{ community.creator.name }} {{ community.creator.surname }}</div>
+                            <div class="fw-bold">{{ community.creator.profile.name if community.creator.profile else community.creator.email }} {{ community.creator.profile.surname if community.creator.profile else '' }}</div>
                             <small class="text-muted">{{ community.creator.email }}</small>
                         </div>
                     </div>
