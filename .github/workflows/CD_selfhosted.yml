@@ -10,58 +10,56 @@ on:
 jobs:
   deploy-pre:
     if: github.ref_name == 'trunk'
-    name: Deploy Preproduction (Docker :latest)
+    name: Deploy Pre (self-hosted)
     runs-on: self-hosted
+
     steps:
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3.6.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Pull and deploy preproduction container
+      - name: Build selfhosted image for pre
         run: |
-          IMAGE=${{ secrets.DOCKER_USER }}/trackhub-1-staging:latest
-          echo "Pulling image $IMAGE..."
-          docker pull $IMAGE
+          docker build \
+            -f docker/images/Dockerfile.selfhosted \
+            -t trackhub-selfhosted:trunk .
 
-          echo "Stopping and removing old container..."
-          docker stop trackhub-pre || true
-          docker rm trackhub-pre || true
+      - name: Deploy pre container
+        run: |
+          docker rm -f trackhub-pre || true
 
-          echo "Launching new preproduction container..."
           docker run -d \
             --name trackhub-pre \
             -p 5001:5000 \
             --env-file /home/pabolimor/trackhub-pre.env \
+            -v /etc/mysql/ssl/ca.pem:/etc/ssl/certs/mariadb-ca.pem:ro \
+            --add-host=host.docker.internal:host-gateway \
             --restart always \
-            $IMAGE
+            trackhub-selfhosted:trunk
 
   deploy-prod:
     if: github.ref_name == 'main'
-    name: Deploy Production (Docker :<sha>)
+    name: Deploy Prod (self-hosted)
     runs-on: self-hosted
+
     steps:
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3.6.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Pull and deploy production container
+      - name: Build selfhosted image for prod
         run: |
-          IMAGE=${{ secrets.DOCKER_USER }}/trackhub-1:${{ github.sha }}
-          echo "Trying to pull $IMAGE..."
-          docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USER }}/trackhub-1:latest
+          docker build \
+            -f docker/images/Dockerfile.selfhosted \
+            -t trackhub-selfhosted:${{ github.sha }} .
 
-          echo "Stopping and removing old production container..."
-          docker stop trackhub-prod || true
-          docker rm trackhub-prod || true
+      - name: Deploy prod container
+        run: |
+          docker rm -f trackhub-prod || true
 
-          echo "Launching new production container..."
           docker run -d \
             --name trackhub-prod \
-            -p 5000:5000 \
+            -p 5002:5000 \
             --env-file /home/pabolimor/trackhub-prod.env \
+            -v /etc/mysql/ssl/ca.pem:/etc/ssl/certs/mariadb-ca.pem:ro \
+            --add-host=host.docker.internal:host-gateway \
             --restart always \
-            $IMAGE
+            trackhub-selfhosted:${{ github.sha }}
