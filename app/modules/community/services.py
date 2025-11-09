@@ -6,7 +6,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.modules.community.models import Community
+from app.modules.community.models import Community, CommunityRequest
 from app.modules.community.repositories import (
     CommunityCuratorRepository,
     CommunityDatasetRepository,
@@ -280,7 +280,7 @@ class CommunityService(BaseService):
 
         # Generar nombre de archivo único
         filename = secure_filename(logo_file.filename)
-        name, ext = os.path.splitext(filename)
+        _, ext = os.path.splitext(filename)
         unique_filename = f"{slug}{ext}"
 
         # Guardar archivo
