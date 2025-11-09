@@ -15,7 +15,9 @@ def db_console():
     mariadb_database = os.getenv("MARIADB_DATABASE")
 
     # Build the command to connect to MariaDB (skip SSL to avoid certificate issues)
-    mariadb_connect_cmd = f"mysql --skip-ssl -h{mariadb_hostname} -u{mariadb_user} -p{mariadb_password} {mariadb_database}"
+    mariadb_connect_cmd = (
+        f"mysql --skip-ssl -h{mariadb_hostname} -u{mariadb_user} -p{mariadb_password} {mariadb_database}"
+    )
 
     # Execute the command
     try:
