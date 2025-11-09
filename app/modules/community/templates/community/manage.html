@@ -725,7 +725,7 @@
     // Handle approve/reject requests
     function handleRequest(requestId, communityId, datasetId, action, reason = '') {
         const actionText = action === 'approve' ? 'approve' : 'reject';
-        const url = `/api/v1/communities/${communityId}/${action}/${datasetId}`;
+        const url = `/community/${communityId}/request/${requestId}/${action}`;
 
         // Show loading state
         const requestElement = document.getElementById(`request-${requestId}`);
@@ -734,20 +734,21 @@
             requestElement.style.pointerEvents = 'none';
         }
 
-        // Prepare request body
-        const body = action === 'reject' && reason ? JSON.stringify({ reason }) : null;
+        // Prepare form data
+        const formData = new FormData();
+        if (action === 'reject' && reason) {
+            formData.append('comment', reason);
+        }
 
-        // Make API call
+        // Make form POST request
         fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: body
+            body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        .then(response => {
+            // The HTML endpoints redirect, but we want to handle it via AJAX
+            // So we check if redirect happened successfully
+            if (response.redirected || response.ok) {
                 alert(`Dataset ${actionText}ed successfully!`);
 
                 // Remove the request from the list
@@ -781,7 +782,7 @@
                     }
                 }
             } else {
-                alert(`Error: ${data.message}`);
+                alert(`Error: Failed to ${action} request`);
                 // Restore element state
                 if (requestElement) {
                     requestElement.style.opacity = '1';
