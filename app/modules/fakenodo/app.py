@@ -6,9 +6,11 @@ import uuid
 from typing import Any
 
 from flask import Flask, jsonify, make_response, request
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # o limita a tu dominio
 
 DEPOSITIONS: dict[str, dict[str, Any]] = {}
 CONCEPTS: dict[str, dict[str, Any]] = {}
@@ -55,6 +57,11 @@ def serialize(dep):
         "doi": dep.get("doi"),
         "links": {"self": f"/api/deposit/depositions/{dep['id']}"},
     }
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"ok": True, "time": now_iso()}), 200
 
 
 @app.route("/api/deposit/depositions", methods=["GET"])
