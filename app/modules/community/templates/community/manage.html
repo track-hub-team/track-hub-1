@@ -73,7 +73,7 @@
                                                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                                                  style="width: 40px; height: 40px;">
                                                                 <span class="fw-bold">
-                                                                    {{ request.requester.name[0] }}{{ request.requester.surname[0] }}
+                                                                    {{ request.requester.profile.name[0] if request.requester.profile else 'U' }}{{ request.requester.profile.surname[0] if request.requester.profile else 'U' }}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -91,7 +91,7 @@
                                                                 {% endif %}
                                                             </h6>
                                                             <p class="text-muted small mb-2">
-                                                                Requested by <strong>{{ request.requester.name }} {{ request.requester.surname }}</strong>
+                                                                Requested by <strong>{{ request.requester.profile.name if request.requester.profile else request.requester.email }} {{ request.requester.profile.surname if request.requester.profile else '' }}</strong>
                                                                 ({{ request.requester.email }})
                                                                 · {{ request.requested_at }}
                                                             </p>
@@ -725,12 +725,7 @@
     // Handle approve/reject requests
     function handleRequest(requestId, communityId, datasetId, action, reason = '') {
         const actionText = action === 'approve' ? 'approve' : 'reject';
-
-        // TODO: Replace with actual API call when backend is ready
         const url = `/api/v1/communities/${communityId}/${action}/${datasetId}`;
-
-        // Mock implementation - simulate success
-        console.log(`Would ${action} request ${requestId} for dataset ${datasetId}`, reason ? `with reason: ${reason}` : '');
 
         // Show loading state
         const requestElement = document.getElementById(`request-${requestId}`);
@@ -739,50 +734,10 @@
             requestElement.style.pointerEvents = 'none';
         }
 
-        // Simulate API call
-        setTimeout(() => {
-            // Show success message
-            let message = `Dataset ${actionText}ed successfully! (Mock)\n\nIn production, this would call:\n${url}`;
-            if (action === 'reject' && reason) {
-                message += `\n\nRejection reason: "${reason}"`;
-            }
-            alert(message);
-
-            // Remove the request from the list
-            if (requestElement) {
-                requestElement.remove();
-            }
-
-            // Update badge count
-            const badge = document.querySelector('#requests-tab .badge');
-            if (badge) {
-                const currentCount = parseInt(badge.textContent);
-                const newCount = currentCount - 1;
-                if (newCount > 0) {
-                    badge.textContent = newCount;
-                } else {
-                    badge.remove();
-                    // Show empty state
-                    const listGroup = document.querySelector('#requests .list-group');
-                    if (listGroup && listGroup.children.length === 0) {
-                        listGroup.innerHTML = `
-                            <div class="text-center py-5">
-                                <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
-                                <h5 class="text-muted">No pending requests</h5>
-                                <p class="text-muted">All dataset submissions have been reviewed.</p>
-                            </div>
-                        `;
-                        if (typeof feather !== 'undefined') {
-                            feather.replace();
-                        }
-                    }
-                }
-            }
-        }, 500);
-
-        /* TODO: Uncomment when backend is ready
+        // Prepare request body
         const body = action === 'reject' && reason ? JSON.stringify({ reason }) : null;
 
+        // Make API call
         fetch(url, {
             method: 'POST',
             headers: {
@@ -794,28 +749,55 @@
         .then(data => {
             if (data.success) {
                 alert(`Dataset ${actionText}ed successfully!`);
+
                 // Remove the request from the list
                 if (requestElement) {
                     requestElement.remove();
                 }
+
                 // Update badge count
                 const badge = document.querySelector('#requests-tab .badge');
                 if (badge) {
                     const currentCount = parseInt(badge.textContent);
-                    badge.textContent = Math.max(0, currentCount - 1);
+                    const newCount = currentCount - 1;
+                    if (newCount > 0) {
+                        badge.textContent = newCount;
+                    } else {
+                        badge.remove();
+                        // Show empty state
+                        const listGroup = document.querySelector('#requests .list-group');
+                        if (listGroup && listGroup.children.length === 0) {
+                            listGroup.innerHTML = `
+                                <div class="text-center py-5">
+                                    <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                    <h5 class="text-muted">No pending requests</h5>
+                                    <p class="text-muted">All dataset submissions have been reviewed.</p>
+                                </div>
+                            `;
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
+                        }
+                    }
                 }
             } else {
                 alert(`Error: ${data.message}`);
-                requestElement.style.opacity = '1';
-                requestElement.style.pointerEvents = 'auto';
+                // Restore element state
+                if (requestElement) {
+                    requestElement.style.opacity = '1';
+                    requestElement.style.pointerEvents = 'auto';
+                }
             }
         })
         .catch(error => {
-            alert(`Error: ${error.message}`);
-            requestElement.style.opacity = '1';
-            requestElement.style.pointerEvents = 'auto';
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            // Restore element state
+            if (requestElement) {
+                requestElement.style.opacity = '1';
+                requestElement.style.pointerEvents = 'auto';
+            }
         });
-        */
     }
 </script>
 {% endblock %}
