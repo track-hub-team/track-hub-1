@@ -47,8 +47,8 @@
                             <!-- Stats -->
                             <div class="d-flex gap-4">
                                 <div>
-                                    <strong>{{ community.datasets_count }}</strong>
-                                    <span class="text-muted">Dataset{{ 's' if community.datasets_count != 1 else '' }}</span>
+                                    <strong>{{ community.get_datasets_count() }}</strong>
+                                    <span class="text-muted">Dataset{{ 's' if community.get_datasets_count() != 1 else '' }}</span>
                                 </div>
                                 <div>
                                     <strong>{{ community.curators|length }}</strong>
@@ -130,10 +130,10 @@
                             {% endfor %}
                         </div>
 
-                        {% if community.datasets_count > datasets|length %}
+                        {% if community.get_datasets_count() > datasets|length %}
                             <div class="text-center mt-3">
                                 <p class="text-muted small">
-                                    Showing {{ datasets|length }} of {{ community.datasets_count }} datasets
+                                    Showing {{ datasets|length }} of {{ community.get_datasets_count() }} datasets
                                 </p>
                                 <!-- TODO: Add pagination when backend is ready -->
                             </div>
