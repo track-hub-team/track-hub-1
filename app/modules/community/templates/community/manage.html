@@ -3,602 +3,203 @@
 {% block title %}Manage {{ community.name }}{% endblock %}
 
 {% block content %}
-
-    <!-- Community Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-1">
-                        <i data-feather="settings"></i> Manage Community
-                    </h1>
-                    <p class="text-muted mb-0">{{ community.name }}</p>
-                </div>
-                <div>
-                    <a href="{{ url_for('community.view', community_id=community.id) }}"
-                       class="btn btn-outline-secondary">
-                        <i data-feather="eye"></i> View Community
-                    </a>
-                </div>
+<!-- ==========================
+     Community Header
+=========================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i data-feather="settings"></i> Manage Community
+                </h1>
+                <p class="text-muted mb-0">{{ community.name }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('community.view', community_id=community.id) }}" class="btn btn-outline-secondary">
+                    <i data-feather="eye"></i> View Community
+                </a>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mb-4" id="manageTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="requests-tab" data-bs-toggle="tab"
-                    data-bs-target="#requests" type="button" role="tab">
-                <i data-feather="inbox"></i>
-                Pending Requests
-                {% if requests %}
-                    <span class="badge bg-primary rounded-pill ms-1">{{ requests|length }}</span>
-                {% endif %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="tab"
-                    data-bs-target="#settings" type="button" role="tab">
-                <i data-feather="sliders"></i> Settings
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="curators-tab" data-bs-toggle="tab"
-                    data-bs-target="#curators" type="button" role="tab">
-                <i data-feather="shield"></i> Curators
-            </button>
-        </li>
-    </ul>
+<!-- ==========================
+     Tabs Navigation
+=========================== -->
+<ul class="nav nav-tabs mb-4" id="manageTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab">
+            <i data-feather="inbox"></i> Pending Requests
+            {% if requests %}
+                <span class="badge bg-primary rounded-pill ms-1">{{ requests|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+            <i data-feather="sliders"></i> Settings
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="curators-tab" data-bs-toggle="tab" data-bs-target="#curators" type="button" role="tab">
+            <i data-feather="shield"></i> Curators
+        </button>
+    </li>
+</ul>
 
-    <!-- Tab Content -->
-    <div class="tab-content" id="manageTabsContent">
+<!-- ==========================
+     Tab Content
+=========================== -->
+<div class="tab-content" id="manageTabsContent">
 
-        <!-- Pending Requests Tab -->
-        <div class="tab-pane fade show active" id="requests" role="tabpanel">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Dataset Submission Requests</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if requests %}
-                                <div class="list-group list-group-flush">
-                                    {% for request in requests %}
-                                        <div class="list-group-item px-0 py-3" id="request-{{ request.id }}">
-                                            <div class="row">
-                                                <div class="col-12 col-lg-8">
-                                                    <div class="d-flex align-items-start mb-2">
-                                                        <div class="me-3">
-                                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                                                 style="width: 40px; height: 40px;">
-                                                                <span class="fw-bold">
-                                                                    {{ request.requester.profile.name[0] if request.requester.profile else 'U' }}{{ request.requester.profile.surname[0] if request.requester.profile else 'U' }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="mb-1">
-                                                                {% if request.dataset %}
-                                                                    <a href="{{ request.dataset.get_uvlhub_doi() }}"
-                                                                       target="_blank"
-                                                                       class="text-decoration-none">
-                                                                        {{ request.dataset.ds_meta_data.title }}
-                                                                        <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
-                                                                    </a>
-                                                                {% else %}
-                                                                    Dataset #{{ request.dataset_id }}
-                                                                {% endif %}
-                                                            </h6>
-                                                            <p class="text-muted small mb-2">
-                                                                Requested by <strong>{{ request.requester.profile.name if request.requester.profile else request.requester.email }} {{ request.requester.profile.surname if request.requester.profile else '' }}</strong>
-                                                                ({{ request.requester.email }})
-                                                                · {{ request.requested_at }}
-                                                            </p>
-
-                                                            {% if request.dataset %}
-                                                                <p class="text-muted small mb-2">
-                                                                    {{ request.dataset.ds_meta_data.description[:200] }}{% if request.dataset.ds_meta_data.description|length > 200 %}...{% endif %}
-                                                                </p>
-                                                                <div class="d-flex gap-3 small text-muted mb-2">
-                                                                    <span>
-                                                                        <i data-feather="file" style="width: 12px; height: 12px;"></i>
-                                                                        {{ request.dataset.get_files_count() }} files
-                                                                    </span>
-                                                                    <span>
-                                                                        <i data-feather="hard-drive" style="width: 12px; height: 12px;"></i>
-                                                                        {{ request.dataset.get_file_total_size_for_human() }}
-                                                                    </span>
-                                                                </div>
-                                                            {% endif %}
-
-                                                            {% if request.message %}
-                                                                <div class="alert alert-light border mt-2 mb-0 small">
-                                                                    <strong>Message:</strong> {{ request.message }}
-                                                                </div>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-12 col-lg-4 text-lg-end">
-                                                    <span class="badge bg-warning text-dark mb-2">{{ request.status|upper }}</span>
-                                                    <div class="btn-group d-block mt-2" role="group">
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-success me-2"
-                                                                onclick="openApproveModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
-                                                            <i data-feather="check" style="width: 14px; height: 14px;"></i> Approve
-                                                        </button>
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-outline-danger"
-                                                                onclick="openRejectModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
-                                                            <i data-feather="x" style="width: 14px; height: 14px;"></i> Reject
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="text-center py-5">
-                                    <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
-                                    <h5 class="text-muted">No pending requests</h5>
-                                    <p class="text-muted">
-                                        All dataset submissions have been reviewed. New requests will appear here.
-                                    </p>
-                                </div>
-                            {% endif %}
-                        </div>
+    <!-- Pending Requests Tab -->
+    <div class="tab-pane fade show active" id="requests" role="tabpanel">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Dataset Submission Requests</h5>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Tab -->
-        <div class="tab-pane fade" id="settings" role="tabpanel">
-            <div class="row">
-                <div class="col-12 col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Community Settings</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="settingsForm">
-                                <!-- Community Name -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Community Name</label>
-                                    <input type="text" class="form-control" value="{{ community.name }}" disabled>
-                                    <small class="form-text text-muted">Contact an administrator to change the community name</small>
-                                </div>
-
-                                <!-- Description -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Description</label>
-                                    <textarea class="form-control" rows="5" disabled>{{ community.description }}</textarea>
-                                    <small class="form-text text-muted">Community description editing coming soon</small>
-                                </div>
-
-                                <!-- Logo -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Current Logo</label>
-                                    <div class="mb-2">
-                                        <img src="{{ community.logo_path }}"
-                                             alt="{{ community.name }}"
-                                             class="rounded"
-                                             style="width: 100px; height: 100px; object-fit: cover;">
-                                    </div>
-                                    <small class="form-text text-muted">Logo update functionality coming soon</small>
-                                </div>
-
-                                <div class="alert alert-info">
-                                    <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                                    <strong>Note:</strong> Full community editing capabilities will be available when the backend is ready.
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-lg-4">
-                    <div class="card bg-light">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Quick Info</h5>
-                        </div>
-                        <div class="card-body">
-                            <dl class="row mb-0">
-                                <dt class="col-6 small">Community ID</dt>
-                                <dd class="col-6 small text-muted">{{ community.id }}</dd>
-
-                                <dt class="col-6 small">Slug</dt>
-                                <dd class="col-6 small text-muted">{{ community.slug }}</dd>
-
-                                <dt class="col-6 small">Created</dt>
-                                <dd class="col-6 small text-muted">{{ community.created_at }}</dd>
-
-                                <dt class="col-6 small">Updated</dt>
-                                <dd class="col-6 small text-muted">{{ community.updated_at }}</dd>
-
-                                <dt class="col-6 small">Datasets</dt>
-                                <dd class="col-6 small text-muted">{{ community.datasets_count }}</dd>
-
-                                <dt class="col-6 small">Curators</dt>
-                                <dd class="col-6 small text-muted">{{ community.curators|length }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Curators Tab -->
-        <div class="tab-pane fade" id="curators" role="tabpanel">
-            <div class="row">
-                <div class="col-12 col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Manage Curators</h5>
-                        </div>
-                        <div class="card-body">
+                    <div class="card-body">
+                        {% if requests %}
                             <div class="list-group list-group-flush">
-                                {% for curator in community.curators %}
-                                    <div class="list-group-item px-0 py-3">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-3">
-                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                                         style="width: 48px; height: 48px;">
-                                                        <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-0">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</h6>
-                                                    <p class="text-muted small mb-0">{{ curator.user.email }}</p>
-                                                    {% if curator.user_id == community.creator_id %}
-                                                        <span class="badge bg-success mt-1">Creator</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                {% if curator.user_id != community.creator_id %}
-                                                    <button class="btn btn-sm btn-outline-danger"
-                                                            onclick="removeCurator({{ curator.id }}, '{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}')">
-                                                        <i data-feather="user-minus" style="width: 14px; height: 14px;"></i> Remove
-                                                    </button>
-                                                {% else %}
-                                                    <span class="text-muted small">Cannot remove creator</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
+                                {% for request in requests %}
+                                    {% include 'partials/request_item.html' with request=request %}
                                 {% endfor %}
                             </div>
-
-                            <div class="mt-4">
-                                <button class="btn btn-primary" onclick="openAddCuratorModal()">
-                                    <i data-feather="user-plus"></i> Add Curator
-                                </button>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                <h5 class="text-muted">No pending requests</h5>
+                                <p class="text-muted">
+                                    All dataset submissions have been reviewed. New requests will appear here.
+                                </p>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-lg-4">
-                    <div class="card bg-light">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">About Curators</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="small">
-                                Curators are responsible for reviewing and approving dataset submissions to the community.
-                            </p>
-                            <h6 class="fw-bold mt-3">Curator Responsibilities:</h6>
-                            <ul class="small">
-                                <li>Review dataset submissions</li>
-                                <li>Approve or reject requests</li>
-                                <li>Ensure quality and relevance</li>
-                                <li>Maintain community guidelines</li>
-                            </ul>
-                            <h6 class="fw-bold mt-3">Permissions:</h6>
-                            <ul class="small">
-                                <li>View all pending requests</li>
-                                <li>Approve/reject datasets</li>
-                                <li>Manage community settings</li>
-                                <li>Add/remove other curators</li>
-                            </ul>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Back Button -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <a href="{{ url_for('community.view', community_id=community.id) }}" class="btn btn-outline-secondary">
-                <i data-feather="arrow-left"></i> Back to Community
-            </a>
-        </div>
-    </div>
-
-    <!-- Approve Modal -->
-    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="approveModalLabel">
-                        <i data-feather="check-circle"></i> Approve Dataset Request
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">You are about to approve the dataset: <strong id="approveDatasetTitle"></strong></p>
-
-                    <div class="alert alert-success">
-                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                        <strong>What happens next:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>The dataset will be added to this community</li>
-                            <li>The requester will be notified of the approval</li>
-                            <li>The dataset will be visible to all community members</li>
-                        </ul>
+    <!-- Settings Tab -->
+    <div class="tab-pane fade" id="settings" role="tabpanel">
+        <div class="row">
+            <div class="col-12 col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Community Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        {% include 'partials/community_settings.html' with community=community %}
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i data-feather="x"></i> Cancel
-                    </button>
-                    <button type="button" class="btn btn-success" id="confirmApproveBtn">
-                        <i data-feather="check"></i> Confirm Approval
-                    </button>
-                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                {% include 'partials/community_quick_info.html' with community=community %}
             </div>
         </div>
     </div>
 
-    <!-- Add Curator Modal -->
-    <div class="modal fade" id="addCuratorModal" tabindex="-1" aria-labelledby="addCuratorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addCuratorModalLabel">
-                        <i data-feather="user-plus"></i> Add Curator
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">Search and select a user to add as curator to this community.</p>
-
-                    <!-- Search Input -->
-                    <div class="mb-3">
-                        <label for="curatorSearch" class="form-label fw-bold">Search user</label>
-                        <input type="text" class="form-control" id="curatorSearch"
-                               placeholder="Search by name or email...">
-                        <small class="form-text text-muted">
-                            Type at least 3 characters to search
-                        </small>
-                    </div>
-
-                    <!-- Search Results -->
-                    <div id="curatorSearchResults" style="display: none;">
-                        <label class="form-label fw-bold">Select user:</label>
-                        <div id="curatorResultsList" class="list-group" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Results will be populated by JavaScript -->
-                        </div>
-                    </div>
-
-                    <!-- No Results Message -->
-                    <div id="curatorNoResults" style="display: none;">
-                        <div class="alert alert-info small">
-                            <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                            No users found. Try a different search term.
-                        </div>
-                    </div>
-
-                    <!-- Loading State -->
-                    <div id="curatorSearchLoading" style="display: none;">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <span class="ms-2 text-muted">Searching...</span>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info mt-3">
-                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                        <strong>About curators:</strong> Curators can review dataset submissions, approve or reject requests, and manage community settings.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i data-feather="x"></i> Close
-                    </button>
-                </div>
+    <!-- Curators Tab -->
+    <div class="tab-pane fade" id="curators" role="tabpanel">
+        <div class="row">
+            <div class="col-12 col-lg-8">
+                {% include 'partials/curators_list.html' with community=community %}
+            </div>
+            <div class="col-12 col-lg-4">
+                {% include 'partials/curators_info.html' %}
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Reject Modal -->
-    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="rejectModalLabel">
-                        <i data-feather="alert-triangle"></i> Reject Dataset Request
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">You are about to reject the dataset: <strong id="rejectDatasetTitle"></strong></p>
-
-                    <div class="mb-3">
-                        <label for="rejectReason" class="form-label fw-bold">
-                            Reason for rejection <span class="text-muted">(Optional)</span>
-                        </label>
-                        <textarea class="form-control" id="rejectReason" rows="4"
-                                  placeholder="Explain why this dataset doesn't fit the community..."></textarea>
-                        <small class="form-text text-muted">
-                            <span id="rejectReasonCharCount">0</span>/500 characters · This message will be sent to the requester
-                        </small>
-                    </div>
-
-                    <div class="alert alert-warning small">
-                        <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                        <strong>Note:</strong> This action cannot be undone. The requester will be notified of the rejection.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i data-feather="x"></i> Cancel
-                    </button>
-                    <button type="button" class="btn btn-danger" id="confirmRejectBtn">
-                        <i data-feather="x-circle"></i> Confirm Rejection
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- ==========================
+     Back Button
+=========================== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{{ url_for('community.view', community_id=community.id) }}" class="btn btn-outline-secondary">
+            <i data-feather="arrow-left"></i> Back to Community
+        </a>
     </div>
+</div>
+
+<!-- ==========================
+     Modals
+=========================== -->
+{% include 'partials/approve_modal.html' %}
+{% include 'partials/reject_modal.html' %}
+{% include 'partials/add_curator_modal.html' %}
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Initialize Feather icons
-    if (typeof feather !== 'undefined') {
-        feather.replace();
-    }
+    // ==========================
+    // Feather Icons Initialization
+    // ==========================
+    function initFeather() { if (typeof feather !== 'undefined') feather.replace(); }
+    initFeather();
 
-    // Re-initialize icons when tab changes
-    const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabButtons.forEach(button => {
-        button.addEventListener('shown.bs.tab', function() {
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
-        });
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn => {
+        btn.addEventListener('shown.bs.tab', initFeather);
     });
 
-    // Modal data variables
-    let approveModalData = {
-        requestId: null,
-        communityId: null,
-        datasetId: null
-    };
+    ['approveModal','rejectModal','addCuratorModal'].forEach(id => {
+        const modalEl = document.getElementById(id);
+        if (modalEl) modalEl.addEventListener('shown.bs.modal', initFeather);
+    });
 
-    let rejectModalData = {
-        requestId: null,
-        communityId: null,
-        datasetId: null
-    };
+    // ==========================
+    // Modal Data & Handlers
+    // ==========================
+    let approveModalData = { requestId: null, communityId: null, datasetId: null };
+    let rejectModalData  = { requestId: null, communityId: null, datasetId: null };
 
-    // Character counter for reject reason
+    function openApproveModal(requestId, communityId, datasetId, datasetTitle) {
+        approveModalData = { requestId, communityId, datasetId };
+        document.getElementById('approveDatasetTitle').textContent = datasetTitle;
+        new bootstrap.Modal(document.getElementById('approveModal')).show();
+    }
+
+    function openRejectModal(requestId, communityId, datasetId, datasetTitle) {
+        rejectModalData = { requestId, communityId, datasetId };
+        document.getElementById('rejectDatasetTitle').textContent = datasetTitle;
+        new bootstrap.Modal(document.getElementById('rejectModal')).show();
+    }
+
+    // ==========================
+    // Confirm Actions
+    // ==========================
+    document.getElementById('confirmApproveBtn').addEventListener('click', function() {
+        const { requestId, communityId, datasetId } = approveModalData;
+        bootstrap.Modal.getInstance(document.getElementById('approveModal')).hide();
+        handleRequest(requestId, communityId, datasetId, 'approve');
+    });
+
     const rejectReasonField = document.getElementById('rejectReason');
     const rejectReasonCharCount = document.getElementById('rejectReasonCharCount');
 
     if (rejectReasonField && rejectReasonCharCount) {
         rejectReasonField.addEventListener('input', function() {
-            const length = this.value.length;
+            const length = Math.min(this.value.length, 500);
+            this.value = this.value.substring(0, length);
             rejectReasonCharCount.textContent = length;
-            // Limit to 500 characters
-            if (length > 500) {
-                this.value = this.value.substring(0, 500);
-                rejectReasonCharCount.textContent = 500;
-            }
         });
     }
 
-    // Re-initialize icons when modals are shown
-    const approveModal = document.getElementById('approveModal');
-    const rejectModal = document.getElementById('rejectModal');
-    const addCuratorModal = document.getElementById('addCuratorModal');
-
-    if (approveModal) {
-        approveModal.addEventListener('shown.bs.modal', function() {
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
-        });
-    }
-
-    if (rejectModal) {
-        rejectModal.addEventListener('shown.bs.modal', function() {
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
-        });
-
-        // Clear form when modal is hidden
-        rejectModal.addEventListener('hidden.bs.modal', function() {
-            rejectReasonField.value = '';
-            rejectReasonCharCount.textContent = '0';
-        });
-    }
-
-    if (addCuratorModal) {
-        addCuratorModal.addEventListener('shown.bs.modal', function() {
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
-            // Focus on search input
-            document.getElementById('curatorSearch').focus();
-        });
-
-        // Clear search when modal is hidden
-        addCuratorModal.addEventListener('hidden.bs.modal', function() {
-            document.getElementById('curatorSearch').value = '';
-            document.getElementById('curatorSearchResults').style.display = 'none';
-            document.getElementById('curatorNoResults').style.display = 'none';
-            document.getElementById('curatorResultsList').innerHTML = '';
-        });
-    }
-
-    // Open approve modal function
-    function openApproveModal(requestId, communityId, datasetId, datasetTitle) {
-        approveModalData = { requestId, communityId, datasetId };
-        document.getElementById('approveDatasetTitle').textContent = datasetTitle;
-        const modal = new bootstrap.Modal(document.getElementById('approveModal'));
-        modal.show();
-    }
-
-    // Open reject modal function
-    function openRejectModal(requestId, communityId, datasetId, datasetTitle) {
-        rejectModalData = { requestId, communityId, datasetId };
-        document.getElementById('rejectDatasetTitle').textContent = datasetTitle;
-        const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
-        modal.show();
-    }
-
-    // Handle confirm approval
-    document.getElementById('confirmApproveBtn').addEventListener('click', function() {
-        const { requestId, communityId, datasetId } = approveModalData;
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
-        modal.hide();
-
-        // Call the approve handler
-        handleRequest(requestId, communityId, datasetId, 'approve');
-    });
-
-    // Handle confirm rejection
     document.getElementById('confirmRejectBtn').addEventListener('click', function() {
         const reason = rejectReasonField.value.trim();
         const { requestId, communityId, datasetId } = rejectModalData;
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
-        modal.hide();
-
-        // Call the reject handler with reason
+        bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
         handleRequest(requestId, communityId, datasetId, 'reject', reason);
     });
 
-    // Open add curator modal
-    function openAddCuratorModal() {
-        const modal = new bootstrap.Modal(document.getElementById('addCuratorModal'));
-        modal.show();
-    }
-
-    // Mock users for search (TODO: Replace with API call)
+    // ==========================
+    // Curators Search & Management
+    // ==========================
     const MOCK_USERS = [
         { id: 10, name: "Alice", surname: "Johnson", email: "alice.johnson@uvlhub.io" },
         { id: 11, name: "Bob", surname: "Smith", email: "bob.smith@uvlhub.io" },
@@ -607,198 +208,7 @@
         { id: 14, name: "Eve", surname: "Davis", email: "eve.davis@uvlhub.io" },
     ];
 
-    // Search users
-    let searchTimeout;
-    const curatorSearchInput = document.getElementById('curatorSearch');
-    const curatorResultsList = document.getElementById('curatorResultsList');
-    const curatorSearchResults = document.getElementById('curatorSearchResults');
-    const curatorNoResults = document.getElementById('curatorNoResults');
-    const curatorSearchLoading = document.getElementById('curatorSearchLoading');
-
-    if (curatorSearchInput) {
-        curatorSearchInput.addEventListener('input', function() {
-            const query = this.value.trim().toLowerCase();
-
-            // Clear previous timeout
-            clearTimeout(searchTimeout);
-
-            // Hide all states
-            curatorSearchResults.style.display = 'none';
-            curatorNoResults.style.display = 'none';
-            curatorSearchLoading.style.display = 'none';
-
-            if (query.length < 3) {
-                return;
-            }
-
-            // Show loading
-            curatorSearchLoading.style.display = 'block';
-
-            // Debounce search
-            searchTimeout = setTimeout(() => {
-                // Mock search (TODO: Replace with API call)
-                const results = MOCK_USERS.filter(user =>
-                    user.name.toLowerCase().includes(query) ||
-                    user.surname.toLowerCase().includes(query) ||
-                    user.email.toLowerCase().includes(query)
-                );
-
-                // Hide loading
-                curatorSearchLoading.style.display = 'none';
-
-                if (results.length === 0) {
-                    curatorNoResults.style.display = 'block';
-                } else {
-                    // Display results
-                    curatorResultsList.innerHTML = '';
-                    results.forEach(user => {
-                        const item = document.createElement('a');
-                        item.href = '#';
-                        item.className = 'list-group-item list-group-item-action';
-                        item.innerHTML = `
-                            <div class="d-flex align-items-center">
-                                <div class="me-2">
-                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                         style="width: 40px; height: 40px;">
-                                        <span class="fw-bold">${user.name[0]}${user.surname[0]}</span>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">${user.name} ${user.surname}</div>
-                                    <small class="text-muted">${user.email}</small>
-                                </div>
-                                <div>
-                                    <i data-feather="plus-circle" style="width: 20px; height: 20px;"></i>
-                                </div>
-                            </div>
-                        `;
-                        item.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            addCurator(user.id, user.name, user.surname, user.email);
-                        });
-                        curatorResultsList.appendChild(item);
-                    });
-
-                    curatorSearchResults.style.display = 'block';
-
-                    // Re-initialize icons
-                    if (typeof feather !== 'undefined') {
-                        feather.replace();
-                    }
-                }
-            }, 500);
-        });
-    }
-
-    // Add curator function
-    function addCurator(userId, name, surname, email) {
-        // TODO: Replace with API call when backend is ready
-        console.log(`Would add curator: ${userId} - ${name} ${surname} (${email})`);
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addCuratorModal'));
-        modal.hide();
-
-        // Show success message (Mock)
-        alert(`Curator "${name} ${surname}" added successfully! (Mock)\n\nIn production, this would call:\nPOST /api/v1/communities/{{ community.id }}/curators/${userId}`);
-
-        // TODO: Reload curators list or add dynamically
-        location.reload();
-    }
-
-    // Remove curator function
-    function removeCurator(curatorId, curatorName) {
-        if (!confirm(`Are you sure you want to remove ${curatorName} as curator?`)) {
-            return;
-        }
-
-        // TODO: Replace with API call when backend is ready
-        console.log(`Would remove curator: ${curatorId} - ${curatorName}`);
-
-        // Show success message (Mock)
-        alert(`Curator "${curatorName}" removed successfully! (Mock)\n\nIn production, this would call:\nDELETE /api/v1/communities/{{ community.id }}/curators/${curatorId}`);
-
-        // TODO: Remove from list dynamically
-        location.reload();
-    }
-
-    // Handle approve/reject requests
-    function handleRequest(requestId, communityId, datasetId, action, reason = '') {
-        const actionText = action === 'approve' ? 'approve' : 'reject';
-        const url = `/community/${communityId}/request/${requestId}/${action}`;
-
-        // Show loading state
-        const requestElement = document.getElementById(`request-${requestId}`);
-        if (requestElement) {
-            requestElement.style.opacity = '0.5';
-            requestElement.style.pointerEvents = 'none';
-        }
-
-        // Prepare form data
-        const formData = new FormData();
-        if (action === 'reject' && reason) {
-            formData.append('comment', reason);
-        }
-
-        // Make form POST request
-        fetch(url, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            // The HTML endpoints redirect, but we want to handle it via AJAX
-            // So we check if redirect happened successfully
-            if (response.redirected || response.ok) {
-                alert(`Dataset ${actionText}ed successfully!`);
-
-                // Remove the request from the list
-                if (requestElement) {
-                    requestElement.remove();
-                }
-
-                // Update badge count
-                const badge = document.querySelector('#requests-tab .badge');
-                if (badge) {
-                    const currentCount = parseInt(badge.textContent);
-                    const newCount = currentCount - 1;
-                    if (newCount > 0) {
-                        badge.textContent = newCount;
-                    } else {
-                        badge.remove();
-                        // Show empty state
-                        const listGroup = document.querySelector('#requests .list-group');
-                        if (listGroup && listGroup.children.length === 0) {
-                            listGroup.innerHTML = `
-                                <div class="text-center py-5">
-                                    <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
-                                    <h5 class="text-muted">No pending requests</h5>
-                                    <p class="text-muted">All dataset submissions have been reviewed.</p>
-                                </div>
-                            `;
-                            if (typeof feather !== 'undefined') {
-                                feather.replace();
-                            }
-                        }
-                    }
-                }
-            } else {
-                alert(`Error: Failed to ${action} request`);
-                // Restore element state
-                if (requestElement) {
-                    requestElement.style.opacity = '1';
-                    requestElement.style.pointerEvents = 'auto';
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-            // Restore element state
-            if (requestElement) {
-                requestElement.style.opacity = '1';
-                requestElement.style.pointerEvents = 'auto';
-            }
-        });
-    }
+    // Search, add, remove functions remain unchanged
+    {% include 'partials/manage_js.html' %}
 </script>
 {% endblock %}
