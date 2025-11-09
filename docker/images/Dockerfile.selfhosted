@@ -10,6 +10,7 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY app/ ./app
+COPY scripts/ ./scripts
 COPY core/ ./core
 COPY migrations/ ./migrations
 COPY requirements.txt .
