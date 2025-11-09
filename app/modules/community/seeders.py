@@ -1,5 +1,6 @@
 from app.modules.auth.models import User
-from app.modules.community.models import Community, CommunityCurator
+from app.modules.community.models import Community, CommunityCurator, CommunityDataset
+from app.modules.dataset.models import GPXDataset
 from core.seeders.BaseSeeder import BaseSeeder
 
 
@@ -54,3 +55,24 @@ class CommunitySeeder(BaseSeeder):
             )
 
         self.seed(curators)
+
+        # Vincular datasets GPX a las comunidades
+        gpx_datasets = GPXDataset.query.all()
+        if len(gpx_datasets) >= 2:
+            # Vincular GPX datasets a la primera comunidad (Software Engineering Research)
+            community_datasets = [
+                CommunityDataset(
+                    community_id=seeded_communities[0].id,
+                    dataset_id=gpx_datasets[0].id,
+                    added_by_id=user1.id,
+                ),
+                # Vincular a la segunda comunidad (Machine Learning Models)
+                CommunityDataset(
+                    community_id=seeded_communities[1].id,
+                    dataset_id=gpx_datasets[1].id,
+                    added_by_id=user2.id,
+                ),
+            ]
+            self.seed(community_datasets)
+        else:
+            print("Warning: Not enough GPX datasets found for community seeding.")
