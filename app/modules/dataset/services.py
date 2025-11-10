@@ -1,15 +1,21 @@
+# app/modules/dataset/services/dataset_service.py
+
 import hashlib
 import logging
 import os
 import shutil
 import uuid
-import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Optional
 
 from flask import request
 
 from app import db
 from app.modules.auth.services import AuthenticationService
+from app.modules.dataset.fetchers.base import FetchError
+from app.modules.dataset.fetchers.github import GithubFetcher
+from app.modules.dataset.fetchers.registry import DataSourceManager
+from app.modules.dataset.fetchers.zip import ZipFetcher
 from app.modules.dataset.models import (
     BaseDataset,
     DatasetVersion,
@@ -20,6 +26,7 @@ from app.modules.dataset.models import (
     UVLDataset,
     UVLDatasetVersion,
 )
+from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
@@ -43,40 +50,6 @@ def calculate_checksum_and_size(file_path):
         return hash_md5, file_size
 
 
-# === Tipos de dataset (validación por extensión) ===
-class DataTypeHandler:
-    ext: str = ""
-    name: str = ""
-
-    def validate(self, filepath: str):
-        return True
-
-
-class UVLHandler(DataTypeHandler):
-    ext: str = ".uvl"
-    name: str = "uvl"
-
-
-class GPXHandler(DataTypeHandler):
-    ext: str = ".gpx"
-    name: str = "gpx"
-
-    def validate(self, filepath: str):
-        # Validación mínima: XML válido y raíz <gpx>
-        with open(filepath, "rb") as f:
-            tree = ET.parse(f)
-        root = tree.getroot()
-        if not root.tag.lower().endswith("gpx"):
-            raise ValueError("Invalid GPX file: missing <gpx> root")
-        return True
-
-
-DATA_TYPE_REGISTRY = {
-    ".uvl": UVLHandler(),
-    ".gpx": GPXHandler(),
-}
-
-
 class DataSetService(BaseService):
     def __init__(self):
         super().__init__(DataSetRepository())
@@ -88,6 +61,13 @@ class DataSetService(BaseService):
         self.hubfiledownloadrecord_repository = HubfileDownloadRecordRepository()
         self.hubfilerepository = HubfileRepository()
         self.dsviewrecord_repostory = DSViewRecordRepository()
+
+        self.datasource_manager = DataSourceManager(
+            providers=[
+                GithubFetcher(),
+                ZipFetcher(),
+            ]
+        )
 
     def move_feature_models(self, dataset: BaseDataset):
         """Mueve los archivos de feature models desde la carpeta temporal a la definitiva."""
@@ -139,27 +119,8 @@ class DataSetService(BaseService):
     def total_dataset_views(self) -> int:
         return self.dsviewrecord_repostory.total_dataset_views()
 
-    def _infer_dataset_kind_from_form(self, form) -> str:
-        # 1) si el usuario indicó el tipo, úsalo
-        if getattr(form, "dataset_type", None) and form.dataset_type.data:
-            return (form.dataset_type.data or "").strip().lower() or "base"
-
-        # 2) si no, infiere por extensión del PRIMER archivo
-        if form.feature_models and len(form.feature_models) > 0:
-            first = form.feature_models[0]
-            filename = (first.uvl_filename.data or "").strip()
-            _, ext = os.path.splitext(filename.lower())
-            handler = DATA_TYPE_REGISTRY.get(ext)
-            if handler:
-                return handler.name
-
-        # 3) fallback
-        return "base"
-
     def create_from_form(self, form, current_user) -> BaseDataset:
         """Crea un dataset desde el formulario."""
-        from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
-
         logger.info("Creating dataset from form...")
 
         if not form.feature_models or len(form.feature_models) == 0:
@@ -263,6 +224,85 @@ class DataSetService(BaseService):
     def get_uvlhub_doi(self, dataset: BaseDataset) -> str:
         domain = os.getenv("DOMAIN", "localhost")
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
+
+    def _save_zip_to_temp(self, file_storage, current_user) -> Path:
+        """
+        Valida y guarda el ZIP subido en la carpeta temporal del usuario
+        Devuelve la ruta al archivo
+        """
+        if not file_storage or not file_storage.filename:
+            raise FetchError("No ZIP file provided")
+
+        filename = file_storage.filename
+        if not filename.lower().endswith(".zip"):
+            raise FetchError("Invalid file type. Only .zip allowed")
+
+        user_temp = Path(current_user.temp_folder())
+        user_temp.mkdir(parents=True, exist_ok=True)
+
+        base_name = Path(filename).name
+        target = user_temp / base_name
+
+        i = 1
+        while target.exists():
+            stem = Path(base_name).stem
+            suffix = Path(base_name).suffix
+            target = user_temp / f"{stem} ({i}){suffix}"
+            i += 1
+
+        file_storage.save(str(target))
+        return target
+
+    def _collect_models_into_temp(self, source_root: Path, dest_dir: Path):
+        """
+        Copia desde source_root todos los .uvl/.gpx válidos a dest_dir.
+        Valida cada archivo con el registry.
+        Devuelve lista de los archivos copiados.
+        """
+
+        added = []
+
+        for path in Path(source_root).rglob("*"):
+            if not path.is_file():
+                continue
+
+            kind = infer_kind_from_filename(path.name)
+            if not kind:
+                continue
+
+            descriptor = get_descriptor(kind)
+
+            try:
+                descriptor.handler.validate(str(path))
+            except Exception as e:
+                logger.warning(f"Skipping invalid model {path}: {e}")
+                continue
+
+            target = dest_dir / path.name
+            i = 1
+            while target.exists():
+                target = dest_dir / f"{path.stem} ({i}){path.suffix}"
+                i += 1
+
+            shutil.copy2(path, target)
+            added.append(target)
+
+        return added
+
+    def fetch_models_from_github(self, github_url: str, dest_dir: Path, current_user):
+        """
+        Clona/descarga el repo en temp del usuario y copia los .uvl/.gpx a dest_dir.
+        """
+        base_path = self.datasource_manager.fetch_to_user_temp(github_url, current_user)
+        return self._collect_models_into_temp(base_path, dest_dir)
+
+    def fetch_models_from_zip_upload(self, file_storage, dest_dir: Path, current_user):
+        """
+        Guarda el ZIP, lo extrae con ZipFetcher y copia los .uvl/.gpx a dest_dir.
+        """
+        zip_path = self._save_zip_to_temp(file_storage, current_user)
+        extracted_root = self.datasource_manager.fetch_to_user_temp(str(zip_path), current_user)
+        return self._collect_models_into_temp(extracted_root, dest_dir)
 
 
 class VersionService:

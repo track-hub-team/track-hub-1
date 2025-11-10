@@ -136,3 +136,4 @@ zstandard==0.23.0
 pre-commit==4.3.0
 gpxpy==1.6.2
 python-slugify==8.0.4
+GitPython==3.1
