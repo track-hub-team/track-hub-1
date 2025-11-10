@@ -48,11 +48,15 @@ class TestMailService:
 
     # Test de integración REAL
     @pytest.mark.integration
+    @staticmethod
+    def _is_sendgrid_configured() -> bool:
+        """Verifica si SendGrid está configurado correctamente"""
+        mail_password = os.getenv("MAIL_PASSWORD") or ""  # ← mypy acepta esto
+        mail_sender = os.getenv("MAIL_DEFAULT_SENDER") or ""
+        return bool(mail_password.startswith("SG.") and mail_sender)
+
     @pytest.mark.skipif(
-        not (
-            os.getenv("MAIL_PASSWORD", "").startswith("SG.")
-            and os.getenv("MAIL_DEFAULT_SENDER", "")
-        ),  # ← SOLUCIÓN: verificación directa inline
+        not _is_sendgrid_configured.__func__(),  # ← mypy acepta esto ahora
         reason="SendGrid no está configurado en las variables de entorno",
     )
     def test_send_real_email(self):
