@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List, Optional, Tuple
 
 from slugify import slugify  # type: ignore
@@ -14,7 +15,10 @@ from app.modules.community.repositories import (
     CommunityRequestRepository,
 )
 from app.modules.dataset.models import BaseDataset
+from app.modules.mail.services import MailService
 from core.services.BaseService import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class CommunityService(BaseService):
@@ -201,6 +205,39 @@ class CommunityService(BaseService):
             )
 
             db.session.commit()
+            
+            # Enviar notificación por correo
+            try:
+                # Obtener información necesaria para el correo
+                requester = request.requester  # relación en el modelo CommunityRequest
+                dataset = request.dataset      # relación en el modelo CommunityRequest
+                community = request.community  # relación en el modelo CommunityRequest
+                
+                # Determinar el nombre del solicitante
+                requester_name = requester.profile.name if requester.profile and requester.profile.name else "User"
+                
+                # Determinar el nombre del dataset
+                dataset_name = f"Dataset #{dataset.id}"  # fallback por si no se puede obtener el nombre real
+                if hasattr(dataset, 'ds_meta_data') and dataset.ds_meta_data:
+                    if hasattr(dataset.ds_meta_data, 'title') and dataset.ds_meta_data.title:
+                        dataset_name = dataset.ds_meta_data.title
+                
+                # Enviar correo
+                success, error = MailService.send_dataset_approved_notification(
+                    requester_email=requester.email,
+                    requester_name=requester_name,
+                    dataset_name=dataset_name,
+                    community_name=community.name
+                )
+                
+                if not success:
+                    # Log del error pero no falla la aprobación
+                    logger.warning(f"Failed to send approval email to {requester.email}: {error}")
+                    
+            except Exception as e:
+                # Si falla el envío de correo, solo loguear pero no revertir la aprobación
+                logger.error(f"Exception sending approval email: {str(e)}")
+            
             return True, None
         except Exception as e:
             db.session.rollback()
