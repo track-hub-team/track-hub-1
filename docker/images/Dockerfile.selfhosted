@@ -13,7 +13,10 @@ COPY app/ ./app
 COPY scripts/ ./scripts
 COPY core/ ./core
 COPY migrations/ ./migrations
+COPY rosemary/ ./rosemary
 COPY requirements.txt .
+COPY pyproject.toml .
+COPY README.md .
 
 RUN find . -type d -name "__pycache__" -exec rm -r {} + || true \
     && find . -type f -name "*.pyc" -exec rm -f {} + || true
@@ -21,7 +24,8 @@ RUN find . -type d -name "__pycache__" -exec rm -r {} + || true \
 RUN echo "webhook" > .moduleignore
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install -r requirements.txt
+    && pip install -r requirements.txt \
+    && pip install .
 
 COPY docker/entrypoints/selfhosted_entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
