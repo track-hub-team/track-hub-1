@@ -1,13 +1,15 @@
-from flask_mail import Message
-from app import mail
-from flask import current_app
 import logging
+
+from flask import current_app
+from flask_mail import Message
+
+from app import mail
 
 logger = logging.getLogger(__name__)
 
 
 class MailService:
-    
+
     @staticmethod
     def send_email(subject, recipients, html_body, text_body=None):
         try:
@@ -16,22 +18,22 @@ class MailService:
                 recipients=recipients,
                 html=html_body,
                 body=text_body or html_body,
-                sender=("TrackHub - Notificaciones", current_app.config['MAIL_DEFAULT_SENDER'])
+                sender=("TrackHub - Notificaciones", current_app.config["MAIL_DEFAULT_SENDER"]),
             )
-            
+
             mail.send(msg)
             logger.info(f"Email enviado correctamente a {recipients}")
             return True, None
-            
+
         except Exception as e:
             error_msg = f"Error al enviar email: {str(e)}"
             logger.error(error_msg)
             return False, error_msg
-    
+
     @staticmethod
     def send_dataset_approved_notification(requester_email, requester_name, dataset_name, community_name):
         subject = f"Dataset aprobado en {community_name}"
-        
+
         # Template HTML del correo
         html_body = f"""
         <!DOCTYPE html>
@@ -65,14 +67,14 @@ class MailService:
                 </div>
                 <div class="content">
                     <p>Hola <strong>{requester_name}</strong>,</p>
-                    
+
                     <p>
                         Tu dataset <span class="highlight">{dataset_name}</span> ha sido <strong>aceptado</strong>
                         en la comunidad <span class="highlight">{community_name}</span>.
                     </p>
-                    
+
                     <p>Tu contribución ayudará a enriquecer esta comunidad. ¡Gracias por tu participación!</p>
-                    
+
                     <p>Saludos,<br>El equipo de TrackHub</p>
                 </div>
                 <div class="footer">
@@ -82,20 +84,17 @@ class MailService:
         </body>
         </html>
         """
-        
+
         # Versión texto plano (fallback)
         text_body = f"""
         Enhorabuena {requester_name},
-        
+
         Tu dataset {dataset_name} ha sido aceptado en {community_name}.
-        
+
         Saludos,
         El equipo de TrackHub
         """
-        
+
         return MailService.send_email(
-            subject=subject,
-            recipients=[requester_email],
-            html_body=html_body,
-            text_body=text_body
+            subject=subject, recipients=[requester_email], html_body=html_body, text_body=text_body
         )
