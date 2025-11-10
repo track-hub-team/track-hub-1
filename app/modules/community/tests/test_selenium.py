@@ -1,36 +1,65 @@
-import time
+import pytest
 
-from selenium.common.exceptions import NoSuchElementException
+from app import create_app, db
+from app.modules.auth.models import User
+from app.modules.community.models import Community
 
-from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import close_driver, initialize_driver
-
-
-def test_community_index():
-
-    driver = initialize_driver()
-
-    try:
-        host = get_host_for_selenium_testing()
-
-        # Open the index page
-        driver.get(f"{host}/community")
-
-        # Wait a little while to make sure the page has loaded completely
-        time.sleep(4)
-
-        try:
-
-            pass
-
-        except NoSuchElementException:
-            raise AssertionError("Test failed!")
-
-    finally:
-
-        # Close the browser
-        close_driver(driver)
+# ------------------------------
+# FIXTURES
+# ------------------------------
 
 
-# Call the test function
-test_community_index()
+@pytest.fixture(scope="module")
+def test_app():
+    app = create_app("testing")
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+
+# ------------------------------
+# FUNCIONES AUXILIARES
+# ------------------------------
+
+
+def create_user(email="suser@test.com", password="password"):
+    from flask import current_app
+
+    with current_app.app_context():
+        user = User(email=email)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        return user
+
+
+def create_community(user, name="Selenium Community", description="Community for Selenium testing"):
+    from flask import current_app
+
+    with current_app.app_context():
+        community = Community(
+            name=name,
+            slug=name.lower().replace(" ", "-"),
+            description=description,
+            creator_id=user.id,
+        )
+        db.session.add(community)
+        db.session.commit()
+        db.session.refresh(community)
+        return community
+
+
+# ------------------------------
+# TESTS FUNCIONALES
+# ------------------------------
+
+
+def test_create_community_db(test_app):
+    """Crea una comunidad directamente en la DB (sin Selenium)."""
+    user = create_user()
+    community = create_community(user)
+    assert community.id is not None
+    assert community.name == "Selenium Community"
