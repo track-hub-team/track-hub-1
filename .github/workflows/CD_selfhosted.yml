@@ -36,6 +36,10 @@ jobs:
             --restart always \
             trackhub-selfhosted:trunk
 
+      - name: Seed pre database
+        run: |
+          docker exec -w /app trackhub-pre python -m rosemary.cli db:seed -y
+
   deploy-prod:
     if: github.ref_name == 'main'
     name: Deploy Prod (self-hosted)
