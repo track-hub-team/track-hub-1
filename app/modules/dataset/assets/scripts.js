@@ -989,3 +989,134 @@ window.addEventListener('load', function() {
         test_zenodo_connection();
     }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Datos mockeados de comentarios
+    const mockComments = [
+        {
+            id: 1,
+            author: "User A",
+            content: "This dataset is very useful, thanks for sharing!",
+            createdAt: "2025-11-10 12:00"
+        },
+        {
+            id: 2,
+            author: "User B",
+            content: "Can you provide more details on the methodology used?",
+            createdAt: "2025-11-09 14:30"
+        },
+        {
+            id: 3,
+            author: "User C",
+            content: "I have a suggestion for improvement: it would be great to include more data points.",
+            createdAt: "2025-11-08 17:45"
+        }
+    ];
+
+    // Referencia al contenedor de comentarios en el frontend
+    const commentsListContainer = document.getElementById('comments-list');
+
+    // Si no hay comentarios, mostramos un mensaje indicando que no hay comentarios
+    if (mockComments.length === 0) {
+        const noCommentsMessage = document.createElement('p');
+        noCommentsMessage.textContent = "No comments yet.";
+        commentsListContainer.appendChild(noCommentsMessage);
+    } else {
+        // Si hay comentarios, agregamos los comentarios al HTML
+        mockComments.forEach(comment => {
+            const commentItem = document.createElement('div');
+            commentItem.classList.add('mb-3', 'border-bottom', 'pb-3', 'border-light');
+
+            // Nombre y fecha del autor
+            const commentHeader = document.createElement('div');
+            commentHeader.classList.add('d-flex', 'justify-content-between');
+            const authorName = document.createElement('strong');
+            authorName.textContent = comment.author;
+            const commentDate = document.createElement('small');
+            commentDate.textContent = comment.createdAt;
+
+            commentHeader.appendChild(authorName);
+            commentHeader.appendChild(commentDate);
+
+            // Contenido del comentario
+            const commentContent = document.createElement('p');
+            commentContent.textContent = comment.content;
+
+            // Botón de borrar comentario
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = "Delete";
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'mt-2');
+            deleteButton.addEventListener('click', function () {
+                alert(`You deleted the comment by ${comment.author}`);
+                commentItem.remove();  // Eliminar el comentario de la interfaz
+            });
+
+            // Añadir todo al item de la lista
+            commentItem.appendChild(commentHeader);
+            commentItem.appendChild(commentContent);
+            commentItem.appendChild(deleteButton);  // Botón para borrar
+
+            // Añadir el comentario al contenedor de comentarios
+            commentsListContainer.appendChild(commentItem);
+        });
+    }
+
+    // Funcionalidad para el botón de enviar comentario
+    const submitCommentButton = document.getElementById('submit-comment');
+    submitCommentButton.addEventListener('click', function () {
+        const commentText = document.getElementById('comment-text').value;
+        if (commentText.trim()) {
+            // Creamos un nuevo comentario (para propósitos de mock, no se enviará al backend)
+            const newComment = {
+                id: mockComments.length + 1,
+                author: "Current User",  // Mock para el nombre del usuario actual
+                content: commentText,
+                createdAt: new Date().toLocaleString()  // Fecha actual
+            };
+
+            // Añadimos el comentario a la lista
+            mockComments.push(newComment);
+
+            // Actualizamos la interfaz
+            const commentItem = document.createElement('div');
+            commentItem.classList.add('mb-3', 'border-bottom', 'pb-3', 'border-light');
+
+            // Nombre y fecha del autor
+            const commentHeader = document.createElement('div');
+            commentHeader.classList.add('d-flex', 'justify-content-between');
+            const authorName = document.createElement('strong');
+            authorName.textContent = newComment.author;
+            const commentDate = document.createElement('small');
+            commentDate.textContent = newComment.createdAt;
+
+            commentHeader.appendChild(authorName);
+            commentHeader.appendChild(commentDate);
+
+            // Contenido del comentario
+            const commentContent = document.createElement('p');
+            commentContent.textContent = newComment.content;
+
+            // Botón de borrar comentario
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = "Delete";
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'mt-2');
+            deleteButton.addEventListener('click', function () {
+                alert(`You deleted the comment by ${newComment.author}`);
+                commentItem.remove();  // Eliminar el comentario de la interfaz
+            });
+
+            // Añadir todo al item de la lista
+            commentItem.appendChild(commentHeader);
+            commentItem.appendChild(commentContent);
+            commentItem.appendChild(deleteButton);  // Botón para borrar
+
+            // Añadir el comentario al contenedor de comentarios
+            commentsListContainer.appendChild(commentItem);
+
+            // Limpiar el campo de texto después de enviar el comentario
+            document.getElementById('comment-text').value = '';
+        } else {
+            alert("Please write a comment before posting.");
+        }
+    });
+});
