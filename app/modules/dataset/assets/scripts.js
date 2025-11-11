@@ -472,15 +472,15 @@ Dropzone.options.gpxDropzone = {
 document.addEventListener('DOMContentLoaded', function() {
     // Buscar directamente por ID (como hace ZIP)
     const githubBtn = document.getElementById('import_github_btn');
-    
+
     if (githubBtn) {
-        
+
         githubBtn.addEventListener('click', function() {
-            
+
             // Buscar input por ID también
             const githubUrlInput = document.getElementById('github_url');
             const githubUrl = githubUrlInput ? githubUrlInput.value.trim() : '';
-            
+
             // Contenedor de alertas (crear si no existe)
             let alertsContainer = document.getElementById('github-alerts');
             if (!alertsContainer) {
@@ -498,13 +498,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     cardBody.insertBefore(alertsContainer, githubBtn);
                 }
             }
-            
+
             // Validación básica
             if (!githubUrl) {
                 showAlert(alertsContainer, 'Please enter a GitHub URL', 'danger');
                 return;
             }
-            
+
             if (!githubUrl.includes('github.com')) {
                 showAlert(alertsContainer, 'Invalid GitHub URL', 'danger');
                 return;
@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalHTML = githubBtn.innerHTML;
             githubBtn.disabled = true;
             githubBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
-            
+
             // Limpiar alertas previas
             alertsContainer.innerHTML = '';
 
@@ -536,29 +536,29 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 console.log('GitHub import success:', data); // Debug
-                
+
                 githubBtn.disabled = false;
                 githubBtn.innerHTML = originalHTML;
-                
+
                 if (typeof feather !== 'undefined') {
                     feather.replace();
                 }
 
                 if (data.files && data.files.length > 0) {
                     // Éxito
-                    showAlert(alertsContainer, 
-                        `Successfully imported ${data.count} file(s) from GitHub`, 
+                    showAlert(alertsContainer,
+                        `Successfully imported ${data.count} file(s) from GitHub`,
                         'success'
                     );
-                    
+
                     // Mostrar archivos importados
                     displayImportedFiles('github', data.files);
-                    
+
                     // Limpiar el input
                     if (githubUrlInput) {
                         githubUrlInput.value = '';
                     }
-                    
+
                     // Mostrar botón de submit del dataset si estaba oculto
                     show_upload_dataset();
                 } else {
@@ -567,14 +567,14 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('GitHub import error:', error); // Debug
-                
+
                 githubBtn.disabled = false;
                 githubBtn.innerHTML = originalHTML;
-                
+
                 if (typeof feather !== 'undefined') {
                     feather.replace();
                 }
-                
+
                 const errorMsg = error.message || 'Failed to import from GitHub';
                 showAlert(alertsContainer, `${errorMsg}`, 'danger');
             });
@@ -588,14 +588,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     // Buscar el botón por el texto
-    const zipBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+    const zipBtn = Array.from(document.querySelectorAll('button')).find(btn =>
         btn.textContent.includes('Import from ZIP')
     );
-    
+
     if (zipBtn) {
         zipBtn.addEventListener('click', function() {
             const zipFileInput = document.querySelector('input[type="file"][accept=".zip"]');
-            
+
             // Contenedor de alertas
             let alertsContainer = zipBtn.closest('.card-body').querySelector('.alerts-container');
             if (!alertsContainer) {
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alertsContainer.className = 'alerts-container mt-3';
                 zipBtn.parentNode.insertBefore(alertsContainer, zipBtn.nextSibling);
             }
-            
+
             // Validación básica
             if (!zipFileInput || !zipFileInput.files || zipFileInput.files.length === 0) {
                 showAlert(alertsContainer, 'Please select a ZIP file', 'danger');
@@ -611,12 +611,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const file = zipFileInput.files[0];
-            
+
             if (!file.name.toLowerCase().endsWith('.zip')) {
                 showAlert(alertsContainer, 'Only ZIP files are allowed', 'danger');
                 return;
             }
-            
+
             // Validar tamaño (100 MB)
             const maxSize = 100 * 1024 * 1024; // 100 MB en bytes
             if (file.size > maxSize) {
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalHTML = zipBtn.innerHTML;
             zipBtn.disabled = true;
             zipBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
-            
+
             // Limpiar alertas previas
             alertsContainer.innerHTML = '';
 
@@ -650,26 +650,26 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 zipBtn.disabled = false;
                 zipBtn.innerHTML = originalHTML;
-                
+
                 if (typeof feather !== 'undefined') {
                     feather.replace();
                 }
 
                 if (data.files && data.files.length > 0) {
                     // Éxito
-                    showAlert(alertsContainer, 
-                        `Successfully imported ${data.count} file(s) from ZIP`, 
+                    showAlert(alertsContainer,
+                        `Successfully imported ${data.count} file(s) from ZIP`,
                         'success'
                     );
-                    
+
                     // Mostrar archivos importados
                     displayImportedFiles('zip', data.files);
-                    
+
                     // Limpiar el input
                     if (zipFileInput) {
                         zipFileInput.value = '';
                     }
-                    
+
                     // Mostrar botón de submit del dataset si estaba oculto
                     show_upload_dataset();
                 } else {
@@ -679,11 +679,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 zipBtn.disabled = false;
                 zipBtn.innerHTML = originalHTML;
-                
+
                 if (typeof feather !== 'undefined') {
                     feather.replace();
                 }
-                
+
                 console.error('ZIP import error:', error);
                 const errorMsg = error.message || 'Failed to import from ZIP';
                 showAlert(alertsContainer, `${errorMsg}`, 'danger');
@@ -706,7 +706,7 @@ function showAlert(container, message, type) {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
     container.appendChild(alertDiv);
-    
+
     // Auto-dismiss después de 5 segundos (solo para success)
     if (type === 'success') {
         setTimeout(() => {
@@ -720,44 +720,44 @@ function displayImportedFiles(source, files) {
     // Determinar IDs según la fuente
     const containerId = source === 'github' ? 'github-imported-files' : 'zip-imported-files';
     const listId = source === 'github' ? 'github-file-list' : 'zip-file-list';
-    
+
     // Obtener elementos del DOM (ya existen en el HTML)
     const container = document.getElementById(containerId);
     const list = document.getElementById(listId);
-    
+
     if (!container || !list) {
         console.error(`Elements not found: ${containerId} or ${listId}`);
         return;
     }
-    
+
     // Limpiar lista previa
     list.innerHTML = '';
-    
+
     // Añadir archivos
     files.forEach(filename => {
         const li = document.createElement('li');
         li.className = 'mb-2';
-        
+
         // Detectar tipo de archivo
         const isUVL = filename.toLowerCase().endsWith('.uvl');
         const icon = isUVL ? 'git-branch' : 'map-pin';
         const badge = isUVL ? 'UVL' : 'GPX';
         const badgeClass = isUVL ? 'bg-success' : 'bg-info';
-        
+
         li.innerHTML = `
             <i data-feather="${icon}" style="width: 16px; height: 16px;"></i>
             <span class="badge ${badgeClass} me-2">${badge}</span>
             <code>${filename}</code>
         `;
-        
+
         list.appendChild(li);
-        
+
         createHiddenFormForImportedFile(filename, isUVL);
     });
-    
+
     // Mostrar contenedor
     container.style.display = 'block';
-    
+
     // Actualizar íconos de Feather
     if (typeof feather !== 'undefined') {
         feather.replace();
@@ -766,30 +766,30 @@ function displayImportedFiles(source, files) {
 
 function createHiddenFormForImportedFile(filename, isUVL) {
     const id = generateIncrementalId();
-    
+
     // Determinar dónde agregar el formulario
     const fileListId = isUVL ? 'uvl-file-list' : 'gpx-file-list';
     const fileList = document.getElementById(fileListId);
-    
+
     if (!fileList) {
         console.error(`File list not found: ${fileListId}`);
         return;
     }
-    
+
     // Crear elemento de lista (oculto, solo para el formulario)
     const li = document.createElement('li');
     li.className = 'file-item-hidden';
     li.style.display = 'none'; // Oculto porque ya se muestra en la lista de importados
     li.setAttribute('data-imported', 'true'); // Marcar como importado
-    
+
     // Crear formulario según el tipo
     const formClass = isUVL ? 'uvl_form' : 'gpx_form';
     const form = document.createElement('div');
     form.className = formClass;
-    
+
     // Extraer nombre base sin extensión
     const baseName = filename.replace(/\.(uvl|gpx)$/i, '');
-    
+
     if (isUVL) {
         form.innerHTML = `
             <input type="hidden" name="feature_models-${id}-filename" value="${filename}">
@@ -813,10 +813,10 @@ function createHiddenFormForImportedFile(filename, isUVL) {
             <input type="hidden" name="feature_models-${id}-tags" value="">
         `;
     }
-    
+
     li.appendChild(form);
     fileList.appendChild(li);
-    
+
     console.log(`Created hidden form for ${filename} with ID ${id}`);
 }
 
@@ -825,7 +825,7 @@ function getImportSource() {
     // Determinar si fue GitHub o ZIP basándose en cuál lista tiene archivos
     const githubFiles = document.querySelectorAll('#github-file-list li').length;
     const zipFiles = document.querySelectorAll('#zip-file-list li').length;
-    
+
     if (githubFiles > 0 && zipFiles === 0) return 'GitHub';
     if (zipFiles > 0 && githubFiles === 0) return 'ZIP';
     return 'Import'; // Por si hay ambos
@@ -844,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validar que hay al menos 1 archivo UVL o GPX
             const uvlForms = document.querySelectorAll('.uvl_form').length;
             const gpxForms = document.querySelectorAll('.gpx_form').length;
-            
+
             const totalFiles = uvlForms + gpxForms;
 
             console.log(`Total forms found: UVL=${uvlForms}, GPX=${gpxForms}, Total=${totalFiles}`);

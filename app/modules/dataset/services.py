@@ -268,9 +268,9 @@ class DataSetService(BaseService):
 
             # Inferir tipo de archivo
             kind = infer_kind_from_filename(path.name)
-            
+
             # Saltar archivos no reconocidos o tipo 'base'
-            if not kind or kind == 'base':
+            if not kind or kind == "base":
                 logger.debug(f"Skipping unsupported file: {path.name}")
                 continue
 
