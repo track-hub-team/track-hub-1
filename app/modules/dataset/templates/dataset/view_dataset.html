@@ -300,12 +300,15 @@
                 <h1 class="h3 mb-3">Comments on this dataset</h1>
                 <div id="comments-list"  style="max-height: 300px; overflow-y: auto;">
                 </div>
-
+                 {% if current_user.is_authenticated %}
                 <div class="mt-3">
                     <h5>Add a comment</h5>
                     <textarea id="comment-text" class="form-control" rows="3" placeholder="Write your comment..."></textarea>
                     <button id="submit-comment" class="btn btn-primary mt-2">Post Comment</button>
                 </div>
+                {% else %}
+            <p class="text-muted">You need to be logged in to post a comment.</p>
+            {% endif %}
             </div>
         </div>
     </div>
@@ -456,13 +459,6 @@ document.addEventListener('DOMContentLoaded', function () {
             author_id: 2, // ID del autor
             content: "Can you provide more details on the methodology used?",
             createdAt: "2025-11-09 14:30"
-        },
-        {
-            id: 3,
-            author: "Current User", // Aquí se simula que el usuario actual escribió este comentario
-            author_id: 3, // ID del autor
-            content: "I have a suggestion for improvement: it would be great to include more data points.",
-            createdAt: "2025-11-08 17:45"
         }
     ];
 
