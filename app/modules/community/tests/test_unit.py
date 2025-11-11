@@ -1,5 +1,3 @@
-# tests/test_unit.py
-
 from datetime import datetime
 from unittest.mock import Mock, patch
 
@@ -172,16 +170,21 @@ def test_create_community_exception(mock_db_session, mock_repo):
 
 @patch("app.modules.community.services.CommunityRepository")
 def test_get_all_communities(mock_repo, community_service):
-    mock_repo.return_value.get_all_with_datasets_count.return_value = ["c1", "c2"]
+    # Simulamos el comportamiento por defecto (sin query)
+    mock_repo.return_value.get_all.return_value = ["c1", "c2"]
     service = CommunityService()
     service.repository = mock_repo.return_value
 
+    # Caso 1: sin query → usa get_all()
     result = service.get_all()
     assert result == ["c1", "c2"]
+    mock_repo.return_value.get_all.assert_called_once()
 
+    # Caso 2: con query → usa search_by_name_or_description()
     mock_repo.return_value.search_by_name_or_description.return_value = ["search_result"]
     result = service.get_all(query="search")
     assert result == ["search_result"]
+    mock_repo.return_value.search_by_name_or_description.assert_called_once_with("search")
 
 
 @patch("app.modules.community.services.CommunityDatasetRepository")

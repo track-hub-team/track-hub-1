@@ -40,12 +40,21 @@ def list_communities():
 
 @community_bp.route("/community/<int:community_id>", methods=["GET"])
 def view(community_id):
-    community = get_community_or_redirect(community_id)
-    if not isinstance(community, type(redirect(url_for("community.list_communities")))):
-        return community  # redirect if not found
+    """View a single community with its datasets"""
+    community = community_service.get_by_id(community_id)
 
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    # Get datasets from the community
     datasets = community_service.get_community_datasets(community_id)
-    is_curator = current_user.is_authenticated and community_service.is_curator(community_id, current_user.id)
+
+    # Check if current user is curator
+    is_curator = False
+    if current_user.is_authenticated:
+        is_curator = community_service.is_curator(community_id, current_user.id)
+
     return render_template("community/view.html", community=community, datasets=datasets, is_curator=is_curator)
 
 

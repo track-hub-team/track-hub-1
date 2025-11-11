@@ -29,7 +29,11 @@ class CommunityService:
         """Return all communities, optionally filtered by a search query."""
         if query:
             return self.repository.search_by_name_or_description(query)
-        return self.repository.get_all_with_datasets_count()
+        return self.repository.get_all()
+
+    def get_by_id(self, community_id: int) -> Optional[Community]:
+        """Retrieve a community by its ID."""
+        return self.repository.get_by_id(community_id)
 
     def get_community_datasets(self, community_id: int):
         """Retrieve all datasets associated with a specific community."""
