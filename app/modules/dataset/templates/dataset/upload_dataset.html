@@ -111,7 +111,7 @@
         </div>
     </div>
 
-    <!-- Sección de archivos (modular por tipo) -->
+    <!-- Sección de archivos (modular por tipo) (UVL Y GPX)-->
     <div class="row mt-4">
         <!-- UVL Models -->
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
@@ -121,6 +121,17 @@
         <!-- GPX Tracks -->
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
             {% include "dataset/blocks/upload_gpx.html" %}
+        </div>
+    </div>
+
+    <!-- Sección de archivos (modular por tipo) (GITHUB Y ZIP)-->
+    <div class="row mt-4">
+        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+            {% include "dataset/blocks/upload_github.html" %}
+        </div>
+
+        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+            {% include "dataset/blocks/upload_zip.html" %}
         </div>
     </div>
 

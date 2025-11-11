@@ -266,18 +266,29 @@ class DataSetService(BaseService):
             if not path.is_file():
                 continue
 
+            # Inferir tipo de archivo
             kind = infer_kind_from_filename(path.name)
-            if not kind:
+            
+            # Saltar archivos no reconocidos o tipo 'base'
+            if not kind or kind == 'base':
+                logger.debug(f"Skipping unsupported file: {path.name}")
                 continue
 
-            descriptor = get_descriptor(kind)
+            # Intentar obtener descriptor con manejo de errores
+            try:
+                descriptor = get_descriptor(kind)
+            except ValueError as e:
+                logger.warning(f"Cannot get descriptor for {path.name}: {e}")
+                continue
 
+            # Validar archivo
             try:
                 descriptor.handler.validate(str(path))
             except Exception as e:
                 logger.warning(f"Skipping invalid model {path}: {e}")
                 continue
 
+            # Copiar a destino evitando duplicados
             target = dest_dir / path.name
             i = 1
             while target.exists():
@@ -286,7 +297,9 @@ class DataSetService(BaseService):
 
             shutil.copy2(path, target)
             added.append(target)
+            logger.info(f"Added {kind} file: {path.name} -> {target.name}")
 
+        logger.info(f"Total files collected from {source_root}: {len(added)}")
         return added
 
     def fetch_models_from_github(self, github_url: str, dest_dir: Path, current_user):
