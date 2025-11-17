@@ -29,6 +29,7 @@ from app.modules.dataset.models import (
 from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
 from app.modules.dataset.repositories import (
     AuthorRepository,
+    CommentRepository,
     DataSetRepository,
     DOIMappingRepository,
     DSDownloadRecordRepository,
@@ -507,3 +508,236 @@ class SizeService:
             return f"{round(size / (1024 ** 2), 2)} MB"
         else:
             return f"{round(size / (1024 ** 3), 2)} GB"
+
+
+class CommentService(BaseService):
+    """
+    Servicio para la lógica de negocio de comentarios.
+    Lógica básica sin moderación ni respuestas anidadas (SCRUM-33).
+    """
+
+    def __init__(self):
+        super().__init__(CommentRepository())
+        self.dataset_repository = DataSetRepository()
+
+    def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
+        """
+        Crear un nuevo comentario en un dataset.
+
+        Args:
+            dataset_id: ID del dataset
+            user_id: ID del usuario autor
+            content: Contenido del comentario
+
+        Returns:
+            dict: Comentario creado en formato diccionario
+
+        Raises:
+            ValueError: Si las validaciones fallan
+        """
+        # Validar que el dataset existe
+        dataset = self.dataset_repository.get_by_id(dataset_id)
+        if not dataset:
+            raise ValueError(f"Dataset with id {dataset_id} not found")
+
+        # Validar y sanitizar contenido
+        clean_content = self._validate_content(content)
+
+        # Crear comentario
+        comment = self.repository.create(dataset_id=dataset_id, user_id=user_id, content=clean_content)
+
+        logger.info(
+            "Comment %s created by user %s on dataset %s",
+            comment.id,
+            user_id,
+            dataset_id,
+        )
+        return comment.to_dict()
+
+    def get_comments_by_dataset(self, dataset_id: int, order_by: str = "created_at") -> list:
+        """
+        Obtener todos los comentarios de un dataset.
+
+        Args:
+            dataset_id: ID del dataset
+            order_by: Campo para ordenar (default: created_at ascendente)
+
+        Returns:
+            list: Lista de comentarios en formato diccionario
+
+        Raises:
+            ValueError: Si el dataset no existe
+        """
+        # Validar que el dataset existe
+        dataset = self.dataset_repository.get_by_id(dataset_id)
+        if not dataset:
+            raise ValueError(f"Dataset with id {dataset_id} not found")
+
+        # Obtener comentarios
+        comments = self.repository.get_by_dataset(dataset_id, order_by)
+
+        # Convertir a diccionarios
+        return [comment.to_dict() for comment in comments]
+
+    def delete_comment(self, comment_id: int, user_id: int) -> bool:
+        """
+        Eliminar un comentario (solo si el usuario es el autor).
+
+        Args:
+            comment_id: ID del comentario
+            user_id: ID del usuario que intenta eliminar
+
+        Returns:
+            bool: True si se eliminó correctamente
+
+        Raises:
+            ValueError: Si el comentario no existe
+            PermissionError: Si el usuario no es el autor
+        """
+        # Verificar que el comentario existe
+        comment = self.repository.get_by_id(comment_id)
+        if not comment:
+            raise ValueError(f"Comment with id {comment_id} not found")
+
+        # Verificar propiedad
+        if not self._is_comment_owner(comment, user_id):
+            raise PermissionError("You can only delete your own comments")
+
+        # Eliminar
+        self.repository.delete(comment_id)
+        logger.info(f"Comment {comment_id} deleted by user {user_id}")
+        return True
+
+    def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:
+        """
+        Actualizar el contenido de un comentario (solo si el
+        usuario es el autor).
+
+        Args:
+            comment_id: ID del comentario
+            user_id: ID del usuario que intenta actualizar
+            new_content: Nuevo contenido del comentario
+
+        Returns:
+            dict: Comentario actualizado en formato diccionario
+
+        Raises:
+            ValueError: Si el comentario no existe o las validaciones fallan
+            PermissionError: Si el usuario no es el autor
+        """
+        # Verificar que el comentario existe
+        comment = self.repository.get_by_id(comment_id)
+        if not comment:
+            raise ValueError(f"Comment with id {comment_id} not found")
+
+        # Verificar propiedad
+        if not self._is_comment_owner(comment, user_id):
+            raise PermissionError("You can only update your own comments")
+
+        # Validar y sanitizar nuevo contenido
+        clean_content = self._validate_content(new_content)
+
+        # Actualizar
+        updated_comment = self.repository.update_content(comment_id, clean_content)
+        logger.info(f"Comment {comment_id} updated by user {user_id}")
+        return updated_comment.to_dict()
+
+    def count_comments(self, dataset_id: int) -> int:
+        """
+        Contar el número de comentarios en un dataset.
+
+        Args:
+            dataset_id: ID del dataset
+
+        Returns:
+            int: Número de comentarios
+        """
+        return self.repository.count_by_dataset(dataset_id)
+
+    def get_user_comments(self, user_id: int) -> list:
+        """
+        Obtener todos los comentarios de un usuario.
+
+        Args:
+            user_id: ID del usuario
+
+        Returns:
+            list: Lista de comentarios en formato diccionario
+        """
+        comments = self.repository.get_by_user(user_id)
+        return [comment.to_dict() for comment in comments]
+
+    def get_latest_comments(self, limit: int = 5) -> list:
+        """
+        Obtener los comentarios más recientes globalmente.
+
+        Args:
+            limit: Número máximo de comentarios
+
+        Returns:
+            list: Lista de comentarios recientes
+        """
+        comments = self.repository.get_latest_comments(limit)
+        return [comment.to_dict() for comment in comments]
+
+    def total_comments(self) -> int:
+        """
+        Obtener el total de comentarios en la plataforma.
+
+        Returns:
+            int: Número total de comentarios
+        """
+        return self.repository.total_comments()
+
+    # ==========================================
+    # VALIDACIONES
+    # ==========================================
+
+    def _validate_content(self, content: str) -> str:
+        """
+        Validar y sanitizar el contenido de un comentario.
+
+        Args:
+            content: Contenido a validar
+
+        Returns:
+            str: Contenido limpio y validado
+
+        Raises:
+            ValueError: Si el contenido no cumple las validaciones
+        """
+        # Eliminar espacios en blanco al inicio y final
+        clean_content = content.strip() if content else ""
+
+        # Verificar que no esté vacío
+        if not clean_content:
+            raise ValueError("Comment content cannot be empty")
+
+        # Verificar longitud máxima (1000 caracteres)
+        if len(clean_content) > 1000:
+            raise ValueError("Comment content too long (max 1000 characters)")
+
+        # Verificar longitud mínima (al menos 1 carácter)
+        if len(clean_content) < 1:
+            raise ValueError("Comment content must have at least 1 character")
+
+        # Sanitizar HTML básico (evitar XSS)
+        # Reemplazar caracteres peligrosos
+        import html
+
+        clean_content = html.escape(clean_content)
+
+        return clean_content
+
+    def _is_comment_owner(self, comment, user_id: int) -> bool:
+        """
+        Verificar si el usuario es el propietario del comentario.
+
+        Args:
+            comment: Objeto Comment
+            user_id: ID del usuario a verificar
+
+        Returns:
+            bool: True si es el propietario
+        """
+        return comment.user_id == user_id

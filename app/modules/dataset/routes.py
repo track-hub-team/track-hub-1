@@ -648,3 +648,93 @@ def edit_dataset(dataset_id):
             flash("No changes detected", "info")
 
     return render_template("dataset/edit_dataset.html", dataset=dataset)
+
+
+# ========== DATASET COMMENTS ==========
+@dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["POST"])
+@login_required
+def create_comment(dataset_id):
+    """Crear un comentario en un dataset."""
+    from app.modules.dataset.services import CommentService
+
+    try:
+        data = request.get_json()
+        if not data or "content" not in data:
+            return jsonify({"success": False, "message": "Content is required"}), 400
+
+        comment_service = CommentService()
+        comment = comment_service.create_comment(
+            dataset_id=dataset_id, user_id=current_user.id, content=data["content"]
+        )
+
+        return jsonify({"success": True, "comment": comment}), 201
+
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error creating comment: {e}")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["GET"])
+def get_comments(dataset_id):
+    """Listar comentarios de un dataset (público)."""
+    from app.modules.dataset.services import CommentService
+
+    try:
+        comment_service = CommentService()
+        comments = comment_service.get_comments_by_dataset(dataset_id)
+
+        return jsonify({"success": True, "comments": comments}), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching comments: {e}")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
+
+
+@dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["DELETE"])
+@login_required
+def delete_comment(comment_id):
+    """Eliminar un comentario (solo el autor)."""
+    from app.modules.dataset.services import CommentService
+
+    try:
+        comment_service = CommentService()
+        comment_service.delete_comment(comment_id, current_user.id)
+
+        return jsonify({"success": True, "message": "Comment deleted successfully"}), 200
+
+    except PermissionError as e:
+        return jsonify({"success": False, "message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 404
+    except Exception as e:
+        logger.error(f"Error deleting comment: {e}")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
+
+
+@dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["PUT"])
+@login_required
+def update_comment(comment_id):
+    """Editar un comentario (solo el autor)."""
+    from app.modules.dataset.services import CommentService
+
+    try:
+        data = request.get_json()
+        if not data or "content" not in data:
+            return jsonify({"success": False, "message": "Content is required"}), 400
+
+        comment_service = CommentService()
+        updated_comment = comment_service.update_comment(
+            comment_id=comment_id, user_id=current_user.id, new_content=data["content"]
+        )
+
+        return jsonify({"success": True, "comment": updated_comment}), 200
+
+    except PermissionError as e:
+        return jsonify({"success": False, "message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error updating comment: {e}")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
