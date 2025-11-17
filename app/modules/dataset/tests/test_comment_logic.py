@@ -212,6 +212,21 @@ def test_create_comment_xss_sanitization(app, dataset, user, comment_service):
 # ==========================================
 
 
+def test_delete_comment_dataset_owner(app, dataset, user, user2, comment_repository, comment_service):
+    """
+    El autor del dataset debe poder borrar comentarios de otros usuarios (moderación).
+    """
+    with app.app_context():
+        # dataset.user_id == user (ver fixture)
+        # Creamos un comentario de otro usuario (user2) en ese dataset
+        comment = comment_repository.create(dataset_id=dataset, user_id=user2, content="User2 comment")
+
+        # El autor del dataset (user) intenta borrar el comentario
+        result = comment_service.delete_comment(comment.id, user)
+
+        assert result is True
+
+
 def test_delete_comment_owner(app, dataset, user, comment_repository, comment_service):
     """Test eliminar comentario siendo el autor debe funcionar."""
     with app.app_context():
@@ -227,7 +242,7 @@ def test_delete_comment_not_owner(app, dataset, user, user2, comment_repository,
     with app.app_context():
         comment = comment_repository.create(dataset_id=dataset, user_id=user, content="User 1 comment")
 
-        with pytest.raises(PermissionError, match="your own comments"):
+        with pytest.raises(PermissionError, match="You don't have permission to delete this comment"):
             comment_service.delete_comment(comment.id, user2)
 
 
@@ -246,13 +261,37 @@ def test_update_comment_not_owner(app, dataset, user, user2, comment_repository,
     with app.app_context():
         comment = comment_repository.create(dataset_id=dataset, user_id=user, content="User 1 comment")
 
-        with pytest.raises(PermissionError, match="your own comments"):
+        with pytest.raises(PermissionError, match="You don't have permission to update this comment"):
             comment_service.update_comment(comment.id, user2, "Hacked content")
 
 
 # ==========================================
 # TESTS DE ENDPOINTS
 # ==========================================
+
+
+def test_delete_comment_endpoint_dataset_owner(client, app, dataset, user, user2, comment_repository, monkeypatch):
+    """
+    El autor del dataset debe poder borrar comentarios de otros usuarios vía endpoint.
+    """
+    with app.app_context():
+        # Creamos un comentario de user2 en el dataset cuyo owner es user
+        comment = comment_repository.create(dataset_id=dataset, user_id=user2, content="User2 comment")
+
+        import app.modules.dataset.routes as routes_mod
+
+        class DummyUser:
+            # Simulamos que el current_user es el autor del dataset
+            id = user
+            is_authenticated = True
+
+        monkeypatch.setattr(routes_mod, "current_user", DummyUser())
+
+        resp = client.delete(f"/dataset/comments/{comment.id}")
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["success"] is True
 
 
 def test_create_comment_endpoint_authenticated(client, app, dataset, user, monkeypatch):

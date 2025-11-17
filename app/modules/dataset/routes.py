@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 from flask import (
     abort,
+    current_app,
     flash,
     jsonify,
     make_response,
@@ -26,6 +27,7 @@ from app import db
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.fetchers.base import FetchError
 from app.modules.dataset.forms import DataSetForm
+from app.modules.dataset.handlers.gpx_handler import GPXHandler
 from app.modules.dataset.models import BaseDataset, DatasetVersion, DSDownloadRecord
 from app.modules.dataset.registry import (
     get_allowed_extensions,
@@ -34,6 +36,7 @@ from app.modules.dataset.registry import (
 )
 from app.modules.dataset.services import (
     AuthorService,
+    CommentService,
     DataSetService,
     DOIMappingService,
     DSDownloadRecordService,
@@ -42,6 +45,11 @@ from app.modules.dataset.services import (
     VersionService,
     calculate_checksum_and_size,
 )
+from app.modules.featuremodel.repositories import (
+    FeatureModelRepository,
+    FMMetaDataRepository,
+)
+from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
 
 logger = logging.getLogger(__name__)
@@ -358,9 +366,6 @@ def get_unsynchronized_dataset(dataset_id):
 @dataset_bp.route("/api/gpx/<int:file_id>")
 def get_gpx_data(file_id):
     """Retorna datos parseados de un archivo GPX."""
-    from flask import current_app, jsonify
-
-    from app.modules.dataset.handlers.gpx_handler import GPXHandler
 
     try:
         # Query directa
@@ -567,12 +572,6 @@ def edit_dataset(dataset_id):
                     flash(f"File validation failed for {filename}: {str(e)}", "danger")
                     continue
 
-                from app.modules.featuremodel.repositories import (
-                    FeatureModelRepository,
-                    FMMetaDataRepository,
-                )
-                from app.modules.hubfile.repositories import HubfileRepository
-
                 fmmetadata = FMMetaDataRepository().create(
                     commit=False,
                     filename=filename,
@@ -655,8 +654,6 @@ def edit_dataset(dataset_id):
 @login_required
 def create_comment(dataset_id):
     """Crear un comentario en un dataset."""
-    from app.modules.dataset.services import CommentService
-
     try:
         data = request.get_json()
         if not data or "content" not in data:
@@ -679,8 +676,6 @@ def create_comment(dataset_id):
 @dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["GET"])
 def get_comments(dataset_id):
     """Listar comentarios de un dataset (público)."""
-    from app.modules.dataset.services import CommentService
-
     try:
         comment_service = CommentService()
         comments = comment_service.get_comments_by_dataset(dataset_id)
@@ -695,8 +690,7 @@ def get_comments(dataset_id):
 @dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["DELETE"])
 @login_required
 def delete_comment(comment_id):
-    """Eliminar un comentario (solo el autor)."""
-    from app.modules.dataset.services import CommentService
+    """Eliminar un comentario (solo el autor, dueño del dataset)."""
 
     try:
         comment_service = CommentService()
@@ -716,9 +710,7 @@ def delete_comment(comment_id):
 @dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["PUT"])
 @login_required
 def update_comment(comment_id):
-    """Editar un comentario (solo el autor)."""
-    from app.modules.dataset.services import CommentService
-
+    """Editar un comentario (solo el autor, dueño del dataset)."""
     try:
         data = request.get_json()
         if not data or "content" not in data:

@@ -520,6 +520,26 @@ class CommentService(BaseService):
         super().__init__(CommentRepository())
         self.dataset_repository = DataSetRepository()
 
+    def _can_moderate_comment(self, comment, user_id: int) -> bool:
+        """
+        Verificar si el usuario puede moderar el comentario:
+        - Autor del comentario
+        - Autor del dataset
+        """
+        if not user_id:
+            return False
+
+        # 1. Autor del comentario
+        if comment.user_id == user_id:
+            return True
+
+        # 2. Autor del dataset
+        dataset = comment.dataset or self.dataset_repository.get_by_id(comment.dataset_id)
+        if dataset and dataset.user_id == user_id:
+            return True
+
+        return False
+
     def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
         """
         Crear un nuevo comentario en un dataset.
@@ -600,8 +620,9 @@ class CommentService(BaseService):
             raise ValueError(f"Comment with id {comment_id} not found")
 
         # Verificar propiedad
-        if not self._is_comment_owner(comment, user_id):
-            raise PermissionError("You can only delete your own comments")
+        # Verificar permisos de moderación
+        if not self._can_moderate_comment(comment, user_id):
+            raise PermissionError("You don't have permission to delete this comment")
 
         # Eliminar
         self.repository.delete(comment_id)
@@ -631,8 +652,9 @@ class CommentService(BaseService):
             raise ValueError(f"Comment with id {comment_id} not found")
 
         # Verificar propiedad
-        if not self._is_comment_owner(comment, user_id):
-            raise PermissionError("You can only update your own comments")
+        # Verificar permisos de moderación
+        if not self._can_moderate_comment(comment, user_id):
+            raise PermissionError("You don't have permission to update this comment")
 
         # Validar y sanitizar nuevo contenido
         clean_content = self._validate_content(new_content)
