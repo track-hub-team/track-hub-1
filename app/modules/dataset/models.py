@@ -597,6 +597,54 @@ class DOIMapping(db.Model):
 
 
 # ---------------------------
+# Comentarios en Datasets
+# ---------------------------
+class Comment(db.Model):
+    """
+    Comentarios asociados a un dataset.
+    Lógica básica sin moderación ni respuestas anidadas.
+    """
+
+    __tablename__ = "comment"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Relación con Dataset (polimórfico)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
+
+    # Relación con Usuario (autor del comentario)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    # Contenido del comentario
+    content = db.Column(db.Text, nullable=False)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relaciones
+    dataset = db.relationship(
+        "BaseDataset", backref=db.backref("comments", lazy="dynamic", cascade="all, delete-orphan")
+    )
+    user = db.relationship("User", backref=db.backref("comments", lazy=True))
+
+    def __repr__(self):
+        return f"<Comment id={self.id} " f"dataset_id={self.dataset_id} " f"user_id={self.user_id}>"
+
+    def to_dict(self):
+        """Serializar a diccionario para API"""
+        return {
+            "id": self.id,
+            "dataset_id": self.dataset_id,
+            "user_id": self.user_id,
+            "author_name": (self.user.profile.name if self.user and self.user.profile else "Anonymous"),
+            "content": self.content,
+            "created_at": (self.created_at.isoformat() if self.created_at else None),
+            "updated_at": (self.updated_at.isoformat() if self.updated_at else None),
+        }
+
+
+# ---------------------------
 # Registro de tipos (útil para factorías en servicios/rutas)
 # ---------------------------
 DATASET_KIND_TO_CLASS = {
