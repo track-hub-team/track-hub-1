@@ -1,0 +1,39 @@
+#!/bin/bash
+# Script que añade la referencia al issue de Jira en el mensaje de commit a partir de la rama actual
+
+# DEBUG: Log para verificar ejecución
+echo "Hook ejecutado: $(date)" >> /tmp/hook-debug.log
+echo "Args: $1 $2 $3" >> /tmp/hook-debug.log
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Solo ejecutar en commits normales y cuando se usa template
+# Salir en caso de merge, squash, amend, etc.
+if [ -n "$COMMIT_SOURCE" ] && [ "$COMMIT_SOURCE" != "template" ]; then
+    exit 0
+fi
+
+# Obtener el nombre de la rama actual
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null) # permite obtener solo stdout y poner vacía la variable en caso de error stderr
+if [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix)/(SCRUM-[0-9]+) ]]; then
+    ISSUE="${BASH_REMATCH[2]}" #índice 2 captura la parte Scrum-XXX
+
+    # Verificar si ya existe la referencia para evitar duplicados
+    if ! grep -q "Refs: $ISSUE" "$COMMIT_MSG_FILE"; then
+        # Crear archivo temporal
+        TEMP_FILE="${COMMIT_MSG_FILE}.tmp"
+
+        # Insertar "Refs: ISSUE" justo antes de los comentarios automáticos de Git (antes de la línea "# Please enter the commit message" que Git siempre añade)
+        awk -v issue="$ISSUE" '
+        !inserted && /^# Please enter the commit message/ {
+            print ""
+            print "Refs: " issue
+            inserted = 1
+        }
+        { print }
+        ' "$COMMIT_MSG_FILE" > "$TEMP_FILE"
+
+        mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
+    fi
+fi
