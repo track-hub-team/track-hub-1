@@ -108,8 +108,22 @@ jobs:
         id: changelog
         if: steps.bump.outputs.skip != 'true'
         run: |
-          # Generate changelog and save to file and output
-          CHANGELOG=$(git-cliff --config cliff.toml --latest --strip header)
+          LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+
+          echo "=== Debug: Generating changelog from $LATEST_TAG to HEAD ==="
+          echo "=== Commits in range: ==="
+          git log ${LATEST_TAG}..HEAD --pretty=format:"%s" | head -20
+
+          # Generate changelog using explicit range instead of --latest
+          if [ "$LATEST_TAG" = "v0.0.0" ]; then
+            CHANGELOG=$(git-cliff --config cliff.toml --strip header)
+          else
+            CHANGELOG=$(git-cliff --config cliff.toml ${LATEST_TAG}..HEAD --strip header)
+          fi
+
+          echo "=== Generated changelog: ==="
+          echo "$CHANGELOG"
+
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
