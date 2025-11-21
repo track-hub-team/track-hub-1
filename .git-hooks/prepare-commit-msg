@@ -26,9 +26,10 @@ if [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix)/(SCRUM-[0-9]+) ]]; then
 
         # Insertar "Refs: ISSUE" justo antes de los comentarios automáticos de Git (antes de la línea "# Please enter the commit message" que Git siempre añade)
         awk -v issue="$ISSUE" '
-        !inserted && /^# Please enter the commit message/ {
+        !inserted && /^# ==================== HOW TO MAKE A GOOD COMMIT\? ====================/ {
             print ""
             print "Refs: " issue
+            print "#"
             inserted = 1
         }
         { print }

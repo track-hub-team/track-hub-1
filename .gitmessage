@@ -1,6 +1,43 @@
 # ==================== WRITE YOUR COMMIT MESSAGE BELOW ====================
-# Remove the '#' from the lines below and replace with your actual message. If you are not sure of our flow, please take a look at our docs:
+# Remove the '#' from the lines below and replace with your actual message:
 #
 # <type>(<scope>): <subject>
 #
 # [optional body]
+# ==================== HOW TO MAKE A GOOD COMMIT? ====================
+#
+# ------ MANDATORY RULES ------
+# ⚠️  The commit MUST have a reference in the footer (Refs: SCRUM-XX)
+# ⚠️  The subject MUST be in lowercase and MUST NOT end with a period (.)
+# ⚠️  The type MUST be in lowercase
+# ⚠️  The full header (type+scope+subject) has a MAX of 100 characters
+#
+# ------ Conventional Commits Format ------
+# <type>: feat, fix, docs, style, refactor, test, chore
+#
+# <scope>: Optional. The affected module (auth, dataset, zenodo, etc.)
+#
+# <subject>: Short description (imperative mood in English, lowercase, without final period)
+#   - Example: "add export to CSV functionality"
+#
+# <body>: Optional. Explain WHAT and WHY, not HOW
+#   - It must have a blank line after the header
+#   - You can use multiple paragraphs separated by blank lines
+#
+# <footer>: MANDATORY. Reference to issues
+#   - It must have a blank line before the footer
+#   - Refs: SCRUM-XX (reference to task/issue) - MANDATORY
+#
+# ------ Valid Examples ------
+# feat(dataset): add csv export functionality
+#
+# Refs: SCRUM-45
+#
+# ---
+#
+# fix(auth): correct password validation logic
+#
+# The password validator was not checking for minimum length correctly.
+# This fix ensures passwords must be at least 8 characters.
+#
+# Refs: SCRUM-32
