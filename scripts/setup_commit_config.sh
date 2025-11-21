@@ -18,6 +18,22 @@ cp .git-hooks/prepare-commit-msg .git/hooks/prepare-commit-msg
 # Damos permisos de ejecución al hook
 chmod +x .git/hooks/prepare-commit-msg
 
-echo "Our git hooks have been installed."
+echo "Our git hooks have been installed.Now your commits will automatically include the Jira issue reference based on your branch name."
 echo ""
-echo "Now your commits will automatically include the Jira issue reference based on your branch name."
+echo "Installing pre-commit hooks..."
+
+# Comprobar si pre-commit está instalado (funciona para ambos casos)
+if ! command -v pre-commit &> /dev/null; then
+    echo "pre-commit is not installed. Installing..."
+    pip install pre-commit
+else
+    echo "pre-commit is already installed."
+fi
+
+# Instalar los hooks definidos en .pre-commit-config.yaml
+pre-commit install
+pre-commit install --hook-type commit-msg
+pre-commit install --hook-type pre-push
+echo "pre-commit hooks have been installed."
+echo ""
+echo "Installation complete! :)"
