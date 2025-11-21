@@ -1,3 +1,9 @@
+# ----------------------------------------------------------------------------
+# Calidad de Código con SonarCloud
+# Este workflow se activa después de que el workflow de pruebas se complete con éxito.
+# Realiza un análisis estático del código de main y solo se ejecuta al hacer push a main.
+# ----------------------------------------------------------------------------
+
 name: SonarCloud Analysis
 
 on:
