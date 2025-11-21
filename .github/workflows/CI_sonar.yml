@@ -1,0 +1,33 @@
+name: SonarCloud Analysis
+
+on:
+    workflow_run:
+        workflows: ["Stage 3 - Testing"]
+        types:
+            - completed
+        branches:
+            - main
+
+jobs:
+    sonarcloud:
+        name: SonarCloud Static Analysis
+        runs-on: ubuntu-24.04
+        if: github.event.workflow_run.conclusion == 'success'
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Download coverage artifact from tests workflow
+              uses: actions/download-artifact@v4
+              with:
+                  name: coverage-reports
+                  run-id: ${{ github.event.workflow_run.id }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@v6
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

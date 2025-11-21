@@ -51,29 +51,3 @@ jobs:
         run: |
           echo "Running Flake8 linter..."
           flake8 --max-line-length=120 --extend-ignore=E203,W503 --show-source --statistics app rosemary
-
-  sonarcloud:
-    name: SonarCloud Static Analysis
-    runs-on: ubuntu-24.04
-    needs: code-quality
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage artifact from tests workflow
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          workflow: CI_pytest.yml
-          name: coverage-reports
-          path: .
-          if_no_artifact_found: warn
-        continue-on-error: true
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
