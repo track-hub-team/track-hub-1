@@ -1,14 +1,14 @@
 # ----------------------------------------------------------------------------
-# Stage 4: Security Workflow
-# This workflow runs security scans in parallel with other stages.
+# Etapa 4: Workflow de Seguridad
+# Este workflow ejecuta análisis de seguridad en paralelo con otras etapas.
 #
-# Security checks:
-# - Dependency vulnerability scanning with pip-audit
-# - OWASP Dependency-Check for comprehensive dependency analysis
-# - Static Application Security Testing (SAST) with Bandit
-# - Secret scanning with TruffleHog
-#
+# Comprobaciones de seguridad:
+# - Escaneo de vulnerabilidades de dependencias con pip-audit
+# - OWASP Dependency-Check para un análisis completo de dependencias
+# - Análisis estático de seguridad de aplicaciones (SAST) con Bandit
+# - Escaneo de secretos con TruffleHog
 # ----------------------------------------------------------------------------
+
 
 name: Stage 4 - Security
 

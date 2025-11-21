@@ -1,12 +1,12 @@
 # ----------------------------------------------------------------------------
-# Stage 2: Code Quality Workflow
-# This workflow runs linting and code style checks using the same configuration
-# as local pre-commit hooks.
+# Etapa 2: Workflow de Calidad de Código
+# Este workflow ejecuta comprobaciones de linting y estilo de código usando
+# la misma configuración que los hooks locales de pre-commit.
 #
-# Checks:
-# - Black: Code formatting (line length 120, Python 3.12)
-# - isort: Import ordering (black profile, line length 120)
-# - Flake8: PEP8 linting (max line length 120, ignore E203,W503)
+# Comprobaciones:
+# - Black: Formateo de código (longitud de línea 120, Python 3.12)
+# - isort: Ordenación de imports (perfil black, longitud de línea 120)
+# - Flake8: Linting PEP8 (longitud máxima de línea 120, ignorar E203, W503)
 # ----------------------------------------------------------------------------
 
 name: Stage 2 - Code Quality

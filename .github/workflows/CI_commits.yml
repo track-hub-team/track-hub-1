@@ -1,13 +1,13 @@
 # ----------------------------------------------------------------------------
-# Stage 1: Commit Validation Workflow
+# Etapa 1: Flujo de trabajo de validación de commits
 #
-# Validates:
-# - Commit messages follow Conventional Commits specification (commitlint)
-# - Branch names follow EGC Flow convention (feature/bugfix/hotfix)
+# Valida:
+# - Los mensajes de commit siguen la especificación Conventional Commits (commitlint)
+# - Los nombres de rama siguen la convención EGC Flow (feature/bugfix/hotfix)
 #
-# Uses project configuration files for consistency with local development:
-# - .commitlintrc.yaml (commit message rules)
-# - .pre-commit-config.yaml (branch naming logic)
+# Usa archivos de configuración del proyecto para coherencia con el desarrollo local:
+# - .commitlintrc.yaml (reglas de mensajes de commit)
+# - .pre-commit-config.yaml (lógica de nombrado de ramas)
 # ----------------------------------------------------------------------------
 
 name: Stage 1 - Commit Validation

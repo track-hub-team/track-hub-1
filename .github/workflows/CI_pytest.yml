@@ -1,13 +1,13 @@
 # ----------------------------------------------------------------------------
-# Stage 3: Testing Workflow
-# This workflow runs the complete test suite with coverage analysis.
+# Etapa 3: Workflow de Tests
+# Este workflow ejecuta la suite completa de tests con análisis de cobertura.
 #
-# Features:
-# - Runs all pytest tests (excluding Selenium)
-# - Generates coverage report
-# - Enforces minimum 50% coverage threshold
-# - Uploads coverage to Codecov
-# - Generates test summary report
+# Funcionalidades:
+# - Ejecuta todos los tests de pytest (excluyendo Selenium)
+# - Genera un informe de cobertura
+# - Exige un umbral mínimo de cobertura del 30%
+# - Sube la cobertura a Codecov
+# - Genera un informe resumen de tests
 # ----------------------------------------------------------------------------
 
 name: Stage 3 - Testing
