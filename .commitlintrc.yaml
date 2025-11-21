@@ -5,8 +5,8 @@ parserPreset:
   parserOpts:
     # Reconocer referencias de Jira
     issuePrefixes: ['SCRUM-', '#']
-    # Reconocer breaking changes con !
-    headerPattern: '^(\w+)(?:\(([^)]+)\))?!?:\s(.+)$'
+    # Reconocer breaking changes con ! (ej: feat!: o feat(scope)!:)
+    headerPattern: "^(\\w+)(?:\\(([^)]+)\\))?!?:\\s(.+)$"
     headerCorrespondence: ['type', 'scope', 'subject']
 
 rules:
