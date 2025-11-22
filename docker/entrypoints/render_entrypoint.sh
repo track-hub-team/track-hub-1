@@ -60,13 +60,15 @@ else
     flask db upgrade
 fi
 
-# Seed the database if it's empty (no users exist)
+# Seed the database if it's empty (no users exist) and seeding is enabled (variable only for staging, not production)
 USER_COUNT=$(mariadb --skip-ssl -u $MARIADB_USER -p$MARIADB_PASSWORD -h $MARIADB_HOSTNAME -P $MARIADB_PORT -D $MARIADB_DATABASE -sse "SELECT COUNT(*) FROM user;" 2>/dev/null || echo "0")
 
-if [ "$USER_COUNT" -eq 0 ]; then
-    echo "No users found, seeding database..."
+if [ "$USER_COUNT" -eq 0 ] && [ "$ENABLE_SEEDER" = "true" ]; then
+    echo "No users found and ENABLE_SEEDER=true, seeding database..."
     rosemary db:seed
     echo "Database seeded successfully!"
+elif [ "$USER_COUNT" -eq 0 ]; then
+    echo "No users found, but ENABLE_SEEDER is not enabled. Skipping seed."
 else
     echo "Database already has data, skipping seed."
 fi
