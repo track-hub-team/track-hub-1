@@ -1,35 +1,47 @@
 # ----------------------------------------------------------------------------
 # Publish image in Docker Hub Workflow
 # This workflow builds and pushes a Docker image to Docker Hub whenever
-# a new release is published on GitHub.
+# the Auto Release workflow completes successfully.
 # ----------------------------------------------------------------------------
 
 name: Publish image in Docker Hub on release
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Auto Release"]
+    types: [completed]
 
 jobs:
   push_to_registry:
     runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
 
       # Step 1: Check out the repository code
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      # Step 2: Log in to Docker Hub using secrets
+      # Step 2: Get latest tag
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using tag: $TAG"
+
+      # Step 3: Log in to Docker Hub using secrets
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.6.0
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Build and push the Docker image
+      # Step 4: Build and push the Docker image
       - name: Build and push Docker image
         run: |
-          TAG=${{ github.event.release.tag_name }}
+          TAG=${{ steps.get_tag.outputs.tag }}
           IMAGE=${{ secrets.DOCKER_USER }}/track-hub-1
 
           docker build --build-arg VERSION_TAG=$TAG -t $IMAGE:$TAG -f docker/images/Dockerfile.render .
