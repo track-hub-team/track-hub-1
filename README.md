@@ -2,14 +2,21 @@
   <img src="app/static/img/logos/logo-light.svg" alt="Logo">
 </div>
 
-# uvlhub.io
+# Track Hub
 
-Repository of feature models in UVL format integrated with Zenodo and flamapy following Open Science principles - Developed by DiversoLab
+A web platform for managing and sharing GPS tracks (GPX files), built on top of UVLHub. Upload, visualize, and collaborate on GPS route collections following Open Science principles.
 
-## Official documentation
+## Features
 
-You can consult the official documentation of the project at [docs.uvlhub.io](https://docs.uvlhub.io/)
+- **GPX Track Management**: Upload and organize GPS tracks in GPX format
+- **Interactive Visualization**: View routes on an interactive map with statistics (distance, elevation, duration)
+- **Version Control**: Track changes to your datasets over time
+- **Community Features**: Share and discover GPS track collections
 
 ## Getting Started
 
 To set up your development environment, follow the [Developer Setup Guide](docs/setup-guide.md).
+
+## Deployment
+
+- [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
