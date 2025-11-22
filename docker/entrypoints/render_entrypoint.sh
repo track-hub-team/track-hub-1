@@ -60,6 +60,17 @@ else
     flask db upgrade
 fi
 
+# Seed the database if it's empty (no users exist)
+USER_COUNT=$(mariadb --skip-ssl -u $MARIADB_USER -p$MARIADB_PASSWORD -h $MARIADB_HOSTNAME -P $MARIADB_PORT -D $MARIADB_DATABASE -sse "SELECT COUNT(*) FROM user;" 2>/dev/null || echo "0")
+
+if [ "$USER_COUNT" -eq 0 ]; then
+    echo "No users found, seeding database..."
+    rosemary db:seed
+    echo "Database seeded successfully!"
+else
+    echo "Database already has data, skipping seed."
+fi
+
 # Start the application using Gunicorn, binding it to port 80
 # Set the logging level to info and the timeout to 3600 seconds
 exec gunicorn --bind 0.0.0.0:80 app:app --log-level info --timeout 3600
