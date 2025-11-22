@@ -38,5 +38,17 @@ done
 echo "🧱 Applying database migrations..."
 flask db upgrade || echo "⚠️ Migrations failed, continuing anyway..."
 
+# Ejecutar seeders solo si el entorno es preproducción
+if [[ "$FLASK_ENV" == "preproduction" || "$ENV" == "pre" ]]; then
+  echo "🌱 Running seeders (preproduction environment detected)..."
+  if flask seed run >/dev/null 2>&1; then
+    echo "✅ Seeders executed successfully"
+  else
+    echo "ℹ️ No seeders found or already applied, skipping..."
+  fi
+else
+  echo "🚫 Seeders skipped (not a preproduction environment)"
+fi
+
 echo "🚀 Starting TrackHub with Gunicorn..."
 exec gunicorn --bind 0.0.0.0:5000 app:app --log-level info --timeout 3600
