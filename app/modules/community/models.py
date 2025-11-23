@@ -1,6 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app import db
+
+
+def utc_now():
+    """Devuelve la fecha/hora actual en UTC con información de timezone."""
+    return datetime.now(timezone.utc)
 
 
 class Community(db.Model):
@@ -18,13 +23,13 @@ class Community(db.Model):
     description = db.Column(db.Text, nullable=False)
     logo_path = db.Column(db.String(255), nullable=True)
 
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 
     # Creador de la comunidad
     creator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    # Relaciones
+    # Relaciones (usado para navegación y consultas)
     creator = db.relationship("User", foreign_keys=[creator_id], backref="created_communities")
     curators = db.relationship("CommunityCurator", back_populates="community", cascade="all, delete-orphan")
     datasets = db.relationship("CommunityDataset", back_populates="community", cascade="all, delete-orphan")
@@ -90,7 +95,7 @@ class CommunityCurator(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     community_id = db.Column(db.Integer, db.ForeignKey("community.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    assigned_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    assigned_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
 
     # Relaciones
     community = db.relationship("Community", back_populates="curators")
@@ -114,9 +119,9 @@ class CommunityDataset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     community_id = db.Column(db.Integer, db.ForeignKey("community.id"), nullable=False)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
-    added_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    added_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
 
-    # Usuario que añadió el dataset (puede ser curador que aprobó la solicitud)
+    # Curador que aprobó la solicitud (para auditoría, el autor real está en dataset.user_id)
     added_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
     # Relaciones
@@ -168,8 +173,8 @@ class CommunityRequest(db.Model):
     status = db.Column(db.String(20), nullable=False, default=STATUS_PENDING)
 
     # Fechas
-    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    reviewed_at = db.Column(db.DateTime, nullable=True)
+    requested_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # Revisión (si fue aprobada o rechazada)
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
@@ -184,14 +189,14 @@ class CommunityRequest(db.Model):
     def approve(self, curator_id, comment=None):
         """Aprobar la solicitud y añadir el dataset a la comunidad"""
         self.status = self.STATUS_APPROVED
-        self.reviewed_at = datetime.utcnow()
+        self.reviewed_at = utc_now()
         self.reviewed_by_id = curator_id
         self.review_comment = comment
 
     def reject(self, curator_id, comment=None):
         """Rechazar la solicitud"""
         self.status = self.STATUS_REJECTED
-        self.reviewed_at = datetime.utcnow()
+        self.reviewed_at = utc_now()
         self.reviewed_by_id = curator_id
         self.review_comment = comment
 

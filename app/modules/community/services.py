@@ -208,16 +208,14 @@ class CommunityService(BaseService):
 
             # Enviar notificación por correo
             try:
-                # Obtener información necesaria para el correo
-                requester = request.requester  # relación en el modelo CommunityRequest
-                dataset = request.dataset  # relación en el modelo CommunityRequest
-                community = request.community  # relación en el modelo CommunityRequest
+                requester = request.requester
+                dataset = request.dataset
+                community = request.community
 
-                # Determinar el nombre del solicitante
                 requester_name = requester.profile.name if requester.profile and requester.profile.name else "User"
 
                 # Determinar el nombre del dataset
-                dataset_name = f"Dataset #{dataset.id}"  # fallback por si no se puede obtener el nombre real
+                dataset_name = f"Dataset #{dataset.id}"
                 if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data:
                     if hasattr(dataset.ds_meta_data, "title") and dataset.ds_meta_data.title:
                         dataset_name = dataset.ds_meta_data.title

@@ -46,7 +46,6 @@ class CommunityCuratorRepository(BaseRepository):
         super().__init__(CommunityCurator)
 
     def get_by_community_and_user(self, community_id: int, user_id: int) -> Optional[CommunityCurator]:
-        """Verificar si un usuario es curador de una comunidad"""
         return self.model.query.filter_by(community_id=community_id, user_id=user_id).first()
 
     def is_curator(self, community_id: int, user_id: int) -> bool:
@@ -63,7 +62,6 @@ class CommunityDatasetRepository(BaseRepository):
         super().__init__(CommunityDataset)
 
     def get_by_community_and_dataset(self, community_id: int, dataset_id: int) -> Optional[CommunityDataset]:
-        """Verificar si un dataset está en una comunidad"""
         return self.model.query.filter_by(community_id=community_id, dataset_id=dataset_id).first()
 
     def dataset_in_community(self, community_id: int, dataset_id: int) -> bool:

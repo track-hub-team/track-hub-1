@@ -22,7 +22,6 @@ def list_communities():
     """List all communities with search functionality"""
     query = request.args.get("query", "")
 
-    # Get communities from database
     communities = community_service.get_all(query if query else None)
 
     return render_template("community/list.html", communities=communities, query=query)
@@ -55,7 +54,6 @@ def create():
     form = CommunityForm()
 
     if form.validate_on_submit():
-        # Create community using the service
         community, error = community_service.create_community(
             name=form.name.data,
             description=form.description.data,
@@ -119,7 +117,6 @@ def propose_dataset(community_id):
         dataset_id = form.dataset_id.data
         message = form.message.data
 
-        # Propose dataset using the service
         success, error = community_service.propose_dataset(
             community_id=community_id, dataset_id=dataset_id, requester_id=current_user.id, message=message
         )
