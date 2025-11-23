@@ -746,8 +746,6 @@
             body: formData
         })
         .then(response => {
-            // The HTML endpoints redirect, but we want to handle it via AJAX
-            // So we check if redirect happened successfully
             if (response.redirected || response.ok) {
                 alert(`Dataset ${actionText}ed successfully!`);
 

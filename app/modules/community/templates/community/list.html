@@ -63,7 +63,7 @@
                     <div class="card h-100 hover-shadow">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex align-items-center mb-3">
-                                <img src="{{ community.logo_path }}"
+                                <img src="{{ community.get_logo_url() }}"
                                      alt="{{ community.name }}"
                                      class="rounded me-3"
                                      style="width: 60px; height: 60px; object-fit: cover;">
@@ -74,9 +74,10 @@
                                             {{ community.name }}
                                         </a>
                                     </h5>
+                                    {% set datasets_count = community.get_datasets_count() %}
                                     <small class="text-muted">
                                         <i data-feather="database" style="width: 14px; height: 14px;"></i>
-                                        {{ community.get_datasets_count() }} dataset{{ 's' if community.get_datasets_count() != 1 else '' }}
+                                        {{ datasets_count }} dataset{{ 's' if datasets_count != 1 else '' }}
                                     </small>
                                 </div>
                             </div>
@@ -88,7 +89,7 @@
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <small class="text-muted">
                                     <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
-                                    Created {{ community.created_at }}
+                                    Created {{ community.created_at.strftime('%b %d, %Y') }}
                                 </small>
                                 <a href="{{ url_for('community.view', slug=community.slug) }}"
                                    class="btn btn-sm btn-outline-primary">
@@ -125,42 +126,40 @@
 
 {% endblock %}
 
+{% block styles %}
+<style>
+    .hover-shadow {
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-5px);
+    }
+    .input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-radius: 0.375rem;
+    }
+    .input-group:focus-within input.form-control {
+        box-shadow: none;
+        border-color: #dee2e6;
+    }
+    .input-group:focus-within input.form-control:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+        outline: none;
+    }
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
-    // Initialize Feather icons
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
 
-    // Add hover effect class and search input styles
     document.addEventListener('DOMContentLoaded', function() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .hover-shadow {
-                transition: box-shadow 0.3s ease, transform 0.3s ease;
-            }
-            .hover-shadow:hover {
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-                transform: translateY(-5px);
-            }
-            /* Search input focus styles - unified border */
-            .input-group:focus-within {
-                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-                border-radius: 0.375rem;
-            }
-            .input-group:focus-within input.form-control {
-                box-shadow: none;
-                border-color: #dee2e6;
-            }
-            .input-group:focus-within input.form-control:focus {
-                box-shadow: none;
-                border-color: #dee2e6;
-                outline: none;
-            }
-        `;
-        document.head.appendChild(style);
 
-        // Dynamic search with AJAX - no page reload
+        // Dynamic search with AJAX (no page reload)
         const searchInput = document.querySelector('input[name="query"]');
         const searchForm = document.querySelector('form[action*="community"]');
         const resultsMessage = document.getElementById('search-results-message');

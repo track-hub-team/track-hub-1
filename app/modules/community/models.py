@@ -47,6 +47,17 @@ class Community(db.Model):
         """Verificar si un usuario es curador de esta comunidad"""
         return any(curator.user_id == user_id for curator in self.curators)
 
+    def get_logo_url(self):
+        """Obtener URL del logo o imagen por defecto"""
+        if self.logo_path:
+            # Si ya empieza con / o http, devolverlo tal cual
+            if self.logo_path.startswith("/") or self.logo_path.startswith("http"):
+                return self.logo_path
+            # Si no, añadir / al principio (para rutas relativas como uploads/...)
+            return f"/{self.logo_path}"
+        # Usar placeholder con iniciales
+        return f"https://ui-avatars.com/api/?name={self.name[:2]}&background=6366f1&color=fff&size=120"
+
     def to_dict(self):
         """Serializar a diccionario"""
         return {
