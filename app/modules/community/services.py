@@ -32,7 +32,7 @@ class CommunityService(BaseService):
         """Obtener todas las comunidades, opcionalmente filtradas por búsqueda"""
         if query:
             return self.repository.search_by_name_or_description(query)
-        return self.repository.get_all_with_datasets_count()
+        return self.repository.get_all_ordered()
 
     def get_by_slug(self, slug: str) -> Optional[Community]:
         """Obtener comunidad por slug"""

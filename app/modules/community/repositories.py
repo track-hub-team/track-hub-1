@@ -12,7 +12,7 @@ class CommunityRepository(BaseRepository):
         """Obtener comunidad por slug"""
         return self.model.query.filter_by(slug=slug).first()
 
-    def get_all_with_datasets_count(self) -> List[Community]:
+    def get_all_ordered(self) -> List[Community]:
         """Obtener todas las comunidades ordenadas por fecha de creación"""
         return self.model.query.order_by(self.model.created_at.desc()).all()
 
@@ -46,6 +46,7 @@ class CommunityCuratorRepository(BaseRepository):
         super().__init__(CommunityCurator)
 
     def get_by_community_and_user(self, community_id: int, user_id: int) -> Optional[CommunityCurator]:
+        """Obtener relación curador-comunidad específica"""
         return self.model.query.filter_by(community_id=community_id, user_id=user_id).first()
 
     def is_curator(self, community_id: int, user_id: int) -> bool:
@@ -62,6 +63,7 @@ class CommunityDatasetRepository(BaseRepository):
         super().__init__(CommunityDataset)
 
     def get_by_community_and_dataset(self, community_id: int, dataset_id: int) -> Optional[CommunityDataset]:
+        """Obtener relación dataset-comunidad específica"""
         return self.model.query.filter_by(community_id=community_id, dataset_id=dataset_id).first()
 
     def dataset_in_community(self, community_id: int, dataset_id: int) -> bool:
@@ -93,20 +95,15 @@ class CommunityRequestRepository(BaseRepository):
         """Obtener solicitud específica por comunidad y dataset"""
         return self.model.query.filter_by(community_id=community_id, dataset_id=dataset_id).first()
 
-    def has_pending_request(self, community_id: int, dataset_id: int) -> bool:
-        """Verificar si existe una solicitud pendiente para un dataset en una comunidad"""
-        return (
-            self.model.query.filter_by(
-                community_id=community_id, dataset_id=dataset_id, status=CommunityRequest.STATUS_PENDING
-            ).first()
-            is not None
-        )
-
     def get_pending_request_by_dataset(self, community_id: int, dataset_id: int) -> Optional[CommunityRequest]:
         """Obtener solicitud pendiente específica por comunidad y dataset"""
         return self.model.query.filter_by(
             community_id=community_id, dataset_id=dataset_id, status=CommunityRequest.STATUS_PENDING
         ).first()
+
+    def has_pending_request(self, community_id: int, dataset_id: int) -> bool:
+        """Verificar si existe una solicitud pendiente para un dataset en una comunidad"""
+        return self.get_pending_request_by_dataset(community_id, dataset_id) is not None
 
     def get_user_requests(self, user_id: int) -> List[CommunityRequest]:
         """Obtener todas las solicitudes de un usuario"""
