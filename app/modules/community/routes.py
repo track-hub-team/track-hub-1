@@ -200,5 +200,8 @@ def reject_request(slug, request_id):
 def uploaded_file(filename):
     """Serve uploaded community logos"""
     working_dir = os.getenv("WORKING_DIR", "")
+    if not working_dir:
+        # Si WORKING_DIR está vacío, usar la raíz del proyecto
+        working_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     upload_dir = os.path.join(working_dir, "uploads", "communities")
     return send_from_directory(upload_dir, filename)

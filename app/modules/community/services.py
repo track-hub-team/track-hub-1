@@ -354,6 +354,9 @@ class CommunityService(BaseService):
 
         # Crear directorio si no existe
         working_dir = os.getenv("WORKING_DIR", "")
+        if not working_dir:
+            # Si WORKING_DIR está vacío, usar la raíz del proyecto
+            working_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         upload_dir = os.path.join(working_dir, "uploads", "communities")
         os.makedirs(upload_dir, exist_ok=True)
 

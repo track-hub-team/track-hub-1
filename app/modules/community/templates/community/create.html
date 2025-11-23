@@ -72,8 +72,9 @@
                                 {% endif %}
                             </div>
                             <small class="form-text text-muted">
-                                Supported formats: JPG, JPEG, PNG, GIF (Max 5MB recommended)
+                                Supported formats: JPG, JPEG, PNG, GIF, WebP (Max 2MB)
                             </small>
+                            <div id="logoError" class="text-danger small mt-1" style="display: none;"></div>
 
                             <!-- Image Preview -->
                             <div id="imagePreview" class="mt-3" style="display: none;">
@@ -159,24 +160,45 @@
         charCount.textContent = descriptionField.value.length;
     }
 
-    // Image preview
+    // Image preview and validation
     const logoInput = document.getElementById('logoInput');
     const imagePreview = document.getElementById('imagePreview');
     const previewImage = document.getElementById('previewImage');
+    const logoError = document.getElementById('logoError');
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
     if (logoInput) {
         logoInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                imagePreview.style.display = 'none';
+            logoError.style.display = 'none';
+            imagePreview.style.display = 'none';
+
+            if (!file) return;
+
+            // Validate file type
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                logoError.textContent = 'Invalid file type. Allowed: JPG, PNG, GIF, WebP';
+                logoError.style.display = 'block';
+                logoInput.value = '';
+                return;
             }
+
+            // Validate file size
+            if (file.size > MAX_FILE_SIZE) {
+                logoError.textContent = `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum: 2MB`;
+                logoError.style.display = 'block';
+                logoInput.value = '';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         });
     }
 

@@ -29,7 +29,9 @@ class CommunityForm(FlaskForm):
         "Community Logo",
         validators=[
             Optional(),
-            FileAllowed(["jpg", "jpeg", "png", "gif"], "Only image files are allowed (jpg, jpeg, png, gif)"),
+            FileAllowed(
+                ["jpg", "jpeg", "png", "gif", "webp"], "Only image files are allowed (jpg, jpeg, png, gif, webp)"
+            ),
         ],
     )
 
