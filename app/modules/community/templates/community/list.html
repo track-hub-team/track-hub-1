@@ -69,7 +69,7 @@
                                      style="width: 60px; height: 60px; object-fit: cover;">
                                 <div class="flex-grow-1">
                                     <h5 class="card-title mb-1">
-                                        <a href="{{ url_for('community.view', community_id=community.id) }}"
+                                        <a href="{{ url_for('community.view', slug=community.slug) }}"
                                            class="text-decoration-none text-dark">
                                             {{ community.name }}
                                         </a>
@@ -90,7 +90,7 @@
                                     <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
                                     Created {{ community.created_at }}
                                 </small>
-                                <a href="{{ url_for('community.view', community_id=community.id) }}"
+                                <a href="{{ url_for('community.view', slug=community.slug) }}"
                                    class="btn btn-sm btn-outline-primary">
                                     View <i data-feather="arrow-right" style="width: 14px; height: 14px;"></i>
                                 </a>

@@ -15,7 +15,7 @@
                     <p class="text-muted mb-0">{{ community.name }}</p>
                 </div>
                 <div>
-                    <a href="{{ url_for('community.view', community_id=community.id) }}"
+                    <a href="{{ url_for('community.view', slug=community.slug) }}"
                        class="btn btn-outline-secondary">
                         <i data-feather="eye"></i> View Community
                     </a>
@@ -125,12 +125,12 @@
                                                     <div class="btn-group d-block mt-2" role="group">
                                                         <button type="button"
                                                                 class="btn btn-sm btn-success me-2"
-                                                                onclick="openApproveModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
+                                                                onclick="openApproveModal({{ request.id }}, '{{ community.slug }}', {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
                                                             <i data-feather="check" style="width: 14px; height: 14px;"></i> Approve
                                                         </button>
                                                         <button type="button"
                                                                 class="btn btn-sm btn-outline-danger"
-                                                                onclick="openRejectModal({{ request.id }}, {{ request.community_id }}, {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
+                                                                onclick="openRejectModal({{ request.id }}, '{{ community.slug }}', {{ request.dataset_id }}, '{{ request.dataset.ds_meta_data.title if request.dataset else 'Dataset #' ~ request.dataset_id }}')">
                                                             <i data-feather="x" style="width: 14px; height: 14px;"></i> Reject
                                                         </button>
                                                     </div>
@@ -313,7 +313,7 @@
     <!-- Back Button -->
     <div class="row mt-4">
         <div class="col-12">
-            <a href="{{ url_for('community.view', community_id=community.id) }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('community.view', slug=community.slug) }}" class="btn btn-outline-secondary">
                 <i data-feather="arrow-left"></i> Back to Community
             </a>
         </div>
@@ -480,13 +480,13 @@
     // Modal data variables
     let approveModalData = {
         requestId: null,
-        communityId: null,
+        communitySlug: null,
         datasetId: null
     };
 
     let rejectModalData = {
         requestId: null,
-        communityId: null,
+        communitySlug: null,
         datasetId: null
     };
 
@@ -552,16 +552,16 @@
     }
 
     // Open approve modal function
-    function openApproveModal(requestId, communityId, datasetId, datasetTitle) {
-        approveModalData = { requestId, communityId, datasetId };
+    function openApproveModal(requestId, communitySlug, datasetId, datasetTitle) {
+        approveModalData = { requestId, communitySlug, datasetId };
         document.getElementById('approveDatasetTitle').textContent = datasetTitle;
         const modal = new bootstrap.Modal(document.getElementById('approveModal'));
         modal.show();
     }
 
     // Open reject modal function
-    function openRejectModal(requestId, communityId, datasetId, datasetTitle) {
-        rejectModalData = { requestId, communityId, datasetId };
+    function openRejectModal(requestId, communitySlug, datasetId, datasetTitle) {
+        rejectModalData = { requestId, communitySlug, datasetId };
         document.getElementById('rejectDatasetTitle').textContent = datasetTitle;
         const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
         modal.show();
@@ -569,27 +569,27 @@
 
     // Handle confirm approval
     document.getElementById('confirmApproveBtn').addEventListener('click', function() {
-        const { requestId, communityId, datasetId } = approveModalData;
+        const { requestId, communitySlug, datasetId } = approveModalData;
 
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
         modal.hide();
 
         // Call the approve handler
-        handleRequest(requestId, communityId, datasetId, 'approve');
+        handleRequest(requestId, communitySlug, datasetId, 'approve');
     });
 
     // Handle confirm rejection
     document.getElementById('confirmRejectBtn').addEventListener('click', function() {
         const reason = rejectReasonField.value.trim();
-        const { requestId, communityId, datasetId } = rejectModalData;
+        const { requestId, communitySlug, datasetId } = rejectModalData;
 
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
         modal.hide();
 
         // Call the reject handler with reason
-        handleRequest(requestId, communityId, datasetId, 'reject', reason);
+        handleRequest(requestId, communitySlug, datasetId, 'reject', reason);
     });
 
     // Open add curator modal
@@ -723,9 +723,9 @@
     }
 
     // Handle approve/reject requests
-    function handleRequest(requestId, communityId, datasetId, action, reason = '') {
+    function handleRequest(requestId, communitySlug, datasetId, action, reason = '') {
         const actionText = action === 'approve' ? 'approve' : 'reject';
-        const url = `/community/${communityId}/request/${requestId}/${action}`;
+        const url = `/community/${communitySlug}/request/${requestId}/${action}`;
 
         // Show loading state
         const requestElement = document.getElementById(`request-${requestId}`);

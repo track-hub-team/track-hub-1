@@ -20,6 +20,11 @@ from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
 
+# Configuración de logos
+ALLOWED_LOGO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+MAX_LOGO_SIZE_MB = 2
+MAX_LOGO_SIZE_BYTES = MAX_LOGO_SIZE_MB * 1024 * 1024
+
 
 class CommunityService(BaseService):
     def __init__(self):
@@ -173,6 +178,10 @@ class CommunityService(BaseService):
         """Obtener solicitudes pendientes de una comunidad"""
         return self.request_repository.get_pending_requests(community_id)
 
+    def get_request_by_id(self, request_id: int) -> Optional[CommunityRequest]:
+        """Obtener una solicitud por su ID"""
+        return self.request_repository.get_by_id(request_id)
+
     def approve_request(
         self, request_id: int, curator_id: int, comment: Optional[str] = None
     ) -> Tuple[bool, Optional[str]]:
@@ -303,11 +312,46 @@ class CommunityService(BaseService):
         """Obtener comunidades donde el usuario es curador"""
         return self.repository.get_curated_communities(user_id)
 
+    def get_user_datasets(self, user_id: int) -> List[BaseDataset]:
+        """Obtener todos los datasets de un usuario"""
+        return BaseDataset.query.filter_by(user_id=user_id).all()
+
+    def _validate_logo(self, logo_file: FileStorage) -> Optional[str]:
+        """
+        Validar el archivo de logo.
+        Retorna mensaje de error si es inválido, None si es válido.
+        """
+        if not logo_file or not logo_file.filename:
+            return None
+
+        # Validar extensión
+        filename = secure_filename(logo_file.filename)
+        _, ext = os.path.splitext(filename)
+        if ext.lower() not in ALLOWED_LOGO_EXTENSIONS:
+            allowed = ", ".join(ALLOWED_LOGO_EXTENSIONS)
+            return f"Invalid file type. Allowed: {allowed}"
+
+        # Validar tamaño
+        logo_file.seek(0, os.SEEK_END)
+        size = logo_file.tell()
+        logo_file.seek(0)
+
+        if size > MAX_LOGO_SIZE_BYTES:
+            return f"File too large. Maximum size: {MAX_LOGO_SIZE_MB}MB"
+
+        return None
+
     def _save_logo(self, logo_file: FileStorage, slug: str) -> str:
         """
         Guardar el logo de la comunidad.
         Retorna la ruta relativa del archivo guardado.
+        Raises ValueError si el archivo no es válido.
         """
+        # Validar archivo
+        validation_error = self._validate_logo(logo_file)
+        if validation_error:
+            raise ValueError(validation_error)
+
         # Crear directorio si no existe
         working_dir = os.getenv("WORKING_DIR", "")
         upload_dir = os.path.join(working_dir, "uploads", "communities")
@@ -316,7 +360,7 @@ class CommunityService(BaseService):
         # Generar nombre de archivo único
         filename = secure_filename(logo_file.filename)
         _, ext = os.path.splitext(filename)
-        unique_filename = f"{slug}{ext}"
+        unique_filename = f"{slug}{ext.lower()}"
 
         # Guardar archivo
         file_path = os.path.join(upload_dir, unique_filename)

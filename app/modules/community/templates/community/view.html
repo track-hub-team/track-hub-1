@@ -34,12 +34,12 @@
                                         <a href="#" class="btn btn-outline-danger me-2" id="follow-btn">
                                             <i data-feather="heart"></i> Follow
                                         </a>
-                                        <a href="{{ url_for('community.propose_dataset', community_id=community.id) }}"
+                                        <a href="{{ url_for('community.propose_dataset', slug=community.slug) }}"
                                            class="btn btn-primary">
                                             <i data-feather="upload"></i> Propose Dataset
                                         </a>
                                         <!-- TODO: Add manage button only if user is curator -->
-                                        <a href="{{ url_for('community.manage', community_id=community.id) }}"
+                                        <a href="{{ url_for('community.manage', slug=community.slug) }}"
                                            class="btn btn-outline-secondary">
                                             <i data-feather="settings"></i> Manage
                                         </a>
@@ -150,7 +150,7 @@
                                 This community doesn't have any datasets yet.
                             </p>
                             {% if not current_user.is_anonymous %}
-                                <a href="{{ url_for('community.propose_dataset', community_id=community.id) }}"
+                                <a href="{{ url_for('community.propose_dataset', slug=community.slug) }}"
                                    class="btn btn-primary">
                                     <i data-feather="upload"></i> Be the first to propose a dataset
                                 </a>
