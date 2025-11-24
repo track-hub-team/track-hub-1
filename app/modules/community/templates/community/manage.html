@@ -163,36 +163,61 @@
                             <h5 class="card-title mb-0">Community Settings</h5>
                         </div>
                         <div class="card-body">
-                            <form id="settingsForm">
+                            <form action="{{ url_for('community.update_community', slug=community.slug) }}"
+                                  method="POST"
+                                  enctype="multipart/form-data"
+                                  id="settingsForm">
+
                                 <!-- Community Name -->
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Community Name</label>
                                     <input type="text" class="form-control" value="{{ community.name }}" disabled>
-                                    <small class="form-text text-muted">Contact an administrator to change the community name</small>
+                                    <small class="form-text text-muted">
+                                        <i data-feather="lock" style="width: 12px; height: 12px;"></i>
+                                        The community name cannot be changed to maintain URL integrity
+                                    </small>
                                 </div>
 
                                 <!-- Description -->
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Description</label>
-                                    <textarea class="form-control" rows="5" disabled>{{ community.description }}</textarea>
-                                    <small class="form-text text-muted">Community description editing coming soon</small>
+                                    <label class="form-label fw-bold">Description *</label>
+                                    <textarea name="description"
+                                              class="form-control"
+                                              rows="5"
+                                              required
+                                              maxlength="2000"
+                                              id="descriptionInput">{{ community.description }}</textarea>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="form-text text-muted">Describe the purpose and focus of this community</small>
+                                        <small class="text-muted" id="descriptionCounter">{{ community.description|length }}/2000</small>
+                                    </div>
                                 </div>
 
                                 <!-- Logo -->
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Current Logo</label>
+                                    <label class="form-label fw-bold">Community Logo</label>
                                     <div class="mb-2">
                                         <img src="{{ community.get_logo_url() }}"
                                              alt="{{ community.name }}"
                                              class="rounded"
-                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                             style="width: 100px; height: 100px; object-fit: cover;"
+                                             id="logoPreview">
                                     </div>
-                                    <small class="form-text text-muted">Logo update functionality coming soon</small>
+                                    <input type="file"
+                                           class="form-control"
+                                           name="logo"
+                                           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                           id="logoInput">
+                                    <small class="form-text text-muted">
+                                        Accepted formats: JPG, PNG, GIF, WEBP. Max size: 2MB
+                                    </small>
                                 </div>
 
-                                <div class="alert alert-info">
-                                    <i data-feather="info" style="width: 16px; height: 16px;"></i>
-                                    <strong>Note:</strong> Full community editing capabilities will be available when the backend is ready.
+                                <!-- Submit Button -->
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i data-feather="save"></i> Save Changes
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -490,6 +515,50 @@
             const tab = new bootstrap.Tab(tabButton);
             tab.show();
         }
+    }
+
+    // Settings form: Character counter for description
+    const descriptionInput = document.getElementById('descriptionInput');
+    const descriptionCounter = document.getElementById('descriptionCounter');
+
+    if (descriptionInput && descriptionCounter) {
+        descriptionInput.addEventListener('input', function() {
+            const length = this.value.length;
+            descriptionCounter.textContent = `${length}/2000`;
+        });
+    }
+
+    // Settings form: Logo preview
+    const logoInput = document.getElementById('logoInput');
+    const logoPreview = document.getElementById('logoPreview');
+
+    if (logoInput && logoPreview) {
+        logoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be less than 2MB');
+                    this.value = '';
+                    return;
+                }
+
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
+                    this.value = '';
+                    return;
+                }
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     }
 
     // Modal data variables

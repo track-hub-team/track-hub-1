@@ -286,3 +286,33 @@ def remove_curator_route(slug):
         flash(f"Error removing curator: {error}", "error")
 
     return redirect(url_for("community.manage", slug=slug))
+
+
+@community_bp.route("/community/<string:slug>/update", methods=["POST"])
+@login_required
+def update_community(slug):
+    """Update community settings (curators only)"""
+    community = community_service.get_by_slug(slug)
+
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    # Check if user is curator
+    if not community_service.is_curator(community.id, current_user.id):
+        flash("Only curators can update community settings", "error")
+        return redirect(url_for("community.view", slug=slug))
+
+    # Get form data
+    description = request.form.get("description")
+    logo_file = request.files.get("logo")
+
+    # Update community
+    success, error = community_service.update_community(community.id, description=description, logo_file=logo_file)
+
+    if success:
+        flash("Community settings updated successfully!", "success")
+    else:
+        flash(f"Error updating community: {error}", "error")
+
+    return redirect(url_for("community.manage", slug=slug))

@@ -85,6 +85,53 @@ class CommunityService(BaseService):
             db.session.rollback()
             return None, f"Error creating community: {str(e)}"
 
+    def update_community(
+        self,
+        community_id: int,
+        description: Optional[str] = None,
+        logo_file: Optional[FileStorage] = None,
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Actualizar información de una comunidad existente.
+        Retorna (success, error_message)
+        Nota: El nombre no se puede cambiar para mantener la integridad del slug
+        """
+        community = self.repository.get_by_id(community_id)
+        if not community:
+            return False, "Community not found"
+
+        try:
+            # Actualizar descripción si se proporciona
+            if description is not None:
+                community.description = description
+
+            # Actualizar logo si se proporciona
+            if logo_file and logo_file.filename:
+                # Eliminar logo anterior si existe
+                if community.logo_path:
+                    try:
+                        working_dir = os.getenv("WORKING_DIR", "")
+                        if not working_dir:
+                            working_dir = os.path.dirname(
+                                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            )
+                        old_logo_path = os.path.join(working_dir, community.logo_path)
+                        if os.path.exists(old_logo_path):
+                            os.remove(old_logo_path)
+                    except Exception as e:
+                        logger.warning(f"Failed to delete old logo: {e}")
+
+                # Guardar nuevo logo
+                logo_path = self._save_logo(logo_file, community.slug)
+                community.logo_path = logo_path
+
+            db.session.commit()
+            return True, None
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Error updating community: {str(e)}"
+
     def add_curator(self, community_id: int, user_id: int) -> Tuple[bool, Optional[str]]:
         """
         Añadir un curador a una comunidad.
