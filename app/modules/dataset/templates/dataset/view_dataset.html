@@ -105,8 +105,26 @@
                     <div class="col-md-4 col-12">
                         <span class="text-secondary">Uploaded by</span>
                     </div>
-                    <div class="col-md-8 col-12">
-                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+                    <div class="col-md-8 col-12 d-flex align-items-center">
+                        <a href="#" class="me-3">
+                            {{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}
+                        </a>
+
+                        {% if current_user.is_authenticated and current_user.id != dataset.user.id %}
+                            <button
+                                class="btn btn-sm btn-outline-primary follow-user-btn"
+                                data-user-id="{{ dataset.user.id }}"
+                                {% if current_user.id in dataset.user.followers_ids %}
+                                    disabled
+                                    style="background-color: #28a745; color: white;"
+                                {% endif %}>
+                                {% if current_user.id in dataset.user.followers_ids %}
+                                    Following
+                                {% else %}
+                                    Follow
+                                {% endif %}
+                            </button>
+                        {% endif %}
                     </div>
                 </div>
 
