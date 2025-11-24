@@ -30,6 +30,31 @@
 
 </div>
 
+<h1 class="h3 mb-3">Following communities</h1>
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <ul id="followed-communities-list">
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h1 class="h3 mb-3">Following users</h1>
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <ul id="followed-users-list">
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <h1 class="h3 mb-3">User datasets</h1>
 
     {% if datasets %}
@@ -109,7 +134,6 @@
         No datasets found
     </div>
     {% endif %}
-
 {% endblock %}
 
 {% block scripts %}
