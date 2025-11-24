@@ -4,6 +4,9 @@
 
 {% block content %}
 
+    {# Cache frequently used values #}
+    {% set datasets_count = community.get_datasets_count() %}
+
     <!-- Community Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -11,7 +14,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-auto">
-                            <img src="{{ community.logo_path }}"
+                            <img src="{{ community.get_logo_url() }}"
                                  alt="{{ community.name }}"
                                  class="rounded"
                                  style="width: 120px; height: 120px; object-fit: cover;">
@@ -22,9 +25,9 @@
                                     <h1 class="h3 mb-1">{{ community.name }}</h1>
                                     <p class="text-muted mb-0">
                                         <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
-                                        Created {{ community.created_at }}
-                                        {% if community.updated_at != community.created_at %}
-                                            · Updated {{ community.updated_at }}
+                                        Created {{ community.created_at.strftime('%Y-%m-%d') if community.created_at else 'N/A' }}
+                                        {% if community.updated_at and community.created_at and community.updated_at.date() != community.created_at.date() %}
+                                            · Updated {{ community.updated_at.strftime('%Y-%m-%d') }}
                                         {% endif %}
                                     </p>
                                 </div>
@@ -38,11 +41,12 @@
                                            class="btn btn-primary">
                                             <i data-feather="upload"></i> Propose Dataset
                                         </a>
-                                        <!-- TODO: Add manage button only if user is curator -->
-                                        <a href="{{ url_for('community.manage', slug=community.slug) }}"
-                                           class="btn btn-outline-secondary">
-                                            <i data-feather="settings"></i> Manage
-                                        </a>
+                                        {% if is_curator %}
+                                            <a href="{{ url_for('community.manage', slug=community.slug) }}"
+                                               class="btn btn-outline-secondary">
+                                                <i data-feather="settings"></i> Manage
+                                            </a>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -51,8 +55,8 @@
                             <!-- Stats -->
                             <div class="d-flex gap-4">
                                 <div>
-                                    <strong>{{ community.get_datasets_count() }}</strong>
-                                    <span class="text-muted">Dataset{{ 's' if community.get_datasets_count() != 1 else '' }}</span>
+                                    <strong>{{ datasets_count }}</strong>
+                                    <span class="text-muted">Dataset{{ 's' if datasets_count != 1 else '' }}</span>
                                 </div>
                                 <div>
                                     <strong>{{ community.curators|length }}</strong>
@@ -79,6 +83,7 @@
                     {% if datasets %}
                         <div class="list-group list-group-flush">
                             {% for dataset in datasets %}
+                                {% set files_count = dataset.get_files_count() %}
                                 <div class="list-group-item px-0">
                                     <div class="row align-items-center">
                                         <div class="col">
@@ -89,7 +94,11 @@
                                                 </a>
                                             </h6>
                                             <p class="text-muted mb-2 small">
-                                                {{ dataset.ds_meta_data.description[:200] }}{% if dataset.ds_meta_data.description|length > 200 %}...{% endif %}
+                                                {% if dataset.ds_meta_data.description %}
+                                                    {{ dataset.ds_meta_data.description[:200] }}{% if dataset.ds_meta_data.description|length > 200 %}...{% endif %}
+                                                {% else %}
+                                                    No description available
+                                                {% endif %}
                                             </p>
                                             <div class="d-flex gap-3 small text-muted">
                                                 <span>
@@ -105,7 +114,7 @@
                                                 </span>
                                                 <span>
                                                     <i data-feather="file" style="width: 12px; height: 12px;"></i>
-                                                    {{ dataset.get_files_count() }} file{{ 's' if dataset.get_files_count() != 1 else '' }}
+                                                    {{ files_count }} file{{ 's' if files_count != 1 else '' }}
                                                 </span>
                                                 <span>
                                                     <i data-feather="hard-drive" style="width: 12px; height: 12px;"></i>
@@ -134,10 +143,10 @@
                             {% endfor %}
                         </div>
 
-                        {% if community.get_datasets_count() > datasets|length %}
+                        {% if datasets_count > datasets|length %}
                             <div class="text-center mt-3">
                                 <p class="text-muted small">
-                                    Showing {{ datasets|length }} of {{ community.get_datasets_count() }} datasets
+                                    Showing {{ datasets|length }} of {{ datasets_count }} datasets
                                 </p>
                                 <!-- TODO: Add pagination when backend is ready -->
                             </div>
@@ -179,11 +188,14 @@
                                         <div class="me-2">
                                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                                  style="width: 40px; height: 40px;">
-                                                <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
+                                                {% set name = curator.user.profile.name if curator.user.profile and curator.user.profile.name else '' %}
+                                                {% set surname = curator.user.profile.surname if curator.user.profile and curator.user.profile.surname else '' %}
+                                                <span class="fw-bold">{{ name[0] if name else 'U' }}{{ surname[0] if surname else 'U' }}</span>
                                             </div>
                                         </div>
                                         <div>
-                                            <div class="fw-bold">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</div>
+                                            {% set display_name = name ~ ' ' ~ surname if name or surname else curator.user.email %}
+                                            <div class="fw-bold">{{ display_name }}</div>
                                             <small class="text-muted">{{ curator.user.email }}</small>
                                         </div>
                                     </div>
@@ -208,11 +220,14 @@
                         <div class="me-2">
                             <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
                                  style="width: 40px; height: 40px;">
-                                <span class="fw-bold">{{ community.creator.profile.name[0] if community.creator.profile else 'U' }}{{ community.creator.profile.surname[0] if community.creator.profile else 'U' }}</span>
+                                {% set creator_name = community.creator.profile.name if community.creator.profile and community.creator.profile.name else '' %}
+                                {% set creator_surname = community.creator.profile.surname if community.creator.profile and community.creator.profile.surname else '' %}
+                                <span class="fw-bold">{{ creator_name[0] if creator_name else 'U' }}{{ creator_surname[0] if creator_surname else 'U' }}</span>
                             </div>
                         </div>
                         <div>
-                            <div class="fw-bold">{{ community.creator.profile.name if community.creator.profile else community.creator.email }} {{ community.creator.profile.surname if community.creator.profile else '' }}</div>
+                            {% set creator_display_name = creator_name ~ ' ' ~ creator_surname if creator_name or creator_surname else community.creator.email %}
+                            <div class="fw-bold">{{ creator_display_name }}</div>
                             <small class="text-muted">{{ community.creator.email }}</small>
                         </div>
                     </div>
