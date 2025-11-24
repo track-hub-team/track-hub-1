@@ -182,7 +182,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Current Logo</label>
                                     <div class="mb-2">
-                                        <img src="{{ community.logo_path }}"
+                                        <img src="{{ community.get_logo_url() }}"
                                              alt="{{ community.name }}"
                                              class="rounded"
                                              style="width: 100px; height: 100px; object-fit: cover;">
@@ -259,8 +259,9 @@
                                             </div>
                                             <div>
                                                 {% if curator.user_id != community.creator_id %}
+                                                    {% set curator_name = (curator.user.profile.name ~ ' ' ~ curator.user.profile.surname) if curator.user.profile and curator.user.profile.name else curator.user.email %}
                                                     <button class="btn btn-sm btn-outline-danger"
-                                                            onclick="removeCurator({{ curator.id }}, '{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}')">
+                                                            onclick="removeCurator({{ curator.user_id }}, '{{ curator_name }}')">
                                                         <i data-feather="user-minus" style="width: 14px; height: 14px;"></i> Remove
                                                     </button>
                                                 {% else %}
@@ -467,15 +468,29 @@
         feather.replace();
     }
 
-    // Re-initialize icons when tab changes
+    // Re-initialize icons when tab changes and persist active tab
     const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
     tabButtons.forEach(button => {
-        button.addEventListener('shown.bs.tab', function() {
+        button.addEventListener('shown.bs.tab', function(e) {
+            // Re-initialize Feather icons
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
+            // Save active tab to sessionStorage
+            const activeTab = e.target.getAttribute('data-bs-target');
+            sessionStorage.setItem('communityManageActiveTab', activeTab);
         });
     });
+
+    // Restore active tab on page load
+    const savedTab = sessionStorage.getItem('communityManageActiveTab');
+    if (savedTab) {
+        const tabButton = document.querySelector(`button[data-bs-target="${savedTab}"]`);
+        if (tabButton) {
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+    }
 
     // Modal data variables
     let approveModalData = {
@@ -598,15 +613,6 @@
         modal.show();
     }
 
-    // Mock users for search (TODO: Replace with API call)
-    const MOCK_USERS = [
-        { id: 10, name: "Alice", surname: "Johnson", email: "alice.johnson@uvlhub.io" },
-        { id: 11, name: "Bob", surname: "Smith", email: "bob.smith@uvlhub.io" },
-        { id: 12, name: "Carol", surname: "Williams", email: "carol.williams@uvlhub.io" },
-        { id: 13, name: "David", surname: "Brown", email: "david.brown@uvlhub.io" },
-        { id: 14, name: "Eve", surname: "Davis", email: "eve.davis@uvlhub.io" },
-    ];
-
     // Search users
     let searchTimeout;
     const curatorSearchInput = document.getElementById('curatorSearch');
@@ -617,7 +623,7 @@
 
     if (curatorSearchInput) {
         curatorSearchInput.addEventListener('input', function() {
-            const query = this.value.trim().toLowerCase();
+            const query = this.value.trim();
 
             // Clear previous timeout
             clearTimeout(searchTimeout);
@@ -627,7 +633,7 @@
             curatorNoResults.style.display = 'none';
             curatorSearchLoading.style.display = 'none';
 
-            if (query.length < 3) {
+            if (query.length < 2) {
                 return;
             }
 
@@ -636,74 +642,102 @@
 
             // Debounce search
             searchTimeout = setTimeout(() => {
-                // Mock search (TODO: Replace with API call)
-                const results = MOCK_USERS.filter(user =>
-                    user.name.toLowerCase().includes(query) ||
-                    user.surname.toLowerCase().includes(query) ||
-                    user.email.toLowerCase().includes(query)
-                );
+                // Call API to search users, excluding existing curators
+                fetch(`/community/api/search-users?q=${encodeURIComponent(query)}&community_id={{ community.id }}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading
+                        curatorSearchLoading.style.display = 'none';
 
-                // Hide loading
-                curatorSearchLoading.style.display = 'none';
-
-                if (results.length === 0) {
-                    curatorNoResults.style.display = 'block';
-                } else {
-                    // Display results
-                    curatorResultsList.innerHTML = '';
-                    results.forEach(user => {
-                        const item = document.createElement('a');
-                        item.href = '#';
-                        item.className = 'list-group-item list-group-item-action';
-                        item.innerHTML = `
-                            <div class="d-flex align-items-center">
-                                <div class="me-2">
-                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                         style="width: 40px; height: 40px;">
-                                        <span class="fw-bold">${user.name[0]}${user.surname[0]}</span>
+                        if (data.users.length === 0) {
+                            curatorNoResults.style.display = 'block';
+                        } else {
+                            // Display results
+                            curatorResultsList.innerHTML = '';
+                            data.users.forEach(user => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                const initials = (user.name && user.surname)
+                                    ? `${user.name[0]}${user.surname[0]}`
+                                    : (user.email ? user.email.substring(0, 2).toUpperCase() : 'U');
+                                const displayName = (user.name && user.surname)
+                                    ? `${user.name} ${user.surname}`
+                                    : user.email;
+                                item.innerHTML = `
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px;">
+                                                <span class="fw-bold">${initials}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">${displayName}</div>
+                                            <small class="text-muted">${user.email}</small>
+                                        </div>
+                                        <div>
+                                            <i data-feather="plus-circle" style="width: 20px; height: 20px;"></i>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">${user.name} ${user.surname}</div>
-                                    <small class="text-muted">${user.email}</small>
-                                </div>
-                                <div>
-                                    <i data-feather="plus-circle" style="width: 20px; height: 20px;"></i>
-                                </div>
-                            </div>
-                        `;
-                        item.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            addCurator(user.id, user.name, user.surname, user.email);
-                        });
-                        curatorResultsList.appendChild(item);
+                                `;
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    addCurator(user.id, user.name, user.surname, user.email);
+                                });
+                                curatorResultsList.appendChild(item);
+                            });
+
+                            curatorSearchResults.style.display = 'block';
+
+                            // Re-initialize icons
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching users:', error);
+                        curatorSearchLoading.style.display = 'none';
+                        curatorNoResults.style.display = 'block';
                     });
-
-                    curatorSearchResults.style.display = 'block';
-
-                    // Re-initialize icons
-                    if (typeof feather !== 'undefined') {
-                        feather.replace();
-                    }
-                }
             }, 500);
         });
     }
 
     // Add curator function
     function addCurator(userId, name, surname, email) {
-        // TODO: Replace with API call when backend is ready
-        console.log(`Would add curator: ${userId} - ${name} ${surname} (${email})`);
-
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('addCuratorModal'));
         modal.hide();
 
-        // Show success message (Mock)
-        alert(`Curator "${name} ${surname}" added successfully! (Mock)\n\nIn production, this would call:\nPOST /api/v1/communities/{{ community.id }}/curators/${userId}`);
+        const url = `/community/{{ community.slug }}/add-curator`;
 
-        // TODO: Reload curators list or add dynamically
-        location.reload();
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('user_id', userId);
+
+        // Make form POST request
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                // Follow redirect
+                window.location.href = response.url;
+            } else if (response.ok) {
+                // Success - reload page
+                window.location.reload();
+            } else {
+                console.error('Error adding curator');
+                alert('Error adding curator. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding curator. Please try again.');
+        });
     }
 
     // Remove curator function
@@ -712,14 +746,33 @@
             return;
         }
 
-        // TODO: Replace with API call when backend is ready
-        console.log(`Would remove curator: ${curatorId} - ${curatorName}`);
+        const url = `/community/{{ community.slug }}/remove-curator`;
 
-        // Show success message (Mock)
-        alert(`Curator "${curatorName}" removed successfully! (Mock)\n\nIn production, this would call:\nDELETE /api/v1/communities/{{ community.id }}/curators/${curatorId}`);
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('user_id', curatorId);
 
-        // TODO: Remove from list dynamically
-        location.reload();
+        // Make form POST request
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                // Follow redirect
+                window.location.href = response.url;
+            } else if (response.ok) {
+                // Success - reload page
+                window.location.reload();
+            } else {
+                console.error('Error removing curator');
+                alert('Error removing curator. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing curator. Please try again.');
+        });
     }
 
     // Handle approve/reject requests

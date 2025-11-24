@@ -1,6 +1,6 @@
 import os
 
-from flask import flash, redirect, render_template, request, send_from_directory, url_for
+from flask import flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.modules.community import community_bp
@@ -205,3 +205,84 @@ def uploaded_file(filename):
         working_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     upload_dir = os.path.join(working_dir, "uploads", "communities")
     return send_from_directory(upload_dir, filename)
+
+
+@community_bp.route("/community/api/search-users", methods=["GET"])
+@login_required
+def search_users():
+    """Search users by email or name for adding as curators"""
+    query = request.args.get("q", "").strip()
+    community_id = request.args.get("community_id", type=int)
+
+    # Si se proporciona community_id, excluir curadores existentes en la comunidad
+    exclude_ids = None
+    if community_id:
+        exclude_ids = community_service.get_curator_user_ids(community_id)
+
+    users = community_service.search_users(query, exclude_user_ids=exclude_ids)
+    return jsonify({"users": users})
+
+
+@community_bp.route("/community/<string:slug>/add-curator", methods=["POST"])
+@login_required
+def add_curator_route(slug):
+    """Add a curator to a community"""
+    community = community_service.get_by_slug(slug)
+
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    # Check if current user is curator
+    if not community_service.is_curator(community.id, current_user.id):
+        flash("Only curators can add other curators", "error")
+        return redirect(url_for("community.manage", slug=slug))
+
+    # Get user_id from form
+    user_id = request.form.get("user_id", type=int)
+    if not user_id:
+        flash("User ID is required", "error")
+        return redirect(url_for("community.manage", slug=slug))
+
+    # Add curator
+    success, error = community_service.add_curator(community.id, user_id)
+
+    if success:
+        curator_info = community_service.get_curator_info(user_id)
+        curator_name = f"{curator_info['name']} {curator_info['surname']}".strip() or curator_info["email"]
+        flash(f'Curator "{curator_name}" added successfully!', "success")
+    else:
+        flash(f"Error adding curator: {error}", "error")
+
+    return redirect(url_for("community.manage", slug=slug))
+
+
+@community_bp.route("/community/<string:slug>/remove-curator", methods=["POST"])
+@login_required
+def remove_curator_route(slug):
+    """Remove a curator from a community"""
+    community = community_service.get_by_slug(slug)
+
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    # Get user_id from form
+    user_id = request.form.get("user_id", type=int)
+    if not user_id:
+        flash("User ID is required", "error")
+        return redirect(url_for("community.manage", slug=slug))
+
+    # Get curator info before removing (for flash message)
+    curator_info = community_service.get_curator_info(user_id)
+
+    # Remove curator
+    success, error = community_service.remove_curator(community.id, user_id, current_user.id)
+
+    if success:
+        curator_name = f"{curator_info['name']} {curator_info['surname']}".strip() or curator_info["email"]
+        flash(f'Curator "{curator_name}" removed successfully!', "success")
+    else:
+        flash(f"Error removing curator: {error}", "error")
+
+    return redirect(url_for("community.manage", slug=slug))

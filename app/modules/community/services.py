@@ -7,6 +7,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from app import db
+from app.modules.auth.models import User
 from app.modules.community.models import Community, CommunityRequest
 from app.modules.community.repositories import (
     CommunityCuratorRepository,
@@ -16,6 +17,7 @@ from app.modules.community.repositories import (
 )
 from app.modules.dataset.models import BaseDataset
 from app.modules.mail.services import MailService
+from app.modules.profile.models import UserProfile
 from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
@@ -315,6 +317,75 @@ class CommunityService(BaseService):
     def get_user_datasets(self, user_id: int) -> List[BaseDataset]:
         """Obtener todos los datasets de un usuario"""
         return BaseDataset.query.filter_by(user_id=user_id).all()
+
+    def search_users(self, query: str, limit: int = 10, exclude_user_ids: Optional[List[int]] = None) -> List[dict]:
+        """
+        Buscar usuarios por email, nombre o apellido.
+        Retorna una lista de diccionarios con información del usuario.
+
+        Args:
+            query: Texto de búsqueda
+            limit: Número máximo de resultados
+            exclude_user_ids: Lista de IDs de usuarios a excluir de los resultados
+        """
+        if not query or len(query) < 2:
+            return []
+
+        # Construir query base
+        query_builder = (
+            db.session.query(User)
+            .join(UserProfile, User.id == UserProfile.user_id, isouter=True)
+            .filter(
+                db.or_(
+                    User.email.ilike(f"%{query}%"),
+                    UserProfile.name.ilike(f"%{query}%"),
+                    UserProfile.surname.ilike(f"%{query}%"),
+                )
+            )
+        )
+
+        # Excluir usuarios específicos si se proporciona la lista
+        if exclude_user_ids:
+            query_builder = query_builder.filter(User.id.notin_(exclude_user_ids))
+
+        users = query_builder.limit(limit).all()
+
+        # Formatear resultados
+        results = []
+        for user in users:
+            results.append(
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.profile.name if user.profile and user.profile.name else "",
+                    "surname": user.profile.surname if user.profile and user.profile.surname else "",
+                }
+            )
+
+        return results
+
+    def get_curator_info(self, user_id: int) -> Optional[dict]:
+        """
+        Obtener información de un usuario para mostrar como curador.
+        Retorna diccionario con información del usuario o None si no existe.
+        """
+        user = User.query.get(user_id)
+        if not user:
+            return None
+
+        return {
+            "id": user.id,
+            "email": user.email,
+            "name": user.profile.name if user.profile and user.profile.name else "",
+            "surname": user.profile.surname if user.profile and user.profile.surname else "",
+        }
+
+    def get_curator_user_ids(self, community_id: int) -> List[int]:
+        """
+        Obtener lista de IDs de usuarios que son curadores de una comunidad.
+        """
+        curators = self.curator_repository.get_community_curators(community_id)
+        return [curator.user_id for curator in curators]
 
     def _validate_logo(self, logo_file: FileStorage) -> Optional[str]:
         """
