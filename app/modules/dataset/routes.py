@@ -695,46 +695,48 @@ def get_comments(dataset_id):
 @dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["DELETE"])
 @login_required
 def delete_comment(comment_id):
-    """Eliminar un comentario (solo el autor)."""
+    """
+    Eliminar comentario.
+    Puede hacerlo el autor del comentario O el propietario del dataset.
+    """
     from app.modules.dataset.services import CommentService
 
     try:
         comment_service = CommentService()
         comment_service.delete_comment(comment_id, current_user.id)
-
         return jsonify({"success": True, "message": "Comment deleted successfully"}), 200
-
-    except PermissionError as e:
-        return jsonify({"success": False, "message": str(e)}), 403
     except ValueError as e:
-        return jsonify({"success": False, "message": str(e)}), 404
+        return jsonify({"success": False, "error": str(e)}), 404
+    except PermissionError as e:
+        return jsonify({"success": False, "error": str(e)}), 403
     except Exception as e:
-        logger.error(f"Error deleting comment: {e}")
-        return jsonify({"success": False, "message": "Internal server error"}), 500
+        logger.error(f"Error deleting comment {comment_id}: {str(e)}")
+        return jsonify({"success": False, "error": "Failed to delete comment"}), 500
 
 
 @dataset_bp.route("/dataset/comments/<int:comment_id>", methods=["PUT"])
 @login_required
 def update_comment(comment_id):
-    """Editar un comentario (solo el autor)."""
+    """
+    Actualizar comentario.
+    Solo el autor del comentario puede editarlo.
+    """
     from app.modules.dataset.services import CommentService
 
     try:
-        data = request.get_json()
-        if not data or "content" not in data:
-            return jsonify({"success": False, "message": "Content is required"}), 400
-
         comment_service = CommentService()
-        updated_comment = comment_service.update_comment(
-            comment_id=comment_id, user_id=current_user.id, new_content=data["content"]
-        )
+        data = request.get_json()
+        content = data.get("content", "").strip()
 
-        return jsonify({"success": True, "comment": updated_comment}), 200
+        if not content:
+            return jsonify({"success": False, "error": "Content cannot be empty"}), 400
 
-    except PermissionError as e:
-        return jsonify({"success": False, "message": str(e)}), 403
+        updated = comment_service.update_comment(comment_id, current_user.id, content)
+        return jsonify({"success": True, "comment": updated}), 200
     except ValueError as e:
-        return jsonify({"success": False, "message": str(e)}), 400
+        return jsonify({"success": False, "error": str(e)}), 404
+    except PermissionError as e:
+        return jsonify({"success": False, "error": str(e)}), 403
     except Exception as e:
-        logger.error(f"Error updating comment: {e}")
-        return jsonify({"success": False, "message": "Internal server error"}), 500
+        logger.error(f"Error updating comment {comment_id}: {str(e)}")
+        return jsonify({"success": False, "error": "Failed to update comment"}), 500

@@ -581,66 +581,42 @@ class CommentService(BaseService):
 
     def delete_comment(self, comment_id: int, user_id: int) -> bool:
         """
-        Eliminar un comentario (solo si el usuario es el autor).
-
-        Args:
-            comment_id: ID del comentario
-            user_id: ID del usuario que intenta eliminar
-
-        Returns:
-            bool: True si se eliminó correctamente
-
-        Raises:
-            ValueError: Si el comentario no existe
-            PermissionError: Si el usuario no es el autor
+        Eliminar comentario.
+        Puede hacerlo:
+        - El autor del comentario
+        - El propietario del dataset (moderación)
         """
-        # Verificar que el comentario existe
         comment = self.repository.get_by_id(comment_id)
         if not comment:
-            raise ValueError(f"Comment with id {comment_id} not found")
+            raise ValueError("Comment not found")
 
-        # Verificar propiedad
-        if not self._is_comment_owner(comment, user_id):
-            raise PermissionError("You can only delete your own comments")
+        # Verificar permisos: autor del comentario O autor del dataset
+        if not (self._is_comment_owner(comment, user_id) or self._is_dataset_owner(comment, user_id)):
+            raise PermissionError("You don't have permission to delete this comment")
 
-        # Eliminar
         self.repository.delete(comment_id)
-        logger.info(f"Comment {comment_id} deleted by user {user_id}")
         return True
 
     def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:
         """
-        Actualizar el contenido de un comentario (solo si el
-        usuario es el autor).
-
-        Args:
-            comment_id: ID del comentario
-            user_id: ID del usuario que intenta actualizar
-            new_content: Nuevo contenido del comentario
-
-        Returns:
-            dict: Comentario actualizado en formato diccionario
-
-        Raises:
-            ValueError: Si el comentario no existe o las validaciones fallan
-            PermissionError: Si el usuario no es el autor
+        Actualizar comentario.
+        Solo el autor del comentario puede editarlo (no el moderador del dataset).
         """
-        # Verificar que el comentario existe
         comment = self.repository.get_by_id(comment_id)
         if not comment:
-            raise ValueError(f"Comment with id {comment_id} not found")
+            raise ValueError("Comment not found")
 
-        # Verificar propiedad
+        # Solo el autor puede editar su propio comentario
         if not self._is_comment_owner(comment, user_id):
-            raise PermissionError("You can only update your own comments")
+            raise PermissionError("Only the comment author can edit it")
 
-        # Validar y sanitizar nuevo contenido
         clean_content = self._validate_content(new_content)
+        updated = self.repository.update_content(comment_id, clean_content)
 
-        # Actualizar
-        updated_comment = self.repository.update_content(comment_id, clean_content)
-        logger.info(f"Comment {comment_id} updated by user {user_id}")
-        return updated_comment.to_dict()
+        if not updated:
+            raise ValueError("Failed to update comment")
+
+        return updated.to_dict()
 
     def count_comments(self, dataset_id: int) -> int:
         """
@@ -741,3 +717,10 @@ class CommentService(BaseService):
             bool: True si es el propietario
         """
         return comment.user_id == user_id
+
+    def _is_dataset_owner(self, comment, user_id: int) -> bool:
+        """Verificar si el usuario es el propietario del dataset (moderador)."""
+        dataset = self.dataset_repository.get_by_id(comment.dataset_id)
+        if not dataset:
+            return False
+        return dataset.user_id == user_id
