@@ -1,6 +1,13 @@
 from typing import List, Optional
 
-from app.modules.community.models import Community, CommunityCurator, CommunityDataset, CommunityRequest
+from app.modules.community.models import (  # Añadidos para el seguimiento:
+    Community,
+    CommunityCurator,
+    CommunityDataset,
+    CommunityFollower,
+    CommunityRequest,
+    Follower,
+)
 from core.repositories.BaseRepository import BaseRepository
 
 
@@ -112,3 +119,34 @@ class CommunityRequestRepository(BaseRepository):
     def get_user_requests(self, user_id: int) -> List[CommunityRequest]:
         """Obtener todas las solicitudes de un usuario"""
         return self.model.query.filter_by(requester_id=user_id).order_by(self.model.requested_at.desc()).all()
+
+
+# ----------------------------------------------------------------------
+# Repositorios de SEGUIMIENTO
+# ----------------------------------------------------------------------
+
+
+class FollowerRepository(BaseRepository):
+    """Repositorio para la tabla de seguimiento de Usuario a Usuario."""
+
+    def __init__(self):
+        super().__init__(Follower)
+
+    def get_follower_record(self, follower_id: int, followed_id: int) -> Optional[Follower]:
+        """Obtener el registro de seguimiento específico."""
+        return self.model.query.filter_by(follower_id=follower_id, followed_id=followed_id).first()
+
+
+class CommunityFollowerRepository(BaseRepository):
+    """Repositorio para la tabla de seguimiento de Usuario a Comunidad."""
+
+    def __init__(self):
+        super().__init__(CommunityFollower)
+
+    def is_following(self, user_id: int, community_id: int) -> bool:
+        """Verificar si un usuario está siguiendo una comunidad."""
+        return self.model.query.filter_by(user_id=user_id, community_id=community_id).first() is not None
+
+    def get_follower_record(self, user_id: int, community_id: int) -> Optional[CommunityFollower]:
+        """Obtener el registro de seguimiento específico."""
+        return self.model.query.filter_by(user_id=user_id, community_id=community_id).first()

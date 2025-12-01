@@ -7,7 +7,16 @@ from app.modules.community import community_bp
 from app.modules.community.forms import CommunityForm, ProposeDatasetForm
 from app.modules.community.services import CommunityService
 
+# Necesitas importar el servicio de Perfil de Usuario para las acciones de seguimiento de usuario a usuario
+from app.modules.profile.services import UserProfileService
+
 community_service = CommunityService()
+user_profile_service = UserProfileService()  # Servicio para seguimiento de User a User
+
+
+# ======================================================================
+# RUTAS DE COMUNIDAD (Creación, Listado, Vista, Gestión)
+# ======================================================================
 
 
 @community_bp.route("/community", methods=["GET"])
@@ -38,10 +47,17 @@ def view(slug):
     datasets = community_service.get_community_datasets(community.id)
 
     is_curator = False
+    is_following = False
     if current_user.is_authenticated:
         is_curator = community_service.is_curator(community.id, current_user.id)
 
-    return render_template("community/view.html", community=community, datasets=datasets, is_curator=is_curator)
+    return render_template(
+        "community/view.html",
+        community=community,
+        datasets=datasets,
+        is_curator=is_curator,
+        is_following=is_following,  # Pasamos la variable a la plantilla
+    )
 
 
 @community_bp.route("/community/create", methods=["GET", "POST"])
@@ -192,6 +208,93 @@ def reject_request(slug, request_id):
         flash("Request rejected.", "success")
 
     return redirect(url_for("community.manage", slug=slug))
+
+
+# ======================================================================
+# RUTAS DE SEGUIMIENTO (NUEVO)
+# ======================================================================
+
+
+@community_bp.route("/community/<int:community_id>/follow", methods=["POST"])
+@login_required
+def follow_community(community_id):
+    """Permite al usuario actual seguir una comunidad."""
+    community = community_service.get_by_id(community_id)
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    success, error = community_service.follow_community(current_user.id, community_id)
+
+    if error:
+        flash(f"Error following community: {error}", "error")
+    else:
+        flash(f"You are now following {community.name}.", "success")
+
+    return redirect(url_for("community.view", community_id=community_id))
+
+
+@community_bp.route("/community/<int:community_id>/unfollow", methods=["POST"])
+@login_required
+def unfollow_community(community_id):
+    """Permite al usuario actual dejar de seguir una comunidad."""
+    community = community_service.get_by_id(community_id)
+    if not community:
+        flash("Community not found", "error")
+        return redirect(url_for("community.list_communities"))
+
+    success, error = community_service.unfollow_community(current_user.id, community_id)
+
+    if error:
+        flash(f"Error unfollowing community: {error}", "error")
+    else:
+        flash(f"You have unfollowed {community.name}.", "success")
+
+    return redirect(url_for("community.view", community_id=community_id))
+
+
+# Nota: Las rutas para seguir/dejar de seguir *usuarios* generalmente se colocan
+# en el blueprint del módulo 'profile' o 'user', pero las incluyo aquí temporalmente
+# ya que se relacionan con las funciones de seguimiento.
+
+
+@community_bp.route("/user/<int:followed_id>/follow", methods=["POST"])
+@login_required
+def follow_user(followed_id):
+    """Permite al usuario actual seguir a otro usuario."""
+    if current_user.id == followed_id:
+        flash("You cannot follow yourself.", "error")
+        return redirect(request.referrer or url_for("public.index"))
+
+    followed_user, error = user_profile_service.follow_user(current_user.id, followed_id)
+
+    if error:
+        flash(f"Error following user: {error}", "error")
+    elif followed_user:
+        flash(f"You are now following {followed_user.email}.", "success")
+
+    # Redirige a la página anterior o a la página principal
+    return redirect(request.referrer or url_for("public.index"))
+
+
+@community_bp.route("/user/<int:followed_id>/unfollow", methods=["POST"])
+@login_required
+def unfollow_user(followed_id):
+    """Permite al usuario actual dejar de seguir a otro usuario."""
+    followed_user, error = user_profile_service.unfollow_user(current_user.id, followed_id)
+
+    if error:
+        flash(f"Error unfollowing user: {error}", "error")
+    elif followed_user:
+        flash(f"You have unfollowed {followed_user.email}.", "success")
+
+    # Redirige a la página anterior o a la página principal
+    return redirect(request.referrer or url_for("public.index"))
+
+
+# ======================================================================
+# RUTAS AUXILIARES
+# ======================================================================
 
 
 @community_bp.route("/uploads/communities/<path:filename>")
