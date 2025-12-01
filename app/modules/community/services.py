@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from app.modules.community.models import Community, CommunityRequest
+from app.modules.community.repositories import CommunityFollowerRepository  # Importado el nuevo repositorio
 from app.modules.community.repositories import (
     CommunityCuratorRepository,
     CommunityDatasetRepository,
@@ -27,6 +28,11 @@ class CommunityService(BaseService):
         self.curator_repository = CommunityCuratorRepository()
         self.dataset_repository = CommunityDatasetRepository()
         self.request_repository = CommunityRequestRepository()
+        self.follower_repository = CommunityFollowerRepository()  # Inicialización del nuevo repositorio
+
+    # --------------------------------------------------
+    # CRUD y Búsqueda de Comunidades
+    # --------------------------------------------------
 
     def get_all(self, query: Optional[str] = None) -> List[Community]:
         """Obtener todas las comunidades, opcionalmente filtradas por búsqueda"""
@@ -77,6 +83,10 @@ class CommunityService(BaseService):
         except Exception as e:
             db.session.rollback()
             return None, f"Error creating community: {str(e)}"
+
+    # --------------------------------------------------
+    # Curadores
+    # --------------------------------------------------
 
     def add_curator(self, community_id: int, user_id: int) -> Tuple[bool, Optional[str]]:
         """
@@ -129,6 +139,10 @@ class CommunityService(BaseService):
         except Exception as e:
             db.session.rollback()
             return False, f"Error removing curator: {str(e)}"
+
+    # --------------------------------------------------
+    # Datasets y Solicitudes
+    # --------------------------------------------------
 
     def get_community_datasets(self, community_id: int) -> List[BaseDataset]:
         """Obtener todos los datasets de una comunidad"""
@@ -209,15 +223,15 @@ class CommunityService(BaseService):
             # Enviar notificación por correo
             try:
                 # Obtener información necesaria para el correo
-                requester = request.requester  # relación en el modelo CommunityRequest
-                dataset = request.dataset  # relación en el modelo CommunityRequest
-                community = request.community  # relación en el modelo CommunityRequest
+                requester = request.requester
+                dataset = request.dataset
+                community = request.community
 
                 # Determinar el nombre del solicitante
                 requester_name = requester.profile.name if requester.profile and requester.profile.name else "User"
 
                 # Determinar el nombre del dataset
-                dataset_name = f"Dataset #{dataset.id}"  # fallback por si no se puede obtener el nombre real
+                dataset_name = f"Dataset #{dataset.id}"
                 if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data:
                     if hasattr(dataset.ds_meta_data, "title") and dataset.ds_meta_data.title:
                         dataset_name = dataset.ds_meta_data.title
@@ -293,6 +307,10 @@ class CommunityService(BaseService):
             db.session.rollback()
             return False, f"Error removing dataset: {str(e)}"
 
+    # --------------------------------------------------
+    # Métodos de Soporte
+    # --------------------------------------------------
+
     def is_curator(self, community_id: int, user_id: int) -> bool:
         """Verificar si un usuario es curador de una comunidad"""
         return self.curator_repository.is_curator(community_id, user_id)
@@ -326,3 +344,54 @@ class CommunityService(BaseService):
 
         # Retornar ruta relativa
         return os.path.join("uploads", "communities", unique_filename)
+
+    # --------------------------------------------------
+    # NUEVOS MÉTODOS DE SEGUIMIENTO
+    # --------------------------------------------------
+
+    def follow_community(self, user_id: int, community_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Permite a un usuario seguir una comunidad.
+        Retorna (success, error_message)
+        """
+        # 1. Verificar si la comunidad existe (se asume que el usuario existe por el login_required)
+        community = self.repository.get_by_id(community_id)
+        if not community:
+            return False, "Community not found"
+
+        # 2. Verificar si ya la sigue
+        if self.follower_repository.is_following(user_id, community_id):
+            return False, "User is already following this community"
+
+        # 3. Crear el registro de seguimiento
+        try:
+            self.follower_repository.create(user_id=user_id, community_id=community_id)
+            db.session.commit()
+            return True, None
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Error following community: {str(e)}"
+
+    def unfollow_community(self, user_id: int, community_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Permite a un usuario dejar de seguir una comunidad.
+        Retorna (success, error_message)
+        """
+        # 1. Verificar si la comunidad existe
+        community = self.repository.get_by_id(community_id)
+        if not community:
+            return False, "Community not found"
+
+        # 2. Obtener el registro de seguimiento
+        follow_record = self.follower_repository.get_follower_record(user_id, community_id)
+        if not follow_record:
+            return False, "User is not currently following this community"
+
+        # 3. Eliminar el registro
+        try:
+            db.session.delete(follow_record)
+            db.session.commit()
+            return True, None
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Error unfollowing community: {str(e)}"

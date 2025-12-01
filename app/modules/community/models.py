@@ -1,9 +1,38 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, cast
 
 from app import db
 
+# ----------------------------------------------------------------------
+# SOLUCIÓN MYPY/FLAKE8
+# ----------------------------------------------------------------------
 
-class Community(db.Model):
+if TYPE_CHECKING:
+    # Mypy necesita que la clase User sea visible.
+    from sqlalchemy.orm import DeclarativeBase
+
+    from app.modules.auth.models import User
+
+    # Solución E701 de Flake8: usar 'pass' en una línea separada
+    class Model(DeclarativeBase):
+        pass
+
+else:
+    # En tiempo de ejecución, Model es un alias para db.Model
+    Model = db.Model
+    # Intentamos importar User solo en tiempo de ejecución (opcional, pero ayuda)
+    try:
+        from app.modules.auth.models import User
+    except ImportError:
+        pass
+
+
+# ----------------------------------------------------------------------
+# NOTA IMPORTANTE: TODOS los modelos ahora heredan de Model, NO de db.Model
+# ----------------------------------------------------------------------
+
+
+class Community(Model):  # <--- CORREGIDO: Hereda de Model
     """
     Representa una comunidad que agrupa datasets relacionados por temática.
     Los usuarios pueden proponer datasets para ser añadidos a una comunidad,
@@ -25,10 +54,15 @@ class Community(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     # Relaciones
+    # Usamos la cadena "User" en el relationship para evitar dependencias circulares
+    # y confiamos en que Mypy use la importación condicional.
     creator = db.relationship("User", foreign_keys=[creator_id], backref="created_communities")
     curators = db.relationship("CommunityCurator", back_populates="community", cascade="all, delete-orphan")
     datasets = db.relationship("CommunityDataset", back_populates="community", cascade="all, delete-orphan")
     requests = db.relationship("CommunityRequest", back_populates="community", cascade="all, delete-orphan")
+
+    # RELACIÓN DE SEGUIMIENTO A COMUNIDADES
+    followers = db.relationship("CommunityFollower", backref="community", cascade="all, delete-orphan", lazy="dynamic")
 
     def get_datasets_count(self):
         """Obtener el número de datasets en la comunidad"""
@@ -36,11 +70,17 @@ class Community(db.Model):
 
     def get_curators_list(self):
         """Obtener lista de usuarios curadores"""
-        return [curator.user for curator in self.curators]
+        return [cast("User", curator.user) for curator in self.curators]
 
     def is_curator(self, user_id):
         """Verificar si un usuario es curador de esta comunidad"""
         return any(curator.user_id == user_id for curator in self.curators)
+
+    def is_followed_by(self, user_id: int) -> bool:
+        """Verificar si un usuario está siguiendo esta comunidad"""
+        if user_id is None:
+            return False
+        return self.followers.filter_by(user_id=user_id).first() is not None
 
     def to_dict(self):
         """Serializar a diccionario"""
@@ -57,8 +97,14 @@ class Community(db.Model):
                 {
                     "id": self.creator.id,
                     "email": self.creator.email,
-                    "name": self.creator.profile.name if self.creator.profile else None,
-                    "surname": self.creator.profile.surname if self.creator.profile else None,
+                    "name": (
+                        self.creator.profile.name if hasattr(self.creator, "profile") and self.creator.profile else None
+                    ),
+                    "surname": (
+                        self.creator.profile.surname
+                        if hasattr(self.creator, "profile") and self.creator.profile
+                        else None
+                    ),
                 }
                 if self.creator
                 else None
@@ -67,8 +113,14 @@ class Community(db.Model):
                 {
                     "id": curator.user.id,
                     "email": curator.user.email,
-                    "name": curator.user.profile.name if curator.user.profile else None,
-                    "surname": curator.user.profile.surname if curator.user.profile else None,
+                    "name": (
+                        curator.user.profile.name if hasattr(curator.user, "profile") and curator.user.profile else None
+                    ),
+                    "surname": (
+                        curator.user.profile.surname
+                        if hasattr(curator.user, "profile") and curator.user.profile
+                        else None
+                    ),
                 }
                 for curator in self.curators
             ],
@@ -79,10 +131,10 @@ class Community(db.Model):
         return f"Community<{self.id}:{self.name}>"
 
 
-class CommunityCurator(db.Model):
+class CommunityCurator(Model):  # <--- CORREGIDO: Hereda de Model
     """
     Tabla de asociación entre comunidades y usuarios curadores.
-    Los curadores tienen permisos para aprobar/rechazar solicitudes de datasets.
+    ...
     """
 
     __tablename__ = "community_curator"
@@ -103,10 +155,10 @@ class CommunityCurator(db.Model):
         return f"CommunityCurator<community_id={self.community_id}, user_id={self.user_id}>"
 
 
-class CommunityDataset(db.Model):
+class CommunityDataset(Model):  # <--- CORREGIDO: Hereda de Model
     """
     Tabla de asociación entre comunidades y datasets.
-    Representa los datasets que han sido aceptados en una comunidad.
+    ...
     """
 
     __tablename__ = "community_dataset"
@@ -141,10 +193,10 @@ class CommunityDataset(db.Model):
         return f"CommunityDataset<community_id={self.community_id}, dataset_id={self.dataset_id}>"
 
 
-class CommunityRequest(db.Model):
+class CommunityRequest(Model):  # <--- CORREGIDO: Hereda de Model
     """
     Solicitud para añadir un dataset a una comunidad.
-    Los usuarios proponen datasets y los curadores aprueban o rechazan.
+    ...
     """
 
     __tablename__ = "community_request"
@@ -210,8 +262,16 @@ class CommunityRequest(db.Model):
                 {
                     "id": self.requester.id,
                     "email": self.requester.email,
-                    "name": self.requester.profile.name if self.requester.profile else None,
-                    "surname": self.requester.profile.surname if self.requester.profile else None,
+                    "name": (
+                        self.requester.profile.name
+                        if hasattr(self.requester, "profile") and self.requester.profile
+                        else None
+                    ),
+                    "surname": (
+                        self.requester.profile.surname
+                        if hasattr(self.requester, "profile") and self.requester.profile
+                        else None
+                    ),
                 }
                 if self.requester
                 else None
@@ -224,8 +284,16 @@ class CommunityRequest(db.Model):
                 {
                     "id": self.reviewed_by.id,
                     "email": self.reviewed_by.email,
-                    "name": self.reviewed_by.profile.name if self.reviewed_by.profile else None,
-                    "surname": self.reviewed_by.profile.surname if self.reviewed_by.profile else None,
+                    "name": (
+                        self.reviewed_by.profile.name
+                        if hasattr(self.reviewed_by, "profile") and self.reviewed_by.profile
+                        else None
+                    ),
+                    "surname": (
+                        self.reviewed_by.profile.surname
+                        if hasattr(self.reviewed_by, "profile") and self.reviewed_by.profile
+                        else None
+                    ),
                 }
                 if self.reviewed_by
                 else None
@@ -237,3 +305,50 @@ class CommunityRequest(db.Model):
         return (
             f"CommunityRequest<{self.id}:community={self.community_id},dataset={self.dataset_id},status={self.status}>"
         )
+
+
+# ----------------------------------------------------------------------
+# MODELOS DE ASOCIACIÓN PARA EL SEGUIMIENTO
+# ----------------------------------------------------------------------
+
+
+class Follower(Model):  # <--- CORREGIDO: Hereda de Model
+    """
+    Tabla de asociación para el seguimiento de usuarios (User sigue a otro User).
+    """
+
+    __tablename__ = "follower"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Usuario que sigue (el seguidor)
+    follower_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    # Usuario siendo seguido (el seguido)
+    followed_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    followed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Constraint: Un usuario solo puede seguir a otro una vez
+    __table_args__ = (db.UniqueConstraint("follower_id", "followed_id", name="uq_follower_followed"),)
+
+    def __repr__(self):
+        return f"Follower<follower_id={self.follower_id}, followed_id={self.followed_id}>"
+
+
+class CommunityFollower(Model):  # <--- CORREGIDO: Hereda de Model
+    """
+    Tabla de asociación para el seguimiento de Comunidades por parte de Usuarios.
+    """
+
+    __tablename__ = "community_follower"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Usuario que sigue
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    # Comunidad seguida
+    community_id = db.Column(db.Integer, db.ForeignKey("community.id"), nullable=False, index=True)
+    followed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Constraint: Un usuario solo puede seguir a una comunidad una vez
+    __table_args__ = (db.UniqueConstraint("user_id", "community_id", name="uq_user_community_follow"),)
+
+    def __repr__(self):
+        return f"CommunityFollower<user_id={self.user_id}, community_id={self.community_id}>"
