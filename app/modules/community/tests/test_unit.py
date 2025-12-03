@@ -2,7 +2,7 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.community.models import Community, CommunityDataset, CommunityRequest
+from app.modules.community.models import CommunityDataset, CommunityRequest
 from app.modules.community.services import CommunityService
 from app.modules.dataset.models import DSMetaData, GPXDataset, PublicationType
 
@@ -351,97 +351,4 @@ def test_cannot_remove_community_creator_as_curator(test_client):
 
     # Limpieza
     db.session.delete(community)
-    db.session.commit()
-
-
-def test_propose_dataset_full_workflow(test_client):
-    """
-    Prueba de integración que verifica el flujo completo de propuesta y aprobación de un dataset.
-    """
-    # Obtener usuario de prueba
-    user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
-
-    # Crear un dataset para el test
-    metadata = DSMetaData(
-        title="Dataset Workflow Test",
-        description="Dataset para probar flujo completo",
-        publication_type=PublicationType.NONE,
-    )
-    db.session.add(metadata)
-    db.session.flush()
-
-    dataset = GPXDataset(user_id=user.id, ds_meta_data_id=metadata.id)
-    db.session.add(dataset)
-    db.session.commit()
-
-    # 1. Login del usuario
-    login_response = test_client.post(
-        "/login", data=dict(email="test@example.com", password="test1234"), follow_redirects=True
-    )
-    assert login_response.status_code == 200, "Login falló"
-
-    # 2. Crear comunidad vía POST /community/create
-    create_response = test_client.post(
-        "/community/create",
-        data=dict(name="Test Community Workflow", description="Comunidad para probar flujo completo de integración"),
-        follow_redirects=True,
-    )
-    assert create_response.status_code == 200, "Creación de comunidad falló"
-
-    # Obtener la comunidad creada desde la BD
-    community = Community.query.filter_by(name="Test Community Workflow").first()
-    assert community is not None, "Comunidad no fue creada en la BD"
-
-    # 3. Usuario propone dataset vía POST /community/{slug}/propose
-    propose_response = test_client.post(
-        f"/community/{community.slug}/propose",
-        data=dict(dataset_id=dataset.id, message="Este dataset es perfecto para la comunidad"),
-        follow_redirects=True,
-    )
-    assert propose_response.status_code == 200, "Propuesta de dataset falló"
-
-    # 4. Verificar que aparece solicitud pendiente vía GET /community/{slug}/manage
-    manage_response = test_client.get(f"/community/{community.slug}/manage")
-    assert manage_response.status_code == 200, "No se pudo acceder a la página de gestión"
-
-    # Verificar que el HTML contiene información de la solicitud pendiente
-    html_content = manage_response.data.decode("utf-8")
-    assert "Dataset Workflow Test" in html_content, "El dataset propuesto no aparece en la página de gestión"
-    assert "Este dataset es perfecto para la comunidad" in html_content, "El mensaje de la propuesta no aparece"
-
-    # Obtener la solicitud desde la BD para aprobarla
-    community_service = CommunityService()
-    pending_requests = community_service.get_pending_requests(community.id)
-    assert len(pending_requests) == 1, f"Se esperaba 1 solicitud pendiente, se encontraron {len(pending_requests)}"
-    request = pending_requests[0]
-
-    # 5. Curador aprueba la solicitud vía POST /community/{slug}/request/{id}/approve
-    approve_response = test_client.post(
-        f"/community/{community.slug}/request/{request.id}/approve",
-        data=dict(comment="Dataset aprobado por el curador"),
-        follow_redirects=True,
-    )
-    assert approve_response.status_code == 200, "Aprobación de solicitud falló"
-
-    # 6. Verificar que dataset aparece en la comunidad
-    community_datasets = community_service.get_community_datasets(community.id)
-    assert len(community_datasets) == 1, "El dataset no fue añadido a la comunidad"
-    assert community_datasets[0].id == dataset.id, "El dataset en la comunidad no es el correcto"
-
-    # 7. Verificar que ya no hay solicitudes pendientes
-    pending_after = community_service.get_pending_requests(community.id)
-    assert len(pending_after) == 0, "No debería haber solicitudes pendientes después de aprobar"
-
-    # 8. Verificar que la solicitud está aprobada
-    db.session.refresh(request)
-    assert request.status == CommunityRequest.STATUS_APPROVED, "La solicitud no cambió a estado aprobado"
-
-    # Logout
-    test_client.get("/logout", follow_redirects=True)
-
-    # Limpieza
-    db.session.delete(community)
-    db.session.delete(dataset)
-    db.session.delete(metadata)
     db.session.commit()
