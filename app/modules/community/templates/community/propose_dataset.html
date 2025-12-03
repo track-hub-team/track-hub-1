@@ -4,6 +4,18 @@
 
 {% block content %}
 
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -21,14 +33,18 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <img src="{{ community.logo_path }}"
+                        <img src="{{ community.get_logo_url() }}"
                              alt="{{ community.name }}"
                              class="rounded me-3"
                              style="width: 80px; height: 80px; object-fit: cover;">
                         <div>
                             <h5 class="mb-1">{{ community.name }}</h5>
                             <p class="text-muted mb-0 small">
-                                {{ community.description[:150] }}{% if community.description|length > 150 %}...{% endif %}
+                                {% if community.description %}
+                                    {{ community.description[:150] }}{% if community.description|length > 150 %}...{% endif %}
+                                {% else %}
+                                    No description available
+                                {% endif %}
                             </p>
                         </div>
                     </div>
@@ -138,11 +154,19 @@
                                 <div class="me-2">
                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                                          style="width: 32px; height: 32px; font-size: 0.75rem;">
-                                        <span class="fw-bold">{{ curator.user.profile.name[0] if curator.user.profile else 'U' }}{{ curator.user.profile.surname[0] if curator.user.profile else 'U' }}</span>
+                                        {% if curator.user.profile and curator.user.profile.name and curator.user.profile.surname %}
+                                            <span class="fw-bold">{{ curator.user.profile.name[0] }}{{ curator.user.profile.surname[0] }}</span>
+                                        {% else %}
+                                            <span class="fw-bold">{{ curator.user.email[0]|upper }}{{ curator.user.email[1]|upper if curator.user.email|length > 1 else '' }}</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="fw-bold">{{ curator.user.profile.name if curator.user.profile else curator.user.email }} {{ curator.user.profile.surname if curator.user.profile else '' }}</div>
+                                    {% if curator.user.profile and curator.user.profile.name %}
+                                        <div class="fw-bold">{{ curator.user.profile.name }} {{ curator.user.profile.surname if curator.user.profile.surname else '' }}</div>
+                                    {% else %}
+                                        <div class="fw-bold">{{ curator.user.email }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
@@ -203,7 +227,7 @@
 
             if (selectedDataset) {
                 // Show preview with dataset info (using to_dict() structure)
-                const description = selectedDataset.description;
+                const description = selectedDataset.description || 'No description available';
                 const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
 
                 previewContent.innerHTML = `

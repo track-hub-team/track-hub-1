@@ -101,11 +101,14 @@ def propose_dataset(slug):
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Get user's datasets
-    user_datasets = community_service.get_user_datasets(current_user.id)
+    # Get user's datasets that are eligible for this community
+    user_datasets = community_service.get_eligible_datasets_for_community(current_user.id, community.id)
 
     if not user_datasets:
-        flash("You need to have at least one dataset to propose to a community", "warning")
+        flash(
+            "You don't have any eligible datasets. They may already be in this community or have a pending request.",
+            "warning",
+        )
         return redirect(url_for("community.view", slug=slug))
 
     # Create form and populate dataset choices

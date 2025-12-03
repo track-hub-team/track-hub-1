@@ -365,6 +365,31 @@ class CommunityService(BaseService):
         """Obtener todos los datasets de un usuario"""
         return BaseDataset.query.filter_by(user_id=user_id).all()
 
+    def get_eligible_datasets_for_community(self, user_id: int, community_id: int) -> List[BaseDataset]:
+        """
+        Obtener datasets del usuario que pueden ser propuestos a una comunidad.
+        Excluye datasets que ya están en la comunidad o tienen solicitud pendiente.
+        """
+        # Obtener todos los datasets del usuario
+        user_datasets = self.get_user_datasets(user_id)
+
+        # Obtener IDs de datasets ya en la comunidad
+        datasets_in_community = self.dataset_repository.get_community_datasets(community_id)
+        dataset_ids_in_community = {cd.dataset_id for cd in datasets_in_community}
+
+        # Obtener IDs de datasets con solicitud pendiente
+        pending_requests = self.request_repository.get_pending_requests(community_id)
+        dataset_ids_with_pending_request = {req.dataset_id for req in pending_requests}
+
+        # Filtrar datasets elegibles
+        eligible_datasets = [
+            dataset
+            for dataset in user_datasets
+            if dataset.id not in dataset_ids_in_community and dataset.id not in dataset_ids_with_pending_request
+        ]
+
+        return eligible_datasets
+
     def search_users(self, query: str, limit: int = 10, exclude_user_ids: Optional[List[int]] = None) -> List[dict]:
         """
         Buscar usuarios por email, nombre o apellido.
