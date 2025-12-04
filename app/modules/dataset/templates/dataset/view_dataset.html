@@ -519,9 +519,15 @@ document.addEventListener("DOMContentLoaded", function () {
         item.appendChild(contentP);
 
         // ===============================
-        // 3. Botón borrar (solo autor)
         // ===============================
-        if (isAuthenticated && comment.user_id === currentUserId) {
+        // 3. Botón borrar (autor o dueño del dataset)
+        // ===============================
+        const datasetOwnerId = {{ dataset.user_id }};
+
+        if (
+            isAuthenticated &&
+            (comment.user_id === currentUserId || currentUserId === datasetOwnerId)
+        ) {
             const delBtn = document.createElement("button");
             delBtn.textContent = "Delete";
             delBtn.classList.add("btn", "btn-danger", "btn-sm", "mt-2");
@@ -530,7 +536,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             item.appendChild(delBtn);
         }
-
         commentsContainer.appendChild(item);
     }
 
