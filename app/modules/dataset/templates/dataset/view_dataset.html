@@ -519,15 +519,25 @@ document.addEventListener("DOMContentLoaded", function () {
         item.appendChild(contentP);
 
         // ===============================
-        // ===============================
-        // 3. Botón borrar (autor o dueño del dataset)
+        // 3. Botones: borrar y editar
         // ===============================
         const datasetOwnerId = {{ dataset.user_id }};
+        const isAuthor = comment.user_id === currentUserId;
+        const isOwner = currentUserId === datasetOwnerId;
 
-        if (
-            isAuthenticated &&
-            (comment.user_id === currentUserId || currentUserId === datasetOwnerId)
-        ) {
+        // --- Botón editar (solo autor) ---
+        if (isAuthenticated && isAuthor) {
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.classList.add("btn", "btn-outline-secondary", "btn-sm", "mt-2", "me-2");
+
+            editBtn.addEventListener("click", () => enableEditMode(comment, item, contentP));
+
+            item.appendChild(editBtn);
+        }
+
+        // --- Botón borrar (autor o dueño dataset) ---
+        if (isAuthenticated && (isAuthor || isOwner)) {
             const delBtn = document.createElement("button");
             delBtn.textContent = "Delete";
             delBtn.classList.add("btn", "btn-danger", "btn-sm", "mt-2");
@@ -591,6 +601,79 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Error deleting comment:", err);
             });
     }
+    // ===============================
+    // EDITAR COMENTARIO (solo autor)
+    // ===============================
+    function enableEditMode(comment, container, contentElement) {
+        const originalText = comment.content;
+
+        // Crear textarea con contenido actual
+        const textarea = document.createElement("textarea");
+        textarea.classList.add("form-control", "mt-2");
+        textarea.value = originalText;
+
+        // Ocultar el contenido original
+        contentElement.style.display = "none";
+
+        // Insertar textarea
+        container.insertBefore(textarea, contentElement.nextSibling);
+
+        // Crear botones Save y Cancel
+        const actionRow = document.createElement("div");
+        actionRow.classList.add("mt-2");
+
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.classList.add("btn", "btn-primary", "btn-sm", "me-2");
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.classList.add("btn", "btn-secondary", "btn-sm");
+
+        actionRow.appendChild(saveBtn);
+        actionRow.appendChild(cancelBtn);
+        container.appendChild(actionRow);
+
+        // --- Cancelar edición ---
+        cancelBtn.addEventListener("click", () => {
+            textarea.remove();
+            actionRow.remove();
+            contentElement.style.display = "block";
+        });
+
+        // --- Guardar cambios ---
+        saveBtn.addEventListener("click", () => {
+            const newContent = textarea.value.trim();
+            if (!newContent) {
+                alert("Comment cannot be empty.");
+                return;
+            }
+
+            // PUT al backend
+            fetch(`/dataset/comments/${comment.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: newContent })
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data.success) {
+                    alert(data.error || "Error updating comment");
+                    return;
+                }
+
+                // Actualizar UI con nuevo contenido
+                contentElement.textContent = data.comment.content;
+                comment.content = data.comment.content;
+
+                textarea.remove();
+                actionRow.remove();
+                contentElement.style.display = "block";
+            })
+            .catch(err => console.error("Error updating comment:", err));
+        });
+    }
+
 
     // ===============================
     // 6. Inicializar
