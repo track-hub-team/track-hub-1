@@ -13,7 +13,7 @@ def test_client(test_client):
     Extends the test_client fixture to add additional specific data for module testing.
     """
     with test_client.application.app_context():
-        # Crear usuario de prueba para los tests de integración
+        # Crear usuario de prueba
         user = User.query.filter_by(email="test@example.com").first()
         if not user:
             user = User(email="test@example.com", password="test1234")
@@ -25,7 +25,7 @@ def test_client(test_client):
 
 def test_propose_dataset_full_workflow(test_client):
     """
-    Prueba de integración que verifica el flujo completo de propuesta y aprobación de un dataset.
+    Verifica el flujo completo de propuesta y aprobación de un dataset.
     """
     # Obtener usuario de prueba
     user = User.query.filter_by(email="test@example.com").first()
@@ -118,8 +118,7 @@ def test_propose_dataset_full_workflow(test_client):
 
 def test_curator_management_full_workflow(test_client):
     """
-    Prueba de integración end-to-end para gestión de curadores.
-    Verifica el flujo completo de añadir y eliminar curadores desde la interfaz.
+    Verifica el flujo completo de añadir y eliminar curadores.
     """
     # Obtener usuarios de prueba
     user1 = User.query.filter_by(email="test@example.com").first()
@@ -163,7 +162,7 @@ def test_curator_management_full_workflow(test_client):
     html_content = manage_response.data.decode("utf-8")
     assert user2.email in html_content, "User2 no aparece en la página de gestión como curador"
 
-    # 5. Remover user2 como curador vía POST /remove-curator
+    # 5. Eliminar user2 como curador vía POST /remove-curator
     remove_curator_response = test_client.post(
         f"/community/{community.slug}/remove-curator", data=dict(user_id=user2.id), follow_redirects=True
     )

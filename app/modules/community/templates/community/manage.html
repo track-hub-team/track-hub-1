@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    {# Flash messages #}
+    {# Mensajes flash #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -16,7 +16,7 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Community Header -->
+    <!-- Cabecera de la comunidad -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <!-- Tabs Navigation -->
+    <!-- Navegación de pestañas -->
     <ul class="nav nav-tabs mb-4" id="manageTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="requests-tab" data-bs-toggle="tab"
@@ -62,10 +62,10 @@
         </li>
     </ul>
 
-    <!-- Tab Content -->
+    <!-- Contenido de pestañas -->
     <div class="tab-content" id="manageTabsContent">
 
-        <!-- Pending Requests Tab -->
+        <!-- Pestaña de solicitudes pendientes -->
         <div class="tab-pane fade show active" id="requests" role="tabpanel">
             <div class="row">
                 <div class="col-12">
@@ -166,7 +166,7 @@
             </div>
         </div>
 
-        <!-- Settings Tab -->
+        <!-- Pestaña de configuración -->
         <div class="tab-pane fade" id="settings" role="tabpanel">
             <div class="row">
                 <div class="col-12 col-lg-8">
@@ -180,7 +180,7 @@
                                   enctype="multipart/form-data"
                                   id="settingsForm">
 
-                                <!-- Community Name -->
+                                <!-- Nombre de la comunidad -->
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Community Name</label>
                                     <input type="text" class="form-control" value="{{ community.name }}" disabled>
@@ -190,7 +190,7 @@
                                     </small>
                                 </div>
 
-                                <!-- Description -->
+                                <!-- Descripción -->
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Description *</label>
                                     <textarea name="description"
@@ -225,7 +225,7 @@
                                     </small>
                                 </div>
 
-                                <!-- Submit Button -->
+                                <!-- Botón de envío -->
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i data-feather="save"></i> Save Changes
@@ -266,7 +266,7 @@
             </div>
         </div>
 
-        <!-- Curators Tab -->
+        <!-- Pestaña de curadores -->
         <div class="tab-pane fade" id="curators" role="tabpanel">
             <div class="row">
                 <div class="col-12 col-lg-8">
@@ -348,7 +348,7 @@
         </div>
     </div>
 
-    <!-- Back Button -->
+    <!-- Botón de regreso -->
     <div class="row mt-4">
         <div class="col-12">
             <a href="{{ url_for('community.view', slug=community.slug) }}" class="btn btn-outline-secondary">
@@ -357,7 +357,7 @@
         </div>
     </div>
 
-    <!-- Approve Modal -->
+    <!-- Modal de aprobación -->
     <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -392,7 +392,7 @@
         </div>
     </div>
 
-    <!-- Add Curator Modal -->
+    <!-- Modal de añadir curador -->
     <div class="modal fade" id="addCuratorModal" tabindex="-1" aria-labelledby="addCuratorModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -405,7 +405,7 @@
                 <div class="modal-body">
                     <p class="mb-3">Search and select a user to add as curator to this community.</p>
 
-                    <!-- Search Input -->
+                    <!-- Entrada de búsqueda -->
                     <div class="mb-3">
                         <label for="curatorSearch" class="form-label fw-bold">Search user</label>
                         <input type="text" class="form-control" id="curatorSearch"
@@ -415,7 +415,7 @@
                         </small>
                     </div>
 
-                    <!-- Search Results -->
+                    <!-- Resultados de búsqueda -->
                     <div id="curatorSearchResults" style="display: none;">
                         <label class="form-label fw-bold">Select user:</label>
                         <div id="curatorResultsList" class="list-group" style="max-height: 300px; overflow-y: auto;">
@@ -423,7 +423,7 @@
                         </div>
                     </div>
 
-                    <!-- No Results Message -->
+                    <!-- Mensaje de no resultados -->
                     <div id="curatorNoResults" style="display: none;">
                         <div class="alert alert-info small">
                             <i data-feather="info" style="width: 16px; height: 16px;"></i>
@@ -431,7 +431,7 @@
                         </div>
                     </div>
 
-                    <!-- Loading State -->
+                    <!-- Estado de carga -->
                     <div id="curatorSearchLoading" style="display: none;">
                         <div class="text-center py-3">
                             <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -455,7 +455,7 @@
         </div>
     </div>
 
-    <!-- Reject Modal -->
+    <!-- Modal de rechazo -->
     <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -500,26 +500,26 @@
 
 {% block scripts %}
 <script>
-    // Initialize Feather icons
+    // Inicializar iconos de Feather
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
 
-    // Re-initialize icons when tab changes and persist active tab
+    // Re-inicializar iconos cuando cambian las pestañas y persistir la pestaña activa
     const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
     tabButtons.forEach(button => {
         button.addEventListener('shown.bs.tab', function(e) {
-            // Re-initialize Feather icons
+            // Re-inicializar iconos de Feather
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
-            // Save active tab to sessionStorage
+            // Guardar pestaña activa en sessionStorage
             const activeTab = e.target.getAttribute('data-bs-target');
             sessionStorage.setItem('communityManageActiveTab', activeTab);
         });
     });
 
-    // Restore active tab on page load
+    // Restaurar pestaña activa al cargar la página
     const savedTab = sessionStorage.getItem('communityManageActiveTab');
     if (savedTab) {
         const tabButton = document.querySelector(`button[data-bs-target="${savedTab}"]`);
@@ -529,7 +529,7 @@
         }
     }
 
-    // Settings form: Character counter for description
+    // Contador de caracteres para la descripción
     const descriptionInput = document.getElementById('descriptionInput');
     const descriptionCounter = document.getElementById('descriptionCounter');
 
@@ -540,7 +540,7 @@
         });
     }
 
-    // Settings form: Logo preview
+    // Formulario de configuración: Vista previa del logo
     const logoInput = document.getElementById('logoInput');
     const logoPreview = document.getElementById('logoPreview');
 
@@ -548,14 +548,14 @@
         logoInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                // Validate file size (2MB max)
+                // Validar tamaño del archivo (máximo 2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     alert('File size must be less than 2MB');
                     this.value = '';
                     return;
                 }
 
-                // Validate file type
+                // Validar tipo de archivo
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
                 if (!validTypes.includes(file.type)) {
                     alert('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
@@ -563,7 +563,7 @@
                     return;
                 }
 
-                // Show preview
+                // Mostrar vista previa
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     logoPreview.src = e.target.result;
@@ -573,7 +573,7 @@
         });
     }
 
-    // Modal data variables
+    // Variables para modales de aprobación y rechazo
     let approveModalData = {
         requestId: null,
         communitySlug: null,
@@ -586,7 +586,7 @@
         datasetId: null
     };
 
-    // Character counter for reject reason
+    // Contador de caracteres para el motivo de rechazo
     const rejectReasonField = document.getElementById('rejectReason');
     const rejectReasonCharCount = document.getElementById('rejectReasonCharCount');
 
@@ -594,7 +594,7 @@
         rejectReasonField.addEventListener('input', function() {
             const length = this.value.length;
             rejectReasonCharCount.textContent = length;
-            // Limit to 500 characters
+            // Limitar a 500 caracteres
             if (length > 500) {
                 this.value = this.value.substring(0, 500);
                 rejectReasonCharCount.textContent = 500;
@@ -602,7 +602,7 @@
         });
     }
 
-    // Re-initialize icons when modals are shown
+    // Re-inicializar iconos cuando se muestran los modales
     const approveModal = document.getElementById('approveModal');
     const rejectModal = document.getElementById('rejectModal');
     const addCuratorModal = document.getElementById('addCuratorModal');
@@ -622,7 +622,7 @@
             }
         });
 
-        // Clear form when modal is hidden
+        // Limpiar formulario cuando se oculta el modal
         rejectModal.addEventListener('hidden.bs.modal', function() {
             rejectReasonField.value = '';
             rejectReasonCharCount.textContent = '0';
@@ -634,11 +634,11 @@
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
-            // Focus on search input
+            // Enfocar en el campo de búsqueda
             document.getElementById('curatorSearch').focus();
         });
 
-        // Clear search when modal is hidden
+        // Limpiar búsqueda cuando se oculta el modal
         addCuratorModal.addEventListener('hidden.bs.modal', function() {
             document.getElementById('curatorSearch').value = '';
             document.getElementById('curatorSearchResults').style.display = 'none';
@@ -647,7 +647,7 @@
         });
     }
 
-    // Open approve modal function
+    // Función para abrir el modal de aprobación
     function openApproveModal(requestId, communitySlug, datasetId, datasetTitle) {
         approveModalData = { requestId, communitySlug, datasetId };
         document.getElementById('approveDatasetTitle').textContent = datasetTitle;
@@ -655,7 +655,7 @@
         modal.show();
     }
 
-    // Open reject modal function
+    // Función para abrir el modal de rechazo
     function openRejectModal(requestId, communitySlug, datasetId, datasetTitle) {
         rejectModalData = { requestId, communitySlug, datasetId };
         document.getElementById('rejectDatasetTitle').textContent = datasetTitle;
@@ -663,38 +663,38 @@
         modal.show();
     }
 
-    // Handle confirm approval
+    // Manejar confirmación de aprobación
     document.getElementById('confirmApproveBtn').addEventListener('click', function() {
         const { requestId, communitySlug, datasetId } = approveModalData;
 
-        // Close modal
+        // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
         modal.hide();
 
-        // Call the approve handler
+        // Llamar al manejador de aprobación
         handleRequest(requestId, communitySlug, datasetId, 'approve');
     });
 
-    // Handle confirm rejection
+    // Manejar confirmación de rechazo
     document.getElementById('confirmRejectBtn').addEventListener('click', function() {
         const reason = rejectReasonField.value.trim();
         const { requestId, communitySlug, datasetId } = rejectModalData;
 
-        // Close modal
+        // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
         modal.hide();
 
-        // Call the reject handler with reason
+        // Llamar al manejador de rechazo con motivo
         handleRequest(requestId, communitySlug, datasetId, 'reject', reason);
     });
 
-    // Open add curator modal
+    // Función para abrir el modal de añadir curador
     function openAddCuratorModal() {
         const modal = new bootstrap.Modal(document.getElementById('addCuratorModal'));
         modal.show();
     }
 
-    // Search users
+    // Buscar usuarios
     let searchTimeout;
     const curatorSearchInput = document.getElementById('curatorSearch');
     const curatorResultsList = document.getElementById('curatorResultsList');
@@ -706,10 +706,10 @@
         curatorSearchInput.addEventListener('input', function() {
             const query = this.value.trim();
 
-            // Clear previous timeout
+            // Limpiar timeout previo
             clearTimeout(searchTimeout);
 
-            // Hide all states
+            // Ocultar todos los estados
             curatorSearchResults.style.display = 'none';
             curatorNoResults.style.display = 'none';
             curatorSearchLoading.style.display = 'none';
@@ -718,22 +718,22 @@
                 return;
             }
 
-            // Show loading
+            // Mostrar carga
             curatorSearchLoading.style.display = 'block';
 
-            // Debounce search
+            // Búsqueda con debounce
             searchTimeout = setTimeout(() => {
-                // Call API to search users, excluding existing curators
+                // Llamar a la API para buscar usuarios, excluyendo curadores existentes
                 fetch(`/community/api/search-users?q=${encodeURIComponent(query)}&community_id={{ community.id }}`)
                     .then(response => response.json())
                     .then(data => {
-                        // Hide loading
+                        // Ocultar carga
                         curatorSearchLoading.style.display = 'none';
 
                         if (data.users.length === 0) {
                             curatorNoResults.style.display = 'block';
                         } else {
-                            // Display results
+                            // Mostrar resultados
                             curatorResultsList.innerHTML = '';
                             data.users.forEach(user => {
                                 const item = document.createElement('a');
@@ -771,7 +771,7 @@
 
                             curatorSearchResults.style.display = 'block';
 
-                            // Re-initialize icons
+                            // Re-inicializar iconos
                             if (typeof feather !== 'undefined') {
                                 feather.replace();
                             }
@@ -786,29 +786,27 @@
         });
     }
 
-    // Add curator function
+    // Función para añadir curador
     function addCurator(userId, name, surname, email) {
-        // Close modal
+        // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('addCuratorModal'));
         modal.hide();
 
         const url = `/community/{{ community.slug }}/add-curator`;
 
-        // Prepare form data
+        // Preparar datos del formulario
         const formData = new FormData();
         formData.append('user_id', userId);
 
-        // Make form POST request
+        // Realizar solicitud POST del formulario
         fetch(url, {
             method: 'POST',
             body: formData
         })
         .then(response => {
             if (response.redirected) {
-                // Follow redirect
                 window.location.href = response.url;
             } else if (response.ok) {
-                // Success - reload page
                 window.location.reload();
             } else {
                 console.error('Error adding curator');
@@ -821,7 +819,7 @@
         });
     }
 
-    // Remove curator function
+    // Función para eliminar curador
     function removeCurator(curatorId, curatorName) {
         if (!confirm(`Are you sure you want to remove ${curatorName} as curator?`)) {
             return;
@@ -829,21 +827,19 @@
 
         const url = `/community/{{ community.slug }}/remove-curator`;
 
-        // Prepare form data
+        // Preparar datos del formulario
         const formData = new FormData();
         formData.append('user_id', curatorId);
 
-        // Make form POST request
+        // Realizar solicitud POST del formulario
         fetch(url, {
             method: 'POST',
             body: formData
         })
         .then(response => {
             if (response.redirected) {
-                // Follow redirect
                 window.location.href = response.url;
             } else if (response.ok) {
-                // Success - reload page
                 window.location.reload();
             } else {
                 console.error('Error removing curator');
@@ -856,25 +852,25 @@
         });
     }
 
-    // Handle approve/reject requests
+    // Función para manejar la aprobación/rechazo de solicitudes
     function handleRequest(requestId, communitySlug, datasetId, action, reason = '') {
         const actionText = action === 'approve' ? 'approve' : 'reject';
         const url = `/community/${communitySlug}/request/${requestId}/${action}`;
 
-        // Show loading state
+        // Mostrar estado de carga
         const requestElement = document.getElementById(`request-${requestId}`);
         if (requestElement) {
             requestElement.style.opacity = '0.5';
             requestElement.style.pointerEvents = 'none';
         }
 
-        // Prepare form data
+        // Preparar datos del formulario
         const formData = new FormData();
         if (action === 'reject' && reason) {
             formData.append('comment', reason);
         }
 
-        // Make form POST request
+        // Realizar solicitud POST del formulario
         fetch(url, {
             method: 'POST',
             body: formData
@@ -883,12 +879,11 @@
             if (response.redirected || response.ok) {
                 alert(`Dataset ${actionText}ed successfully!`);
 
-                // Remove the request from the list
+                // Eliminar la solicitud de la lista
                 if (requestElement) {
                     requestElement.remove();
                 }
 
-                // Update badge count
                 const badge = document.querySelector('#requests-tab .badge');
                 if (badge) {
                     const currentCount = parseInt(badge.textContent);
@@ -897,7 +892,7 @@
                         badge.textContent = newCount;
                     } else {
                         badge.remove();
-                        // Show empty state
+                        // Mostrar estado vacío
                         const listGroup = document.querySelector('#requests .list-group');
                         if (listGroup && listGroup.children.length === 0) {
                             listGroup.innerHTML = `
@@ -915,7 +910,7 @@
                 }
             } else {
                 alert(`Error: Failed to ${action} request`);
-                // Restore element state
+                // Restaurar estado del elemento
                 if (requestElement) {
                     requestElement.style.opacity = '1';
                     requestElement.style.pointerEvents = 'auto';
@@ -925,7 +920,7 @@
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
-            // Restore element state
+            // Restaurar estado del elemento
             if (requestElement) {
                 requestElement.style.opacity = '1';
                 requestElement.style.pointerEvents = 'auto';

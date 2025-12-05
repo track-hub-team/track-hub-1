@@ -12,7 +12,7 @@ class CommunityUser(HttpUser):
     community_slug = None
 
     def on_start(self):
-        """Obtiene un slug válido lo cachea."""
+        """Obtiene un slug válido y lo cachea."""
         response = self.client.get("/community/list")
         if response.status_code == 200:
             pattern = r'href="/community/([a-z0-9_-]+)"'
@@ -29,7 +29,7 @@ class CommunityUser(HttpUser):
         """
         response = self.client.get("/community/list")
         if response.status_code != 200:
-            print(f"Error en list_communities: status_code={response.status_code}")
+            print(f"Error in list_communities: status_code={response.status_code}")
 
     @task
     def view_community_with_datasets(self):
@@ -39,9 +39,9 @@ class CommunityUser(HttpUser):
         Usa el slug cacheado
         """
         if not self.community_slug:
-            print("Error: No hay slug disponible")
+            print("Error: No slug available")
             return
 
         response = self.client.get(f"/community/{self.community_slug}", name="/community/[slug]")
         if response.status_code != 200:
-            print(f"Error en view_community: slug={self.community_slug}, status_code={response.status_code}")
+            print(f"Error in view_community: slug={self.community_slug}, status_code={response.status_code}")

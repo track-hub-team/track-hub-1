@@ -12,13 +12,13 @@ community_service = CommunityService()
 
 @community_bp.route("/community", methods=["GET"])
 def index():
-    """Redirect to list view"""
+    """Redireccionar a la lista de comunidades"""
     return redirect(url_for("community.list_communities"))
 
 
 @community_bp.route("/community/list", methods=["GET"])
 def list_communities():
-    """List all communities with search functionality"""
+    """Listar todas las comunidades"""
     query = request.args.get("query", "")
 
     communities = community_service.get_all(query if query else None)
@@ -28,17 +28,15 @@ def list_communities():
 
 @community_bp.route("/community/<string:slug>", methods=["GET"])
 def view(slug):
-    """View a single community with its datasets"""
+    """Ver una comunidad específica"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Get datasets from the community
     datasets = community_service.get_community_datasets(community.id)
 
-    # Check if current user is curator
     is_curator = False
     if current_user.is_authenticated:
         is_curator = community_service.is_curator(community.id, current_user.id)
@@ -49,7 +47,7 @@ def view(slug):
 @community_bp.route("/community/create", methods=["GET", "POST"])
 @login_required
 def create():
-    """Create a new community"""
+    """Crear una nueva comunidad"""
     form = CommunityForm()
 
     if form.validate_on_submit():
@@ -73,19 +71,17 @@ def create():
 @community_bp.route("/community/<string:slug>/manage", methods=["GET"])
 @login_required
 def manage(slug):
-    """Manage community (for curators only)"""
+    """Gestionar comunidad (solo para curadores)"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Check if user is curator
     if not community_service.is_curator(community.id, current_user.id):
         flash("Only curators can manage this community", "error")
         return redirect(url_for("community.view", slug=slug))
 
-    # Get pending requests
     pending_requests = community_service.get_pending_requests(community.id)
 
     return render_template("community/manage.html", community=community, requests=pending_requests)
@@ -94,14 +90,14 @@ def manage(slug):
 @community_bp.route("/community/<string:slug>/propose", methods=["GET", "POST"])
 @login_required
 def propose_dataset(slug):
-    """Propose a dataset to be added to a community"""
+    """Proponer un dataset para ser añadido a una comunidad"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Get user's datasets that are eligible for this community
+    # Obtener datasets elegibles del usuario
     user_datasets = community_service.get_eligible_datasets_for_community(current_user.id, community.id)
 
     if not user_datasets:
@@ -111,7 +107,7 @@ def propose_dataset(slug):
         )
         return redirect(url_for("community.view", slug=slug))
 
-    # Create form and populate dataset choices
+    # Crear el formulario
     form = ProposeDatasetForm()
     form.dataset_id.choices = [(dataset.id, dataset.ds_meta_data.title) for dataset in user_datasets]
 
@@ -131,7 +127,6 @@ def propose_dataset(slug):
         flash(f'Proposal for dataset "{selected_dataset.ds_meta_data.title}" submitted successfully!', "success")
         return redirect(url_for("community.view", slug=slug))
 
-    # Convert datasets to dict for JSON serialization
     datasets_dict = [dataset.to_dict() for dataset in user_datasets]
 
     return render_template(
@@ -146,7 +141,7 @@ def propose_dataset(slug):
 @community_bp.route("/community/<string:slug>/request/<int:request_id>/approve", methods=["POST"])
 @login_required
 def approve_request(slug, request_id):
-    """Approve a dataset request (curators only)"""
+    """Aprobar una solicitud de dataset (solo para curadores)"""
     community = community_service.get_by_slug(slug)
 
     if not community:
@@ -174,7 +169,7 @@ def approve_request(slug, request_id):
 @community_bp.route("/community/<string:slug>/request/<int:request_id>/reject", methods=["POST"])
 @login_required
 def reject_request(slug, request_id):
-    """Reject a dataset request (curators only)"""
+    """Rechazar una solicitud de dataset (solo para curadores)"""
     community = community_service.get_by_slug(slug)
 
     if not community:
@@ -201,10 +196,9 @@ def reject_request(slug, request_id):
 
 @community_bp.route("/uploads/communities/<path:filename>")
 def uploaded_file(filename):
-    """Serve uploaded community logos"""
+    """Servir logos de comunidades subidos"""
     working_dir = os.getenv("WORKING_DIR", "")
     if not working_dir:
-        # Si WORKING_DIR está vacío, usar la raíz del proyecto
         working_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     upload_dir = os.path.join(working_dir, "uploads", "communities")
     return send_from_directory(upload_dir, filename)
@@ -213,7 +207,7 @@ def uploaded_file(filename):
 @community_bp.route("/community/api/search-users", methods=["GET"])
 @login_required
 def search_users():
-    """Search users by email or name for adding as curators"""
+    """Buscar usuarios por email o nombre para añadir como curadores"""
     query = request.args.get("q", "").strip()
     community_id = request.args.get("community_id", type=int)
 
@@ -229,25 +223,22 @@ def search_users():
 @community_bp.route("/community/<string:slug>/add-curator", methods=["POST"])
 @login_required
 def add_curator_route(slug):
-    """Add a curator to a community"""
+    """Añadir un curador a una comunidad"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Check if current user is curator
     if not community_service.is_curator(community.id, current_user.id):
         flash("Only curators can add other curators", "error")
         return redirect(url_for("community.manage", slug=slug))
 
-    # Get user_id from form
     user_id = request.form.get("user_id", type=int)
     if not user_id:
         flash("User ID is required", "error")
         return redirect(url_for("community.manage", slug=slug))
 
-    # Add curator
     success, error = community_service.add_curator(community.id, user_id)
 
     if success:
@@ -263,23 +254,20 @@ def add_curator_route(slug):
 @community_bp.route("/community/<string:slug>/remove-curator", methods=["POST"])
 @login_required
 def remove_curator_route(slug):
-    """Remove a curator from a community"""
+    """Eliminar un curador de una comunidad"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Get user_id from form
     user_id = request.form.get("user_id", type=int)
     if not user_id:
         flash("User ID is required", "error")
         return redirect(url_for("community.manage", slug=slug))
 
-    # Get curator info before removing (for flash message)
     curator_info = community_service.get_curator_info(user_id)
 
-    # Remove curator
     success, error = community_service.remove_curator(community.id, user_id, current_user.id)
 
     if success:
@@ -294,23 +282,20 @@ def remove_curator_route(slug):
 @community_bp.route("/community/<string:slug>/update", methods=["POST"])
 @login_required
 def update_community(slug):
-    """Update community settings (curators only)"""
+    """Actualizar la configuración de la comunidad (solo para curadores)"""
     community = community_service.get_by_slug(slug)
 
     if not community:
         flash("Community not found", "error")
         return redirect(url_for("community.list_communities"))
 
-    # Check if user is curator
     if not community_service.is_curator(community.id, current_user.id):
         flash("Only curators can update community settings", "error")
         return redirect(url_for("community.view", slug=slug))
 
-    # Get form data
     description = request.form.get("description")
     logo_file = request.files.get("logo")
 
-    # Update community
     success, error = community_service.update_community(community.id, description=description, logo_file=logo_file)
 
     if success:

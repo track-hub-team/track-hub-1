@@ -50,9 +50,8 @@ class CommunityService(BaseService):
     ) -> Tuple[Optional[Community], Optional[str]]:
         """
         Crear una nueva comunidad.
-        Retorna (Community, error_message) - si hay error, Community es None
         """
-        # Generar slug único
+        # Generar slug (único)
         base_slug = slugify(name)
         slug = base_slug
         counter = 1
@@ -93,8 +92,7 @@ class CommunityService(BaseService):
     ) -> Tuple[bool, Optional[str]]:
         """
         Actualizar información de una comunidad existente.
-        Retorna (success, error_message)
-        Nota: El nombre no se puede cambiar para mantener la integridad del slug
+        El nombre no se puede cambiar para mantener la integridad del slug
         """
         community = self.repository.get_by_id(community_id)
         if not community:
@@ -135,7 +133,6 @@ class CommunityService(BaseService):
     def add_curator(self, community_id: int, user_id: int) -> Tuple[bool, Optional[str]]:
         """
         Añadir un curador a una comunidad.
-        Retorna (success, error_message)
         """
         # Verificar que la comunidad existe
         community = self.repository.get_by_id(community_id)
@@ -157,18 +154,17 @@ class CommunityService(BaseService):
     def remove_curator(self, community_id: int, user_id: int, requester_id: int) -> Tuple[bool, Optional[str]]:
         """
         Remover un curador de una comunidad.
-        No se puede remover al creador de la comunidad.
-        Retorna (success, error_message)
+        No se puede eliminar al creador de la comunidad.
         """
         community = self.repository.get_by_id(community_id)
         if not community:
             return False, "Community not found"
 
-        # No se puede remover al creador
+        # No se puede eliminar al creador
         if community.creator_id == user_id:
             return False, "Cannot remove the community creator as curator"
 
-        # Solo curadores pueden remover otros curadores
+        # Solo curadores pueden eliminar otros curadores
         if not self.curator_repository.is_curator(community_id, requester_id):
             return False, "Only curators can remove other curators"
 
@@ -194,7 +190,6 @@ class CommunityService(BaseService):
     ) -> Tuple[bool, Optional[str]]:
         """
         Proponer un dataset para ser añadido a una comunidad.
-        Retorna (success, error_message)
         """
         # Verificar que la comunidad existe
         community = self.repository.get_by_id(community_id)
@@ -236,7 +231,6 @@ class CommunityService(BaseService):
     ) -> Tuple[bool, Optional[str]]:
         """
         Aprobar una solicitud y añadir el dataset a la comunidad.
-        Retorna (success, error_message)
         """
         request = self.request_repository.get_by_id(request_id)
         if not request:
@@ -304,7 +298,6 @@ class CommunityService(BaseService):
     ) -> Tuple[bool, Optional[str]]:
         """
         Rechazar una solicitud.
-        Retorna (success, error_message)
         """
         request = self.request_repository.get_by_id(request_id)
         if not request:
@@ -324,30 +317,6 @@ class CommunityService(BaseService):
         except Exception as e:
             db.session.rollback()
             return False, f"Error rejecting request: {str(e)}"
-
-    def remove_dataset_from_community(
-        self, community_id: int, dataset_id: int, curator_id: int
-    ) -> Tuple[bool, Optional[str]]:
-        """
-        Remover un dataset de una comunidad.
-        Solo curadores pueden hacerlo.
-        Retorna (success, error_message)
-        """
-        # Verificar que el usuario es curador
-        if not self.curator_repository.is_curator(community_id, curator_id):
-            return False, "Only curators can remove datasets from the community"
-
-        community_dataset = self.dataset_repository.get_by_community_and_dataset(community_id, dataset_id)
-        if not community_dataset:
-            return False, "Dataset is not in this community"
-
-        try:
-            db.session.delete(community_dataset)
-            db.session.commit()
-            return True, None
-        except Exception as e:
-            db.session.rollback()
-            return False, f"Error removing dataset: {str(e)}"
 
     def is_curator(self, community_id: int, user_id: int) -> bool:
         """Verificar si un usuario es curador de una comunidad"""
@@ -393,17 +362,11 @@ class CommunityService(BaseService):
     def search_users(self, query: str, limit: int = 10, exclude_user_ids: Optional[List[int]] = None) -> List[dict]:
         """
         Buscar usuarios por email, nombre o apellido.
-        Retorna una lista de diccionarios con información del usuario.
-
-        Args:
-            query: Texto de búsqueda
-            limit: Número máximo de resultados
-            exclude_user_ids: Lista de IDs de usuarios a excluir de los resultados
         """
         if not query or len(query) < 2:
             return []
 
-        # Construir query base
+        # Construir query
         query_builder = (
             db.session.query(User)
             .join(UserProfile, User.id == UserProfile.user_id, isouter=True)
@@ -439,7 +402,6 @@ class CommunityService(BaseService):
     def get_curator_info(self, user_id: int) -> Optional[dict]:
         """
         Obtener información de un usuario para mostrar como curador.
-        Retorna diccionario con información del usuario o None si no existe.
         """
         user = User.query.get(user_id)
         if not user:
@@ -462,7 +424,6 @@ class CommunityService(BaseService):
     def _validate_logo(self, logo_file: FileStorage) -> Optional[str]:
         """
         Validar el archivo de logo.
-        Retorna mensaje de error si es inválido, None si es válido.
         """
         if not logo_file or not logo_file.filename:
             return None
@@ -487,8 +448,6 @@ class CommunityService(BaseService):
     def _save_logo(self, logo_file: FileStorage, slug: str) -> str:
         """
         Guardar el logo de la comunidad.
-        Retorna la ruta relativa del archivo guardado.
-        Raises ValueError si el archivo no es válido.
         """
         # Validar archivo
         validation_error = self._validate_logo(logo_file)
@@ -498,7 +457,6 @@ class CommunityService(BaseService):
         # Crear directorio si no existe
         working_dir = os.getenv("WORKING_DIR", "")
         if not working_dir:
-            # Si WORKING_DIR está vacío, usar la raíz del proyecto
             working_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         upload_dir = os.path.join(working_dir, "uploads", "communities")
         os.makedirs(upload_dir, exist_ok=True)

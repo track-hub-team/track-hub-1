@@ -9,11 +9,6 @@ def utc_now():
 
 
 class Community(db.Model):
-    """
-    Representa una comunidad que agrupa datasets relacionados por temática.
-    Los usuarios pueden proponer datasets para ser añadidos a una comunidad,
-    y los curadores aprueban o rechazan estas solicitudes.
-    """
 
     __tablename__ = "community"
 
@@ -29,7 +24,7 @@ class Community(db.Model):
     # Creador de la comunidad
     creator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    # Relaciones (usado para navegación y consultas)
+    # Relaciones
     creator = db.relationship("User", foreign_keys=[creator_id], backref="created_communities")
     curators = db.relationship("CommunityCurator", back_populates="community", cascade="all, delete-orphan")
     datasets = db.relationship("CommunityDataset", back_populates="community", cascade="all, delete-orphan")
@@ -50,16 +45,13 @@ class Community(db.Model):
     def get_logo_url(self):
         """Obtener URL del logo o imagen por defecto"""
         if self.logo_path:
-            # Si ya empieza con / o http, devolverlo tal cual
             if self.logo_path.startswith("/") or self.logo_path.startswith("http"):
                 return self.logo_path
-            # Si no, añadir / al principio (para rutas relativas como uploads/...)
             return f"/{self.logo_path}"
         # Usar placeholder con iniciales
         return f"https://ui-avatars.com/api/?name={self.name[:2]}&background=6366f1&color=fff&size=120"
 
     def to_dict(self):
-        """Serializar a diccionario"""
         return {
             "id": self.id,
             "name": self.name,

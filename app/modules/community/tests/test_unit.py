@@ -13,7 +13,7 @@ def test_client(test_client):
     Extends the test_client fixture to add additional specific data for module testing.
     """
     with test_client.application.app_context():
-        # Crear usuario de prueba para los tests de comunidades
+        # Crear usuario de prueba
         user = User.query.filter_by(email="test@example.com").first()
         if not user:
             user = User(email="test@example.com", password="test1234")

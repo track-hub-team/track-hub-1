@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Length, Optional
 
 
 class CommunityForm(FlaskForm):
-    """Form for creating or editing a community"""
+    """Formulario para crear o editar una comunidad"""
 
     name = StringField(
         "Community Name",
@@ -39,7 +39,7 @@ class CommunityForm(FlaskForm):
 
 
 class ProposeDatasetForm(FlaskForm):
-    """Form for proposing a dataset to a community"""
+    """Formulario para proponer un dataset a una comunidad"""
 
     dataset_id = SelectField(
         "Select Dataset",

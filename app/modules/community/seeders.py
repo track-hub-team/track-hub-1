@@ -5,7 +5,7 @@ from core.seeders.BaseSeeder import BaseSeeder
 
 
 class CommunitySeeder(BaseSeeder):
-    priority = 10  # Run after auth (1) and dataset seeders
+    priority = 10
 
     def run(self):
         # Obtener usuarios existentes
@@ -44,7 +44,7 @@ class CommunitySeeder(BaseSeeder):
 
         seeded_communities = self.seed(communities)
 
-        # Crear curadores (el creador es curador automáticamente)
+        # Crear curadores
         curators = []
         for community in seeded_communities:
             curators.append(

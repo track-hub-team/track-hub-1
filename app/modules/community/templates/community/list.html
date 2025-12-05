@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    {# Flash messages #}
+    {# Mensajes flash #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -171,7 +171,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
 
-        // Dynamic search with AJAX (no page reload)
+        // Búsqueda dinámica
         const searchInput = document.querySelector('input[name="query"]');
         const searchForm = document.querySelector('form[action*="community"]');
         const resultsMessage = document.getElementById('search-results-message');
@@ -184,16 +184,16 @@
                 const cursorPosition = e.target.selectionStart;
                 const query = e.target.value.trim();
 
-                // Clear previous timeout
+                // Limpiar el timeout anterior
                 clearTimeout(searchTimeout);
 
-                // Set new timeout to search after 500ms of no typing
+                // Establecer un nuevo timeout para buscar después de 500ms sin escribir
                 searchTimeout = setTimeout(function() {
                     performSearch(query, cursorPosition);
                 }, 500);
             });
 
-            // Prevent form submission on Enter key
+            // Prevenir el envío del formulario al presionar Enter
             searchForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const query = searchInput.value.trim();
@@ -210,35 +210,35 @@
                     url.searchParams.delete('query');
                 }
 
-                // Update URL without reload
+                // Actualizar URL sin recargar
                 window.history.replaceState({}, '', url);
 
-                // Fetch new results
+                // Obtener nuevos resultados
                 fetch(url)
                     .then(response => response.text())
                     .then(html => {
-                        // Parse the response
+                        // Parsear la respuesta
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
 
-                        // Update results message
+                        // Actualizar mensaje de resultados
                         const newResultsMessage = doc.getElementById('search-results-message');
                         if (newResultsMessage && resultsMessage) {
                             resultsMessage.innerHTML = newResultsMessage.innerHTML;
                         }
 
-                        // Update communities grid
+                        // Actualizar cuadrícula de comunidades
                         const newGrid = doc.getElementById('communities-grid');
                         if (newGrid && communitiesGrid) {
                             communitiesGrid.innerHTML = newGrid.innerHTML;
                         }
 
-                        // Re-initialize feather icons
+                        // Re-inicializar iconos de Feather
                         if (typeof feather !== 'undefined') {
                             feather.replace();
                         }
 
-                        // Restore focus and cursor
+                        // Restaurar foco y cursor
                         searchInput.focus();
                         searchInput.setSelectionRange(cursorPosition, cursorPosition);
                     })

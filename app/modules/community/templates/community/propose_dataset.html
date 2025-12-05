@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    {# Flash messages #}
+    {# Mensajes flash #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -16,7 +16,7 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Header -->
+    <!-- Cabecera -->
     <div class="row mb-4">
         <div class="col-12">
             <h1 class="h3 mb-1">
@@ -27,9 +27,9 @@
     </div>
 
     <div class="row">
-        <!-- Main Form -->
+        <!-- Formulario principal -->
         <div class="col-12 col-lg-8">
-            <!-- Community Info Card -->
+            <!-- Tarjeta de información de la comunidad -->
             <div class="card mb-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -51,7 +51,7 @@
                 </div>
             </div>
 
-            <!-- Proposal Form -->
+            <!-- Formulario de propuesta -->
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -62,7 +62,7 @@
                     <form method="POST" id="proposeForm">
                         {{ form.hidden_tag() }}
 
-                        <!-- Dataset Selection -->
+                        <!-- Selección de dataset -->
                         <div class="mb-4">
                             {{ form.dataset_id.label(class="form-label fw-bold") }}
                             <span class="text-danger">*</span>
@@ -79,7 +79,7 @@
                             </small>
                         </div>
 
-                        <!-- Dataset Preview -->
+                        <!-- Vista previa de Dataset -->
                         <div id="datasetPreview" class="mb-4" style="display: none;">
                             <div class="alert alert-info border">
                                 <h6 class="alert-heading mb-2">
@@ -87,12 +87,11 @@
                                     Dataset Preview
                                 </h6>
                                 <div id="previewContent">
-                                    <!-- Will be populated by JavaScript -->
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Message to Curators -->
+                        <!-- Mensaje a los curadores -->
                         <div class="mb-4">
                             {{ form.message.label(class="form-label fw-bold") }}
                             <span class="text-muted">(Optional)</span>
@@ -109,7 +108,7 @@
                             </small>
                         </div>
 
-                        <!-- Form Actions -->
+                        <!-- Acciones del formulario -->
                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                             <a href="{{ url_for('community.view', slug=community.slug) }}"
                                class="btn btn-outline-secondary">
@@ -122,7 +121,7 @@
             </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Barra lateral -->
         <div class="col-12 col-lg-4">
             <div class="card bg-light">
                 <div class="card-header">
@@ -181,7 +180,7 @@
         </div>
     </div>
 
-    <!-- Back Button -->
+    <!-- Botón de regreso -->
     <div class="row mt-4">
         <div class="col-12">
             <a href="{{ url_for('community.view', slug=community.slug) }}"
@@ -195,15 +194,15 @@
 
 {% block scripts %}
 <script>
-    // Initialize Feather icons
+    // Inicializar iconos Feather
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
 
-    // Dataset data from server
+    // Datos de datasets desde el servidor
     const userDatasets = {{ datasets_json | tojson }};
 
-    // Character counter for message
+    // Contador de caracteres para el mensaje
     const messageField = document.querySelector('textarea[name="message"]');
     const charCount = document.getElementById('messageCharCount');
 
@@ -211,11 +210,11 @@
         messageField.addEventListener('input', function() {
             charCount.textContent = this.value.length;
         });
-        // Initialize count
+        // Inicializar contador
         charCount.textContent = messageField.value.length;
     }
 
-    // Dataset preview functionality
+    // Funcionalidad de vista previa de dataset
     const datasetSelect = document.getElementById('datasetSelect');
     const datasetPreview = document.getElementById('datasetPreview');
     const previewContent = document.getElementById('previewContent');
@@ -226,7 +225,7 @@
             const selectedDataset = userDatasets.find(d => d.id === selectedId);
 
             if (selectedDataset) {
-                // Show preview with dataset info (using to_dict() structure)
+                // Mostrar vista previa con información del dataset
                 const description = selectedDataset.description || 'No description available';
                 const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
 
@@ -242,7 +241,7 @@
 
                 datasetPreview.style.display = 'block';
 
-                // Re-initialize icons
+                // Re-inicializar iconos Feather
                 if (typeof feather !== 'undefined') {
                     feather.replace();
                 }
@@ -251,13 +250,12 @@
             }
         });
 
-        // Trigger on page load if there's a pre-selected value
         if (datasetSelect.value) {
             datasetSelect.dispatchEvent(new Event('change'));
         }
     }
 
-    // Form validation feedback
+    // Formulario con validación
     const form = document.getElementById('proposeForm');
     if (form) {
         form.addEventListener('submit', function(e) {

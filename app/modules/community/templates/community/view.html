@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    {# Flash messages #}
+    {# Mensajes flash #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -16,10 +16,10 @@
         {% endif %}
     {% endwith %}
 
-    {# Cache frequently used values #}
+    {# Cachear valores usados frecuentemente #}
     {% set datasets_count = community.get_datasets_count() %}
 
-    <!-- Community Header -->
+    <!-- Cabecera de la comunidad -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -64,7 +64,7 @@
                             </div>
                             <p class="mb-3">{{ community.description }}</p>
 
-                            <!-- Stats -->
+                            <!-- Estadísticas -->
                             <div class="d-flex gap-4">
                                 <div>
                                     <strong>{{ datasets_count }}</strong>
@@ -83,7 +83,7 @@
     </div>
 
     <div class="row">
-        <!-- Main Content (Datasets) -->
+        <!-- Contenido principal (Datasets) -->
         <div class="col-12 col-lg-8 mb-4">
             <div class="card">
                 <div class="card-header">
@@ -160,7 +160,6 @@
                                 <p class="text-muted small">
                                     Showing {{ datasets|length }} of {{ datasets_count }} datasets
                                 </p>
-                                <!-- TODO: Add pagination when backend is ready -->
                             </div>
                         {% endif %}
                     {% else %}
@@ -182,9 +181,9 @@
             </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Barra lateral -->
         <div class="col-12 col-lg-4">
-            <!-- Curators Card -->
+            <!-- Tarjeta de curadores -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -220,7 +219,7 @@
                 </div>
             </div>
 
-            <!-- Creator Card -->
+            <!-- Tarjeta del creador -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -249,7 +248,7 @@
         </div>
     </div>
 
-    <!-- Back to Communities -->
+    <!-- Volver a Comunidades -->
     <div class="row mt-3">
         <div class="col-12">
             <a href="{{ url_for('community.list_communities') }}" class="btn btn-outline-secondary">
@@ -262,7 +261,7 @@
 
 {% block scripts %}
 <script>
-    // Initialize Feather icons
+    // Inicializar Feather Icons
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
