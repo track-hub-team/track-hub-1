@@ -11,7 +11,7 @@ A web platform for managing and sharing GPS tracks (GPX files), built on top of 
 - **GPX Track Management**: Upload and organize GPS tracks in GPX format
 - **Interactive Visualization**: View routes on an interactive map with statistics (distance, elevation, duration)
 - **Version Control**: Track changes to your datasets over time
-- **Community Features**: Share and discover GPS track collections
+- **[Community Features](docs/communities.md)**: Organize datasets into curated communities
 
 ## Getting Started
 
