@@ -24,5 +24,12 @@ To set up your development environment, follow the [Developer Setup Guide](docs/
 - [Continuous Integration](docs/ci.md) - Local pre-commit hooks and remote GitHub Actions workflows
 - [Track Hub 2 Integration](docs/track-hub-2-integration.md) - Collaboration and feature integration with Track Hub 2 team
 
+### Core Features Documentation
+
+- [Fakenodo Service](docs/fakenodo.md) - Mock Zenodo service for development and testing
+- [Zenodo Integration](docs/zenodo.md) - Integration with Zenodo for DOI publishing and deployment on Render
+- [Comment Moderation System](docs/comment-moderation.md) - Comment management and moderation features
+- [ZIP Upload Feature](docs/zip-upload.md) - Bulk file upload functionality via ZIP archives
+
 ### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
