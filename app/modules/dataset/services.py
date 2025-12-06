@@ -220,7 +220,10 @@ class DataSetService(BaseService):
         return dataset
 
     def update_dsmetadata(self, id, **kwargs):
-        return self.dsmetadata_repository.update(id, **kwargs)
+        logger.info(f"[DATASET] Updating dsmetadata {id} with: {kwargs}")
+        result = self.dsmetadata_repository.update(id, **kwargs)
+        logger.info("[DATASET] Update completed")
+        return result
 
     def get_uvlhub_doi(self, dataset: BaseDataset) -> str:
         domain = os.getenv("DOMAIN", "localhost")

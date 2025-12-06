@@ -169,46 +169,59 @@ class ZenodoService(BaseService):
         """
         Crea una nueva deposición usando los metadatos de un DataSet.
         """
-        logger.info("Dataset sending to Zenodo...")
-        logger.info("Publication type...%s", dataset.ds_meta_data.publication_type.value)
+        logger.info("[ZENODO] Dataset sending to Zenodo...")
+        logger.info("[ZENODO] Publication type: %s", dataset.ds_meta_data.publication_type.value)
 
-        metadata = {
-            "title": dataset.ds_meta_data.title,
-            "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
-            "publication_type": (
-                dataset.ds_meta_data.publication_type.value
-                if dataset.ds_meta_data.publication_type.value != "none"
-                else None
-            ),
-            "description": dataset.ds_meta_data.description,
-            "creators": [
-                {
-                    "name": author.name,
-                    **({"affiliation": author.affiliation} if author.affiliation else {}),
-                    **({"orcid": author.orcid} if author.orcid else {}),
-                }
-                for author in dataset.ds_meta_data.authors
-            ],
-            "keywords": (
-                ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
-            ),
-            "access_right": "open",
-            "license": "CC-BY-4.0",
-        }
+        try:
+            logger.info("[ZENODO] Building metadata...")
+            metadata = {
+                "title": dataset.ds_meta_data.title,
+                "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
+                "publication_type": (
+                    dataset.ds_meta_data.publication_type.value
+                    if dataset.ds_meta_data.publication_type.value != "none"
+                    else None
+                ),
+                "description": dataset.ds_meta_data.description,
+                "creators": [
+                    {
+                        "name": author.name,
+                        **({"affiliation": author.affiliation} if author.affiliation else {}),
+                        **({"orcid": author.orcid} if author.orcid else {}),
+                    }
+                    for author in dataset.ds_meta_data.authors
+                ],
+                "keywords": (
+                    ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
+                ),
+                "access_right": "open",
+                "license": "CC-BY-4.0",
+            }
+            logger.info("[ZENODO] Metadata built successfully")
 
-        data = {"metadata": metadata}
-        response = requests.post(
-            self.ZENODO_API_URL, params=self._params(), json=data, headers=self.headers, timeout=30
-        )
-        if response.status_code != 201:
-            error_message = f"Failed to create deposition. Error details: {response.json()}"
-            raise Exception(error_message)
-        return response.json()
+            data = {"metadata": metadata}
+            logger.info(f"[ZENODO] Posting to {self.ZENODO_API_URL}")
+            response = requests.post(
+                self.ZENODO_API_URL, params=self._params(), json=data, headers=self.headers, timeout=30
+            )
+            logger.info(f"[ZENODO] Response status: {response.status_code}")
+
+            if response.status_code != 201:
+                error_message = f"Failed to create deposition. Status: {response.status_code}, Error: {response.text}"
+                logger.error(f"[ZENODO] {error_message}")
+                raise Exception(error_message)
+
+            logger.info("[ZENODO] Deposition created successfully")
+            return response.json()
+        except Exception as e:
+            logger.exception(f"[ZENODO] Exception in create_new_deposition: {e}")
+            raise
 
     def upload_file(self, dataset: BaseDataset, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
         """
         Sube un fichero a una deposición existente.
         """
+        logger.info(f"[ZENODO] Starting upload_file for deposition {deposition_id}")
         filename = feature_model.fm_meta_data.filename
         data = {"name": filename}
         user_id = current_user.id if user is None else user.id
