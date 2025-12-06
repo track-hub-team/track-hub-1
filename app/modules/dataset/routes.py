@@ -78,27 +78,41 @@ def create_dataset():
         # Enviar a Zenodo
         data = {}
         try:
+            logger.info(f"[UPLOAD] Creating deposition for dataset {dataset.id}")
             zenodo_response_json = zenodo_service.create_new_deposition(dataset)
             data = json.loads(json.dumps(zenodo_response_json))
+            logger.info(f"[UPLOAD] Deposition created successfully: {data.get('id')}")
         except Exception as exc:
             data = {}
-            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
+            logger.exception(f"[UPLOAD] Exception while creating deposition in Zenodo: {exc}")
+            return jsonify({"message": f"Failed to create deposition: {str(exc)}"}), 500
 
         if data.get("conceptrecid"):
             deposition_id = data.get("id")
+            logger.info(f"[UPLOAD] Updating dataset {dataset.ds_meta_data_id} with deposition_id={deposition_id}")
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
             try:
-                for feature_model in dataset.feature_models:
+                logger.info(f"[UPLOAD] Starting file upload for {len(dataset.feature_models)} feature models")
+                for idx, feature_model in enumerate(dataset.feature_models, 1):
+                    logger.info(f"[UPLOAD] Uploading file {idx}/{len(dataset.feature_models)}")
                     zenodo_service.upload_file(dataset, deposition_id, feature_model)
+                logger.info("[UPLOAD] All files uploaded successfully")
 
+                logger.info(f"[UPLOAD] Publishing deposition {deposition_id}")
                 zenodo_service.publish_deposition(deposition_id)
 
+                logger.info(f"[UPLOAD] Getting DOI for deposition {deposition_id}")
                 deposition_doi = zenodo_service.get_doi(deposition_id)
+                logger.info(f"[UPLOAD] DOI retrieved: {deposition_doi}")
+
+                logger.info(f"[UPLOAD] Updating dataset {dataset.ds_meta_data_id} with DOI={deposition_doi}")
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                logger.info(f"[UPLOAD] Dataset {dataset.id} sync completed successfully")
             except Exception as e:
-                msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
-                return jsonify({"message": msg}), 200
+                logger.exception(f"[UPLOAD] Failed during upload/publish: {e}")
+                msg = f"Failed to upload files or publish to Zenodo: {str(e)}"
+                return jsonify({"message": msg}), 500
 
         temp_folder = current_user.temp_folder()
         if os.path.isdir(temp_folder):
