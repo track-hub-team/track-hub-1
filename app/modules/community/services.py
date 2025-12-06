@@ -84,6 +84,20 @@ class CommunityService(BaseService):
             db.session.rollback()
             return None, f"Error creating community: {str(e)}"
 
+    def _delete_old_logo(self, logo_path: str) -> None:
+        """Eliminar logo anterior si existe"""
+        try:
+            working_dir = os.getenv("WORKING_DIR", "")
+            if not working_dir:
+                working_dir = os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                )
+            old_logo_path = os.path.join(working_dir, logo_path)
+            if os.path.exists(old_logo_path):
+                os.remove(old_logo_path)
+        except Exception as e:
+            logger.warning(f"Failed to delete old logo: {e}")
+
     def update_community(
         self,
         community_id: int,
@@ -107,17 +121,7 @@ class CommunityService(BaseService):
             if logo_file and logo_file.filename:
                 # Eliminar logo anterior si existe
                 if community.logo_path:
-                    try:
-                        working_dir = os.getenv("WORKING_DIR", "")
-                        if not working_dir:
-                            working_dir = os.path.dirname(
-                                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                            )
-                        old_logo_path = os.path.join(working_dir, community.logo_path)
-                        if os.path.exists(old_logo_path):
-                            os.remove(old_logo_path)
-                    except Exception as e:
-                        logger.warning(f"Failed to delete old logo: {e}")
+                    self._delete_old_logo(community.logo_path)
 
                 # Guardar nuevo logo
                 logo_path = self._save_logo(logo_file, community.slug)
