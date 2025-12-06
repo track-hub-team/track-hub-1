@@ -1,6 +1,8 @@
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
-from wtforms.validators import URL, DataRequired, Optional
+from wtforms.validators import URL, DataRequired, Optional, Regexp
 
 from app.modules.dataset.models import PublicationType
 
@@ -21,7 +23,6 @@ class AuthorForm(FlaskForm):
         }
 
 
-# ✅ NUEVO: Formulario base para feature models
 class BaseFeatureModelForm(FlaskForm):
     """Formulario base común para todos los tipos de archivos."""
 
@@ -53,7 +54,6 @@ class BaseFeatureModelForm(FlaskForm):
         return []  # Override en subclases si es necesario
 
 
-# ✅ NUEVO: Formulario específico para UVL
 class UVLFeatureModelForm(BaseFeatureModelForm):
     """Formulario específico para archivos UVL."""
 
@@ -68,7 +68,6 @@ class UVLFeatureModelForm(BaseFeatureModelForm):
         return data
 
 
-# ✅ NUEVO: Formulario específico para GPX
 class GPXFeatureModelForm(BaseFeatureModelForm):
     """Formulario específico para archivos GPX."""
 
@@ -102,7 +101,6 @@ class GPXFeatureModelForm(BaseFeatureModelForm):
         return data
 
 
-# ⚠️ DEPRECADO: Mantener por compatibilidad temporal
 class FeatureModelForm(BaseFeatureModelForm):
     """Formulario genérico (deprecado, usar específicos)."""
 
@@ -120,8 +118,18 @@ class DataSetForm(FlaskForm):
         choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
         validators=[DataRequired()],
     )
-    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
-    dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
+
+    DOI_REGEX = r"^10\.\d{3,9}/[-._;()/:A-Z0-9]+$"
+
+    publication_doi = StringField(
+        "Publication DOI",
+        validators=[Optional(), Regexp(DOI_REGEX, flags=re.IGNORECASE, message="Invalid Publication DOI format")],
+    )
+    dataset_doi = StringField(
+        "Dataset DOI",
+        validators=[Optional(), Regexp(DOI_REGEX, flags=re.IGNORECASE, message="Invalid Dataset DOI format")],
+    )
+
     tags = StringField("Tags (separated by commas)", validators=[Optional()])
 
     # Mantener feature_models genérico para compatibilidad
