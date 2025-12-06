@@ -17,6 +17,11 @@ A web platform for managing and sharing GPS tracks (GPX files), built on top of 
 
 To set up your development environment, follow the [Developer Setup Guide](docs/setup-guide.md).
 
-## Deployment
+## For Developers and Team Members
 
+- [Project Management & Workflow](docs/project-management.md) - Jira workflow, task management, and sprints
+- [Branching Strategy](docs/branching-strategy.md) - Git workflow, commit conventions, and EGC Flow
+- [Issue Template](docs/issue-template.md) - How to report and manage bugs and incidents
+
+### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
