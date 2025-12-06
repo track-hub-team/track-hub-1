@@ -16,7 +16,7 @@ To carry out the work, an organization has been created in which the repositorie
 ### 1. GPX Format Adaptation
 
 **Source**: Track Hub 2
-**Pull Request**: [#4 - Implement GPX adaptation based on track-hub-2](https://github.com/track-hub-1/pull/4)
+**Pull Request**: [#4 - Implement GPX adaptation based on track-hub-2](https://github.com/track-hub-team/track-hub-1/pull/4)
 
 **Description**:
 The original UVLHub platform was designed to handle UVL files for feature model management. Track Hub 2 developed the initial adaptation to support GPX (GPS Exchange Format) files instead, which are the standard format for GPS track data.
@@ -30,7 +30,7 @@ The original UVLHub platform was designed to handle UVL files for feature model 
 ### 2. Continuous Deployment Workflow
 
 **Source**: Track Hub 2
-**Pull Request**: [#3 - Integration of the cd flow from track-hub-2](https://github.com/track-hub-1/pull/3)
+**Pull Request**: [#3 - Integration of the cd flow from track-hub-2](https://github.com/track-hub-team/track-hub-1/pull/3)
 
 **Description**:
 Track Hub 2 developed a comprehensive Continuous Deployment (CD) pipeline for deploying to Render.
