@@ -471,4 +471,4 @@ class CommunityService(BaseService):
         logo_file.save(file_path)
 
         # Retornar ruta relativa
-        return os.path.join("uploads", "communities", unique_filename)
+        return f"/uploads/communities/{unique_filename}"
