@@ -19,9 +19,10 @@ To set up your development environment, follow the [Developer Setup Guide](docs/
 
 ## For Developers and Team Members
 
-- [Project Management & Workflow](docs/project-management.md) - Jira workflow, task management, and sprints
-- [Branching Strategy](docs/branching-strategy.md) - Git workflow, commit conventions, and EGC Flow
-- [Issue Template](docs/issue-template.md) - How to report and manage bugs and incidents
+- [Project Management & Workflow](docs/project-management.md) - Jira workflow, task and issues management
+- [Branching and Commit Strategy](docs/branching-strategy.md) - Git workflow, commit conventions, and EGC Flow
+- [Continuous Integration](docs/ci.md) - Local pre-commit hooks and remote GitHub Actions workflows
+- [Track Hub 2 Integration](docs/track-hub-2-integration.md) - Collaboration and feature integration with Track Hub 2 team
 
 ### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render

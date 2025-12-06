@@ -10,11 +10,9 @@ Our team uses **Jira** for task management with integration to **Clockify** for 
 
 - [User Story Workflow](#user-story-workflow)
 - [Sprint Planning](#sprint-planning)
-- [Task Estimation](#task-estimation)
 - [Issue Management](#issue-management)
-- [Branching Strategy](#branching-strategy)
-- [Time Tracking](#time-tracking)
 - [Priority Levels](#priority-levels)
+- [Time Tracking](#time-tracking)
 
 ---
 

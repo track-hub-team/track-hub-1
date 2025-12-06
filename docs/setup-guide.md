@@ -7,7 +7,7 @@ This guide will help you configure your local environment to work with this repo
 - Git installed on your system
 - Python 3.12+ with pip
 
-## Quick Setup
+## Initial Setup
 
 Run the setup script from the project root:
 
@@ -15,51 +15,17 @@ Run the setup script from the project root:
 ./scripts/setup_commit_config.sh
 ```
 
-This script will:
+This script installs:
+1. Git commit template
+2. Prepare-commit-msg hook (auto-adds Jira references)
+3. Pre-commit hooks for code quality validation
 
-1. Configure the git commit template
-2. Install the prepare-commit-msg hook (auto-adds Jira references)
-3. Install pre-commit and its hooks
+## Next Steps
 
-## What Gets Installed
+After running the setup script, familiarize yourself with:
 
-### Git Commit Template
-
-When you run `git commit` (without `-m`), a template will guide you through writing properly formatted commit messages following Conventional Commits.
-
-### Pre-commit Hooks
-
-The following checks run automatically before each commit:
-
-- **Black**: Code formatting
-- **isort**: Import sorting
-- **Flake8**: Linting
-- **mypy**: Type checking
-- **commitlint**: Commit message validation
-
-Additionally, branch name validation runs before each push to ensure compliance with EGC Flow.
-
-## Branch Naming Convention
-
-Your branches must follow this format:
-
-- `main` - Production releases only
-- `trunk` - Integration branch
-- `feature/<task>` - New features (e.g., `feature/SCRUM-123`)
-- `bugfix/<task>` - Bug fixes
-- `hotfix/<task>` - Urgent production fixes
-
-## Commit Message Format
-
-```
-<type>(<scope>): <subject>
-
-[optional body]
-
-Refs: SCRUM-XX
-```
-
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- **[Branching and Commit Strategy](branching-strategy.md)**: Branch naming conventions, commit message format, and template usage
+- **[Continuous Integration](ci.md)**: Local pre-commit hooks and remote CI workflows
 
 ## Troubleshooting
 

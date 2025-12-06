@@ -110,7 +110,7 @@ Refs: SCRUM-44
 
 ### Initial Setup
 
-Initial setup instructions are detailed in the [Developer Guide](../README.md#initial-setup).
+Initial setup instructions are detailed in the [Developer Setup Guide](setup-guide.md#initial-setup).
 
 ### How the Template Works
 
