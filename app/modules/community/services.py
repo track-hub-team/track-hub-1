@@ -51,6 +51,10 @@ class CommunityService(BaseService):
         """
         Crear una nueva comunidad.
         """
+        # Validar que el nombre no esté ya en uso
+        if self.repository.get_by_name(name):
+            return None, f"A community with the name '{name}' already exists"
+
         # Generar slug (único)
         base_slug = slugify(name)
         slug = base_slug

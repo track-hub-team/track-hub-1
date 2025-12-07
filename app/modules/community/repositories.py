@@ -12,6 +12,10 @@ class CommunityRepository(BaseRepository):
         """Obtener comunidad por slug"""
         return self.model.query.filter_by(slug=slug).first()
 
+    def get_by_name(self, name: str) -> Optional[Community]:
+        """Obtener comunidad por nombre"""
+        return self.model.query.filter_by(name=name).first()
+
     def get_all_ordered(self) -> List[Community]:
         """Obtener todas las comunidades ordenadas por fecha de creación"""
         return self.model.query.order_by(self.model.created_at.desc()).all()

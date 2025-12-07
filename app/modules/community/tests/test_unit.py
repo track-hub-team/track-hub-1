@@ -352,3 +352,40 @@ def test_cannot_remove_community_creator_as_curator(test_client):
     # Limpieza
     db.session.delete(community)
     db.session.commit()
+
+
+def test_cannot_create_community_with_duplicate_name(test_client):
+    """
+    Prueba que verifica que no se puede crear una comunidad con un nombre que ya existe.
+    """
+
+    user = User.query.filter_by(email="test@example.com").first()
+    assert user is not None, "Usuario de prueba no encontrado"
+
+    community_service = CommunityService()
+
+    # Crear la primera comunidad
+    community1, error1 = community_service.create_community(
+        name="Unique Community Name",
+        description="Primera comunidad con este nombre",
+        creator_id=user.id,
+    )
+    assert error1 is None, f"Error al crear la primera comunidad: {error1}"
+    assert community1 is not None, "La primera comunidad no fue creada"
+
+    # Intentar crear una segunda comunidad con el mismo nombre
+    community2, error2 = community_service.create_community(
+        name="Unique Community Name",
+        description="Intento de crear una comunidad con nombre duplicado",
+        creator_id=user.id,
+    )
+
+    # Verificaciones
+    assert community2 is None, "No debería haberse creado una segunda comunidad con el mismo nombre"
+    assert error2 is not None, "Debería devolver un mensaje de error"
+    assert "already exists" in error2, f"El mensaje de error no es el esperado, se obtuvo: {error2}"
+    assert "Unique Community Name" in error2, "El mensaje de error debería incluir el nombre de la comunidad"
+
+    # Limpieza
+    db.session.delete(community1)
+    db.session.commit()
