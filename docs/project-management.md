@@ -87,7 +87,7 @@ The project is divided into two sprints:
 2. Estimated by the person who identified the task
 3. Usually assigned to the identifier
 4. **Should fit into an existing user story as a subtask**
-5. If unrelated to existing stories (e.g., fixes to original forked code), add to **"Todo lo Demás"** section
+5. If unrelated to existing stories (e.g., fixes to original forked code), add to **"Todo lo Demás"** section as a task.
 
 > **Note**: Task titles and descriptions in Jira must be in English. For development, branch names can be translated into Spanish if preferred.
 
@@ -165,6 +165,7 @@ When a bug or incident is detected:
 | **User Stories (Independent)** | Medium | Stories not directly tied to core work items |
 | **Issues** | Variable | Set by reporter based on estimated complexity |
 | **Subtasks** | N/A | No priority (inherit from parent story) |
+| **Tasks** | Medium | If it occurs due to an issue, it must inherit its priority. |
 
 ### Priority Usage
 
