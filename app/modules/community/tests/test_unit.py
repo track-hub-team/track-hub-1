@@ -41,7 +41,7 @@ def test_create_community_creator_becomes_curator(test_client):
 
     # Obtener usuario de prueba
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -53,18 +53,18 @@ def test_create_community_creator_becomes_curator(test_client):
     )
 
     # Verificar que la comunidad se creó correctamente
-    assert error is None, f"Error al crear la comunidad: {error}"
-    assert community is not None, "La comunidad no fue creada"
-    assert community.creator_id == user.id, "El creador no coincide con el usuario"
+    assert error is None, f"Error creating community: {error}"
+    assert community is not None, "Community was not created"
+    assert community.creator_id == user.id, "Creator does not match the user"
 
     # Verificar que el creador es curador
     is_curator = community_service.is_curator(community.id, user.id)
-    assert is_curator is True, "El creador no fue añadido como curador automáticamente"
+    assert is_curator is True, "Creator was not automatically added as curator"
 
     # Verificar que existe exactamente 1 curador (el creador)
     curators = community.get_curators_list()
-    assert len(curators) == 1, f"Se esperaba 1 curador, se encontraron {len(curators)}"
-    assert curators[0].id == user.id, "El único curador no es el creador"
+    assert len(curators) == 1, f"Expected 1 curator, found {len(curators)}"
+    assert curators[0].id == user.id, "The only curator is not the creator"
 
     # Limpieza
     db.session.delete(community)
@@ -80,7 +80,7 @@ def test_get_eligible_datasets_excludes_already_added(test_client):
     """
 
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -88,7 +88,7 @@ def test_get_eligible_datasets_excludes_already_added(test_client):
     community, error = community_service.create_community(
         name="Test Community Datasets", description="Comunidad para probar filtrado de datasets", creator_id=user.id
     )
-    assert error is None and community is not None, "Error al crear comunidad de prueba"
+    assert error is None and community is not None, "Error creating test community"
 
     # Crear 3 datasets del usuario
     metadata1 = DSMetaData(
@@ -144,13 +144,13 @@ def test_get_eligible_datasets_excludes_already_added(test_client):
     eligible_datasets = community_service.get_eligible_datasets_for_community(user.id, community.id)
 
     # Verificaciones
-    assert len(eligible_datasets) == 1, f"Se esperaba 1 dataset elegible, se encontraron {len(eligible_datasets)}"
-    assert eligible_datasets[0].id == dataset3.id, "El dataset elegible no es el correcto"
+    assert len(eligible_datasets) == 1, f"Expected 1 eligible dataset, found {len(eligible_datasets)}"
+    assert eligible_datasets[0].id == dataset3.id, "The eligible dataset is not the correct one"
 
     # Verificar que los otros dos no están en la lista
     eligible_ids = [d.id for d in eligible_datasets]
-    assert dataset1.id not in eligible_ids, "Dataset1 (ya en comunidad) no debería ser elegible"
-    assert dataset2.id not in eligible_ids, "Dataset2 (con solicitud pendiente) no debería ser elegible"
+    assert dataset1.id not in eligible_ids, "Dataset1 (already in community) should not be eligible"
+    assert dataset2.id not in eligible_ids, "Dataset2 (with pending request) should not be eligible"
 
     # Limpieza
     db.session.delete(pending_request)
@@ -172,7 +172,7 @@ def test_approve_request_adds_dataset_to_community(test_client):
     """
 
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -182,7 +182,7 @@ def test_approve_request_adds_dataset_to_community(test_client):
         description="Comunidad para probar aprobación de solicitudes",
         creator_id=user.id,
     )
-    assert error is None and community is not None, "Error al crear comunidad"
+    assert error is None and community is not None, "Error creating community"
 
     # Crear un dataset
     metadata = DSMetaData(
@@ -199,11 +199,11 @@ def test_approve_request_adds_dataset_to_community(test_client):
     success, error = community_service.propose_dataset(
         community_id=community.id, dataset_id=dataset.id, requester_id=user.id, message="Por favor, aprueben mi dataset"
     )
-    assert success is True and error is None, "Error al crear solicitud"
+    assert success is True and error is None, "Error creating request"
 
     # Obtener la solicitud creada
     pending_requests = community_service.get_pending_requests(community.id)
-    assert len(pending_requests) == 1, "Debería haber exactamente 1 solicitud pendiente"
+    assert len(pending_requests) == 1, "There should be exactly 1 pending request"
     request = pending_requests[0]
 
     # Aprobar la solicitud (el usuario es curador)
@@ -212,23 +212,23 @@ def test_approve_request_adds_dataset_to_community(test_client):
     )
 
     # Verificaciones
-    assert success is True, f"Error al aprobar solicitud: {error}"
-    assert error is None, f"Se esperaba None, se obtuvo error: {error}"
+    assert success is True, f"Error approving request: {error}"
+    assert error is None, f"Expected None, got error: {error}"
 
     # Verificar que la solicitud cambió de estado
     db.session.refresh(request)
-    assert request.status == CommunityRequest.STATUS_APPROVED, "La solicitud no cambió a estado 'approved'"
-    assert request.reviewed_by_id == user.id, "El revisor no es el curador correcto"
-    assert request.review_comment == "Dataset aprobado para la comunidad", "El comentario no coincide"
+    assert request.status == CommunityRequest.STATUS_APPROVED, "Request status did not change to 'approved'"
+    assert request.reviewed_by_id == user.id, "Reviewer is not the correct curator"
+    assert request.review_comment == "Dataset aprobado para la comunidad", "Comment does not match"
 
     # Verificar que el dataset está ahora en la comunidad
     community_datasets = community_service.get_community_datasets(community.id)
-    assert len(community_datasets) == 1, "El dataset no fue añadido a la comunidad"
-    assert community_datasets[0].id == dataset.id, "El dataset añadido no es el correcto"
+    assert len(community_datasets) == 1, "Dataset was not added to the community"
+    assert community_datasets[0].id == dataset.id, "The added dataset is not the correct one"
 
     # Verificar que ya no hay solicitudes pendientes
     pending_after = community_service.get_pending_requests(community.id)
-    assert len(pending_after) == 0, "No debería haber solicitudes pendientes después de aprobar"
+    assert len(pending_after) == 0, "There should be no pending requests after approval"
 
     # Limpieza
     db.session.delete(community)
@@ -244,7 +244,7 @@ def test_reject_request_does_not_add_dataset(test_client):
     """
 
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -252,7 +252,7 @@ def test_reject_request_does_not_add_dataset(test_client):
     community, error = community_service.create_community(
         name="Test Community Rejection", description="Comunidad para probar rechazo de solicitudes", creator_id=user.id
     )
-    assert error is None and community is not None, "Error al crear comunidad"
+    assert error is None and community is not None, "Error creating community"
 
     # Crear un dataset
     metadata = DSMetaData(
@@ -272,11 +272,11 @@ def test_reject_request_does_not_add_dataset(test_client):
         requester_id=user.id,
         message="Por favor, consideren mi dataset",
     )
-    assert success is True and error is None, "Error al crear solicitud"
+    assert success is True and error is None, "Error creating request"
 
     # Obtener la solicitud creada
     pending_requests = community_service.get_pending_requests(community.id)
-    assert len(pending_requests) == 1, "Debería haber exactamente 1 solicitud pendiente"
+    assert len(pending_requests) == 1, "There should be exactly 1 pending request"
     request = pending_requests[0]
 
     # Rechazar la solicitud (el usuario es curador)
@@ -285,22 +285,22 @@ def test_reject_request_does_not_add_dataset(test_client):
     )
 
     # Verificaciones
-    assert success is True, f"Error al rechazar solicitud: {error}"
-    assert error is None, f"Se esperaba None, se obtuvo error: {error}"
+    assert success is True, f"Error rejecting request: {error}"
+    assert error is None, f"Expected None, got error: {error}"
 
     # Verificar que la solicitud cambió de estado
     db.session.refresh(request)
-    assert request.status == CommunityRequest.STATUS_REJECTED, "La solicitud no cambió a estado 'rejected'"
-    assert request.reviewed_by_id == user.id, "El revisor no es el curador correcto"
-    assert request.review_comment == "Dataset no cumple con los requisitos de la comunidad", "El comentario no coincide"
+    assert request.status == CommunityRequest.STATUS_REJECTED, "Request status did not change to 'rejected'"
+    assert request.reviewed_by_id == user.id, "Reviewer is not the correct curator"
+    assert request.review_comment == "Dataset no cumple con los requisitos de la comunidad", "Comment does not match"
 
     # Verificar que el dataset NO está en la comunidad
     community_datasets = community_service.get_community_datasets(community.id)
-    assert len(community_datasets) == 0, "El dataset no debería estar en la comunidad tras ser rechazado"
+    assert len(community_datasets) == 0, "Dataset should not be in the community after rejection"
 
     # Verificar que ya no hay solicitudes pendientes
     pending_after = community_service.get_pending_requests(community.id)
-    assert len(pending_after) == 0, "No debería haber solicitudes pendientes después de rechazar"
+    assert len(pending_after) == 0, "There should be no pending requests after rejection"
 
     # Limpieza
     db.session.delete(community)
@@ -315,7 +315,7 @@ def test_cannot_remove_community_creator_as_curator(test_client):
     """
 
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -325,11 +325,11 @@ def test_cannot_remove_community_creator_as_curator(test_client):
         description="Comunidad para probar que el creador no puede ser removido",
         creator_id=user.id,
     )
-    assert error is None and community is not None, "Error al crear comunidad"
+    assert error is None and community is not None, "Error creating community"
 
     # Verificar que el usuario es curador
     is_curator = community_service.is_curator(community.id, user.id)
-    assert is_curator is True, "El creador debería ser curador"
+    assert is_curator is True, "Creator should be a curator"
 
     # Intentar eliminar al creador como curador
     success, error = community_service.remove_curator(
@@ -337,17 +337,17 @@ def test_cannot_remove_community_creator_as_curator(test_client):
     )
 
     # Verificaciones
-    assert success is False, "No debería ser posible eliminar al creador como curador"
-    assert error is not None, "Debería devolver un mensaje de error"
-    assert "Cannot remove the community creator as curator" in error, f"El error no es el esperado, se obtuvo: {error}"
+    assert success is False, "Should not be possible to remove creator as curator"
+    assert error is not None, "Should return an error message"
+    assert "Cannot remove the community creator as curator" in error, f"Unexpected error, got: {error}"
 
     # Verificar que el usuario sigue siendo curador
     is_still_curator = community_service.is_curator(community.id, user.id)
-    assert is_still_curator is True, "El creador debería seguir siendo curador después del intento"
+    assert is_still_curator is True, "Creator should still be a curator after the attempt"
 
     # Verificar que sigue habiendo exactamente 1 curador
     curators = community.get_curators_list()
-    assert len(curators) == 1, f"Debería haber exactamente 1 curador, se encontraron {len(curators)}"
+    assert len(curators) == 1, f"There should be exactly 1 curator, found {len(curators)}"
 
     # Limpieza
     db.session.delete(community)
@@ -360,7 +360,7 @@ def test_cannot_create_community_with_duplicate_name(test_client):
     """
 
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     community_service = CommunityService()
 
@@ -370,8 +370,8 @@ def test_cannot_create_community_with_duplicate_name(test_client):
         description="Primera comunidad con este nombre",
         creator_id=user.id,
     )
-    assert error1 is None, f"Error al crear la primera comunidad: {error1}"
-    assert community1 is not None, "La primera comunidad no fue creada"
+    assert error1 is None, f"Error creating first community: {error1}"
+    assert community1 is not None, "First community was not created"
 
     # Intentar crear una segunda comunidad con el mismo nombre
     community2, error2 = community_service.create_community(
@@ -381,10 +381,10 @@ def test_cannot_create_community_with_duplicate_name(test_client):
     )
 
     # Verificaciones
-    assert community2 is None, "No debería haberse creado una segunda comunidad con el mismo nombre"
-    assert error2 is not None, "Debería devolver un mensaje de error"
-    assert "already exists" in error2, f"El mensaje de error no es el esperado, se obtuvo: {error2}"
-    assert "Unique Community Name" in error2, "El mensaje de error debería incluir el nombre de la comunidad"
+    assert community2 is None, "Should not have created a second community with the same name"
+    assert error2 is not None, "Should return an error message"
+    assert "already exists" in error2, f"Unexpected error message, got: {error2}"
+    assert "Unique Community Name" in error2, "Error message should include the community name"
 
     # Limpieza
     db.session.delete(community1)

@@ -29,7 +29,7 @@ def test_propose_dataset_full_workflow(test_client):
     """
     # Obtener usuario de prueba
     user = User.query.filter_by(email="test@example.com").first()
-    assert user is not None, "Usuario de prueba no encontrado"
+    assert user is not None, "Test user not found"
 
     # Crear un dataset para el test
     metadata = DSMetaData(
@@ -48,7 +48,7 @@ def test_propose_dataset_full_workflow(test_client):
     login_response = test_client.post(
         "/login", data=dict(email="test@example.com", password="test1234"), follow_redirects=True
     )
-    assert login_response.status_code == 200, "Login falló"
+    assert login_response.status_code == 200, "Login failed"
 
     # 2. Crear comunidad vía POST /community/create
     create_response = test_client.post(
@@ -56,11 +56,11 @@ def test_propose_dataset_full_workflow(test_client):
         data=dict(name="Test Community Workflow", description="Comunidad para probar flujo completo de integración"),
         follow_redirects=True,
     )
-    assert create_response.status_code == 200, "Creación de comunidad falló"
+    assert create_response.status_code == 200, "Community creation failed"
 
     # Obtener la comunidad creada desde la BD
     community = Community.query.filter_by(name="Test Community Workflow").first()
-    assert community is not None, "Comunidad no fue creada en la BD"
+    assert community is not None, "Community was not created in DB"
 
     # 3. Usuario propone dataset vía POST /community/{slug}/propose
     propose_response = test_client.post(
@@ -68,21 +68,21 @@ def test_propose_dataset_full_workflow(test_client):
         data=dict(dataset_id=dataset.id, message="Este dataset es perfecto para la comunidad"),
         follow_redirects=True,
     )
-    assert propose_response.status_code == 200, "Propuesta de dataset falló"
+    assert propose_response.status_code == 200, "Dataset proposal failed"
 
     # 4. Verificar que aparece solicitud pendiente vía GET /community/{slug}/manage
     manage_response = test_client.get(f"/community/{community.slug}/manage")
-    assert manage_response.status_code == 200, "No se pudo acceder a la página de gestión"
+    assert manage_response.status_code == 200, "Could not access management page"
 
     # Verificar que el HTML contiene información de la solicitud pendiente
     html_content = manage_response.data.decode("utf-8")
-    assert "Dataset Workflow Test" in html_content, "El dataset propuesto no aparece en la página de gestión"
-    assert "Este dataset es perfecto para la comunidad" in html_content, "El mensaje de la propuesta no aparece"
+    assert "Dataset Workflow Test" in html_content, "Proposed dataset does not appear on management page"
+    assert "Este dataset es perfecto para la comunidad" in html_content, "Proposal message does not appear"
 
     # Obtener la solicitud desde la BD para aprobarla
     community_service = CommunityService()
     pending_requests = community_service.get_pending_requests(community.id)
-    assert len(pending_requests) == 1, f"Se esperaba 1 solicitud pendiente, se encontraron {len(pending_requests)}"
+    assert len(pending_requests) == 1, f"Expected 1 pending request, found {len(pending_requests)}"
     request = pending_requests[0]
 
     # 5. Curador aprueba la solicitud vía POST /community/{slug}/request/{id}/approve
@@ -91,20 +91,20 @@ def test_propose_dataset_full_workflow(test_client):
         data=dict(comment="Dataset aprobado por el curador"),
         follow_redirects=True,
     )
-    assert approve_response.status_code == 200, "Aprobación de solicitud falló"
+    assert approve_response.status_code == 200, "Request approval failed"
 
     # 6. Verificar que dataset aparece en la comunidad
     community_datasets = community_service.get_community_datasets(community.id)
-    assert len(community_datasets) == 1, "El dataset no fue añadido a la comunidad"
-    assert community_datasets[0].id == dataset.id, "El dataset en la comunidad no es el correcto"
+    assert len(community_datasets) == 1, "Dataset was not added to the community"
+    assert community_datasets[0].id == dataset.id, "The dataset in the community is not the correct one"
 
     # 7. Verificar que ya no hay solicitudes pendientes
     pending_after = community_service.get_pending_requests(community.id)
-    assert len(pending_after) == 0, "No debería haber solicitudes pendientes después de aprobar"
+    assert len(pending_after) == 0, "There should be no pending requests after approval"
 
     # 8. Verificar que la solicitud está aprobada
     db.session.refresh(request)
-    assert request.status == CommunityRequest.STATUS_APPROVED, "La solicitud no cambió a estado aprobado"
+    assert request.status == CommunityRequest.STATUS_APPROVED, "Request status did not change to approved"
 
     # Logout
     test_client.get("/logout", follow_redirects=True)
@@ -122,7 +122,7 @@ def test_curator_management_full_workflow(test_client):
     """
     # Obtener usuarios de prueba
     user1 = User.query.filter_by(email="test@example.com").first()
-    assert user1 is not None, "Usuario de prueba no encontrado"
+    assert user1 is not None, "Test user not found"
 
     # Crear segundo usuario para añadir como curador
     user2 = User.query.filter_by(email="curator2@example.com").first()
@@ -135,7 +135,7 @@ def test_curator_management_full_workflow(test_client):
     login_response = test_client.post(
         "/login", data=dict(email="test@example.com", password="test1234"), follow_redirects=True
     )
-    assert login_response.status_code == 200, "Login falló"
+    assert login_response.status_code == 200, "Login failed"
 
     # 2. Crear comunidad vía POST (user1 es curador automáticamente)
     create_response = test_client.post(
@@ -143,50 +143,50 @@ def test_curator_management_full_workflow(test_client):
         data=dict(name="Test Community Curators", description="Comunidad para probar gestión de curadores"),
         follow_redirects=True,
     )
-    assert create_response.status_code == 200, "Creación de comunidad falló"
+    assert create_response.status_code == 200, "Community creation failed"
 
     # Obtener la comunidad creada
     community = Community.query.filter_by(name="Test Community Curators").first()
-    assert community is not None, "Comunidad no fue creada en la BD"
+    assert community is not None, "Community was not created in DB"
 
     # 3. Añadir user2 como curador vía POST /add-curator
     add_curator_response = test_client.post(
         f"/community/{community.slug}/add-curator", data=dict(user_id=user2.id), follow_redirects=True
     )
-    assert add_curator_response.status_code == 200, "Añadir curador falló"
+    assert add_curator_response.status_code == 200, "Adding curator failed"
 
     # 4. Verificar que user2 aparece en lista de curadores desde el endpoint /manage
     manage_response = test_client.get(f"/community/{community.slug}/manage")
-    assert manage_response.status_code == 200, "No se pudo acceder a la página de gestión"
+    assert manage_response.status_code == 200, "Could not access management page"
 
     html_content = manage_response.data.decode("utf-8")
-    assert user2.email in html_content, "User2 no aparece en la página de gestión como curador"
+    assert user2.email in html_content, "User2 does not appear on management page as curator"
 
     # 5. Eliminar user2 como curador vía POST /remove-curator
     remove_curator_response = test_client.post(
         f"/community/{community.slug}/remove-curator", data=dict(user_id=user2.id), follow_redirects=True
     )
-    assert remove_curator_response.status_code == 200, "Remover curador falló"
+    assert remove_curator_response.status_code == 200, "Removing curator failed"
 
     # 6. Verificar que user2 ya no aparece en lista de curadores desde el endpoint /manage
     manage_after_remove = test_client.get(f"/community/{community.slug}/manage")
-    assert manage_after_remove.status_code == 200, "No se pudo acceder a la página de gestión"
+    assert manage_after_remove.status_code == 200, "Could not access management page"
 
     html_after_remove = manage_after_remove.data.decode("utf-8")
     # Verificar que solo aparece user1 como curador
-    assert user1.email in html_after_remove, "User1 no aparece como curador"
+    assert user1.email in html_after_remove, "User1 does not appear as curator"
 
     # 7. Intentar remover al creador (user1) - debe fallar
     remove_creator_response = test_client.post(
         f"/community/{community.slug}/remove-curator", data=dict(user_id=user1.id), follow_redirects=True
     )
-    assert remove_creator_response.status_code == 200, "Request completó correctamente"
+    assert remove_creator_response.status_code == 200, "Request completed successfully"
 
     # Verificar que el mensaje de error está en la respuesta
     html_error = remove_creator_response.data.decode("utf-8")
     assert (
         "Cannot remove the community creator" in html_error or "error" in html_error.lower()
-    ), "No se mostró mensaje de error al intentar remover creador"
+    ), "Error message was not shown when trying to remove creator"
 
     # Logout
     test_client.get("/logout", follow_redirects=True)

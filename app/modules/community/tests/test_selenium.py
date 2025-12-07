@@ -75,7 +75,7 @@ def test_add_curator_via_manage_interface():
 
         # Verificar que el curador fue añadido
         page_source = driver.page_source
-        assert "user2@example.com" in page_source, "El nuevo curador no aparece en la lista"
+        assert "user2@example.com" in page_source, "New curator does not appear in the list"
 
         # Eliminamos el curador para limpiar el estado
         remove_button = driver.find_element(By.CSS_SELECTOR, ".btn-sm")
@@ -88,10 +88,10 @@ def test_add_curator_via_manage_interface():
 
         # Verificar que fue eliminado
         page_source = driver.page_source
-        assert "user2@example.com" not in page_source, "El curador no fue eliminado correctamente"
+        assert "user2@example.com" not in page_source, "Curator was not removed correctly"
 
     except NoSuchElementException as e:
-        raise AssertionError(f"Test fallido! Elemento no encontrado: {e}")
+        raise AssertionError(f"Test failed! Element not found: {e}")
 
     finally:
         close_driver(driver)
@@ -181,7 +181,7 @@ def test_propose_and_reject_dataset():
 
         # Verificar que aparece la alerta de éxito
         alert = driver.switch_to.alert
-        assert "rejected successfully" in alert.text, "No apareció el mensaje de éxito"
+        assert "rejected successfully" in alert.text, "Success message did not appear"
         alert.accept()
         time.sleep(1)
 
@@ -189,7 +189,7 @@ def test_propose_and_reject_dataset():
         page_source = driver.page_source
         assert (
             "No pending requests" in page_source or "Sample dataset" not in page_source
-        ), "La propuesta no fue rechazada correctamente"
+        ), "Proposal was not rejected correctly"
 
         print("Test passed! Dataset proposed and rejected successfully.")
 
