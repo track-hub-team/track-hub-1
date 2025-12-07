@@ -1,12 +1,26 @@
+# FROM python:3.11-slim
+# WORKDIR /app
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+# # Copia SOLO lo necesario para fakenodo:
+# COPY app/modules/fakenodo/app.py /app/app.py
+# # Carpeta para ficheros (persistente en Render)
+# ENV FAKENODO_FILES_DIR=/data
+# RUN mkdir -p /data
+# EXPOSE 8000
+# # Render inyecta $PORT; gunicorn debe atarse a 0.0.0.0:$PORT
+# CMD gunicorn -w 2 -b 0.0.0.0:$PORT app:app
+
+
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn[gevent]
 # Copia SOLO lo necesario para fakenodo:
 COPY app/modules/fakenodo/app.py /app/app.py
 # Carpeta para ficheros (persistente en Render)
 ENV FAKENODO_FILES_DIR=/data
 RUN mkdir -p /data
 EXPOSE 8000
-# Render inyecta $PORT; gunicorn debe atarse a 0.0.0.0:$PORT
-CMD gunicorn -w 2 -b 0.0.0.0:$PORT app:app
+# Usando gevent worker: 1 proceso, conexiones concurrentes
+CMD gunicorn -k gevent -w 1 --worker-connections 1000 -b 0.0.0.0:$PORT app:app
