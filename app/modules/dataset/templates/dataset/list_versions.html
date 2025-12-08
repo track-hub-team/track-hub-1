@@ -48,6 +48,39 @@
                 {% endif %}
             </div>
 
+            <!-- DOI Information Section -->
+            {% if dataset.ds_meta_data.dataset_doi %}
+            <div class="card-body border-bottom bg-light">
+                <div class="row">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <h6 class="text-muted mb-2">
+                            <i data-feather="bookmark" style="width: 16px; height: 16px;"></i>
+                            Conceptual DOI (Always points to latest version)
+                        </h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="conceptual_doi"
+                                   value="{{ dataset.ds_meta_data.dataset_doi.rsplit('.v', 1)[0] if '.v' in dataset.ds_meta_data.dataset_doi else dataset.ds_meta_data.dataset_doi }}"
+                                   readonly>
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="copyText('conceptual_doi')">
+                                <i data-feather="copy" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i data-feather="tag" style="width: 16px; height: 16px;"></i>
+                            Version-Specific DOIs
+                        </h6>
+                        <p class="mb-0 small text-muted">
+                            Each version below has its own permanent DOI that never changes.
+                            Use version-specific DOIs for citations to ensure reproducibility.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="card-body">
 
                 <!-- ✅ Obtener la última versión (más reciente) -->
@@ -117,6 +150,31 @@
                     </div>
 
                     <div class="card-body">
+                        <!-- Version-Specific DOI -->
+                        {% if dataset.ds_meta_data.dataset_doi %}
+                        {% set base_doi = dataset.ds_meta_data.dataset_doi.rsplit('.v', 1)[0] if '.v' in dataset.ds_meta_data.dataset_doi else dataset.ds_meta_data.dataset_doi %}
+                        {% set version_number_for_doi = (versions|length - loop.index0) %}
+                        {% set version_doi = base_doi + '.v' + version_number_for_doi|string %}
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="flex-grow-1">
+                                    <small class="text-muted d-block mb-1">
+                                        <i data-feather="link" style="width: 14px; height: 14px;"></i>
+                                        Version-specific DOI:
+                                    </small>
+                                    <input type="text" class="form-control form-control-sm"
+                                           id="version_doi_{{ version.id }}"
+                                           value="{{ version_doi }}" readonly>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary ms-2"
+                                        type="button"
+                                        onclick="navigator.clipboard.writeText('{{ version_doi }}'); this.innerHTML='<i data-feather=\'check\'></i> Copied'; setTimeout(() => this.innerHTML='<i data-feather=\'copy\'></i>', 2000); feather.replace();">
+                                    <i data-feather="copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- Changelog -->
                         <div class="mb-3">
                             <h6><strong>Changes:</strong></h6>
