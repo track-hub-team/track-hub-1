@@ -16,6 +16,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
     url_for,
 )
@@ -512,6 +513,36 @@ def api_list_versions(dataset_id):
     dataset = BaseDataset.query.get_or_404(dataset_id)
     versions = [v.to_dict() for v in dataset.versions.all()]
     return jsonify({"dataset_id": dataset_id, "version_count": len(versions), "versions": versions})
+
+
+@dataset_bp.route("/version/<int:dataset_id>/<int:version_id>/")
+def view_version(dataset_id, version_id):
+    version = DatasetVersion.query.get_or_404(version_id)
+
+    if version.dataset_id != dataset_id:
+        abort(404)
+
+    dataset = version.dataset
+
+    return render_template(
+        "dataset/view_version.html",
+        dataset=dataset,
+        version=version,
+    )
+
+
+@dataset_bp.route("/version/<int:dataset_id>/<int:version_id>/download")
+def download_version_zip(dataset_id, version_id):
+    version = DatasetVersion.query.get_or_404(version_id)
+
+    if version.dataset_id != dataset_id:
+        abort(404)
+
+    dataset = version.dataset
+
+    zip_path = VersionService.build_version_zip(version, dataset)
+
+    return send_file(zip_path, as_attachment=True, download_name=f"{dataset.id}_v{version.version_number}.zip")
 
 
 # ========== EDIT DATASET ==========

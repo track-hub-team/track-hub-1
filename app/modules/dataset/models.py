@@ -108,7 +108,7 @@ class BaseDataset(db.Model):
         cascade="all, delete-orphan",
         order_by="DatasetVersion.created_at.desc()",
     )
-    user = db.relationship("User", foreign_keys=[user_id])
+    user = db.relationship("User", foreign_keys=[user_id], overlaps="data_sets")
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     feature_models = db.relationship("FeatureModel", backref="data_set", lazy=True, cascade="all, delete")
 

@@ -1,0 +1,213 @@
+{% extends "base_template.html" %}
+
+{% block title %}Version v{{ version.version_number }}{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-6">
+        <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}"
+           class="btn btn-outline-primary btn-sm" style="border-radius:5px;">
+            <i data-feather="arrow-left"></i>
+            Back to version history
+        </a>
+    </div>
+</div>
+
+<div class="row">
+
+    <!-- ======================= MAIN CONTENT ======================= -->
+    <div class="col-xl-8 col-lg-12 col-md-12">
+
+        <div class="card mb-3">
+            <div class="card-body">
+
+                <!-- Header -->
+                <h1 class="mb-1"><strong>{{ dataset.ds_meta_data.title }}</strong></h1>
+
+                <div class="mb-2">
+                    <span class="badge bg-info">{{ dataset.dataset_kind|upper }}</span>
+
+                    <span class="badge bg-primary">
+                        <i data-feather="tag" style="width:14px; height:14px;"></i>
+                        v{{ version.version_number }}
+                    </span>
+
+                    {% if dataset.get_latest_version() and dataset.get_latest_version().id == version.id %}
+                    <span class="badge bg-success">Current version</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Historical version</span>
+                    {% endif %}
+                </div>
+
+                <p class="text-muted mb-1">
+                    Created on {{ version.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </p>
+
+                <p class="text-muted">
+                    <i data-feather="user" style="width:14px; height:14px;"></i>
+                    {{ version.created_by.profile.name }}
+                </p>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <span class="text-secondary">Dataset description</span>
+                    </div>
+                    <div class="col-md-8">
+                        <p>{{ dataset.ds_meta_data.description }}</p>
+                    </div>
+                </div>
+
+                <!-- ======================= VERSION TITLE ======================= -->
+                {% if version.title %}
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <span class="text-secondary">Version title</span>
+                    </div>
+                    <div class="col-md-8">
+                        <p>{{ version.title }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ======================= CHANGELOG ======================= -->
+                <h4 class="mt-4">Changelog</h4>
+                <pre class="bg-light p-3 rounded">{{ version.changelog }}</pre>
+
+
+                <!-- ======================= STATISTICS BY TYPE ======================= -->
+                {% if dataset.dataset_kind == 'gpx' %}
+                <h4 class="mt-4"><i data-feather="activity"></i> GPX Statistics</h4>
+
+                <div class="row text-center">
+                    <div class="col-md-3 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ "%.1f"|format(version.total_distance / 1000) if version.total_distance else '-' }} km</strong></h6>
+                                <p class="mb-0"><small>Distance</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ "%.1f"|format(version.total_elevation_gain) if version.total_elevation_gain else '-' }} m</strong></h6>
+                                <p class="mb-0"><small>Elevation Gain</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ version.track_count or '-' }}</strong></h6>
+                                <p class="mb-0"><small>Tracks</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ version.total_points or '-' }}</strong></h6>
+                                <p class="mb-0"><small>Points</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% elif dataset.dataset_kind == 'uvl' %}
+                <h4 class="mt-4"><i data-feather="layers"></i> UVL Statistics</h4>
+
+                <div class="row text-center">
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ version.model_count or '-' }}</strong></h6>
+                                <p class="mb-0"><small>Models</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ version.total_features or '-' }}</strong></h6>
+                                <p class="mb-0"><small>Features</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 col-6 mb-2">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="mb-0"><strong>{{ version.total_constraints or '-' }}</strong></h6>
+                                <p class="mb-0"><small>Constraints</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ======================= SIDEBAR ======================= -->
+    <div class="col-xl-4 col-lg-12 col-md-12">
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="mb-3">
+                    <i data-feather="file"></i>
+                    Files in this version
+                </h4>
+
+                {% if version.files_snapshot %}
+                <ul class="list-group list-group-flush">
+                    {% for filename, info in version.files_snapshot.items() %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ filename }}</span>
+                        <span class="text-muted"><small>{{ (info.size / 1024)|round(2) }} KB</small></span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No files in this version.</p>
+                {% endif %}
+
+                <a href="{{ url_for('dataset.download_version_zip',
+                                    dataset_id=dataset.id,
+                                    version_id=version.id) }}"
+                   class="btn btn-primary btn-sm mt-3" style="border-radius:5px;">
+                    <i data-feather="download"></i>
+                    Download this version
+                </a>
+            </div>
+        </div>
+
+        <!-- DOI -->
+        {% if version.version_doi %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5>DOI (this version)</h5>
+                <div id="ver_doi_copy" style="display:none">{{ version.version_doi }}</div>
+
+                <button class="btn btn-light btn-sm" onclick="copyText('ver_doi_copy')">
+                    <i data-feather="clipboard"></i>
+                    {{ version.version_doi }}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => feather.replace());
+</script>
+
+{% endblock %}

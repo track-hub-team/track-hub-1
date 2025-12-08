@@ -4,9 +4,11 @@ import hashlib
 import logging
 import os
 import shutil
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Optional
+from zipfile import ZipFile
 
 from flask import request
 
@@ -440,6 +442,28 @@ class VersionService:
             return version1.compare_with(version2)
         else:
             return version2.compare_with(version1)
+
+    @staticmethod
+    def build_version_zip(version: DatasetVersion, dataset: BaseDataset, temp_root="/tmp") -> str:
+        """
+        Construir un ZIP con los archivos de una versión específica del dataset.
+        Devuelve la ruta al archivo ZIP creado.
+        """
+        temp_dir = tempfile.mkdtemp(dir=temp_root)
+        zip_path = os.path.join(temp_dir, f"dataset_version_{version.id}.zip")
+
+        working_dir = os.getenv("WORKING_DIR", "")
+        dataset_dir = os.path.join(working_dir, "uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}")
+
+        with ZipFile(zip_path, "w") as zipf:
+            for file_name, file_info in version.files_snapshot.items():
+                file_path = os.path.join(dataset_dir, file_name)
+                if os.path.exists(file_path):
+                    zipf.write(file_path, arcname=file_name)
+                else:
+                    logger.warning(f"File {file_name} not found for version {version.id}, skipping.")
+
+        return zip_path
 
 
 class AuthorService(BaseService):
