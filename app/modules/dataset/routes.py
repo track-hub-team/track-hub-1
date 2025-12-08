@@ -176,21 +176,149 @@ def publish_dataset(dataset_id):
                 logger.info(f"[PUBLISH] Old fingerprint: {old_fingerprint}")
                 logger.info(f"[PUBLISH] New fingerprint: {current_fingerprint}")
 
-        zenodo_service.publish_deposition(deposition_id)
+                # Upload new files to Fakenodo before publishing
+                logger.info(f"[PUBLISH] Syncing local files with Fakenodo deposition {deposition_id}")
+                try:
+                    # Get current files in Fakenodo
+                    deposition_data = zenodo_service.get_deposition(deposition_id)
+                    fakenodo_files = {f["filename"] for f in deposition_data.get("files", [])}
+                    logger.info(f"[PUBLISH] Files in Fakenodo: {fakenodo_files}")
 
-        logger.info(f"[PUBLISH] Getting DOI and conceptrecid for deposition {deposition_id}")
-        deposition_doi = zenodo_service.get_doi(deposition_id)
-        conceptrecid = zenodo_service.get_conceptrecid(deposition_id)
+                    # Upload any local files not in Fakenodo
+                    uploaded_count = 0
+                    for feature_model in dataset.feature_models:
+                        for hubfile in feature_model.files:
+                            if hubfile.name not in fakenodo_files:
+                                logger.info(f"[PUBLISH] Uploading new file {hubfile.name} to Fakenodo")
+                                zenodo_service.upload_file(dataset, deposition_id, feature_model, current_user)
+                                uploaded_count += 1
+
+                    if uploaded_count > 0:
+                        logger.info(f"[PUBLISH] Uploaded {uploaded_count} new file(s) to Fakenodo")
+                    else:
+                        logger.info("[PUBLISH] All files already in Fakenodo")
+
+                except Exception as e:
+                    logger.error(f"[PUBLISH] Error syncing files with Fakenodo: {str(e)}")
+                    return jsonify({"message": f"Failed to sync files with Zenodo: {str(e)}"}), 500
+
+        # Publicar deposición - Fakenodo puede devolver una nueva deposición con nuevo ID si hay cambios
+        publish_response = zenodo_service.publish_deposition(deposition_id)
+        new_deposition_id = publish_response.get("id", deposition_id)
+
+        # Si Fakenodo creó una nueva versión, actualizar el deposition_id
+        if new_deposition_id != deposition_id:
+            logger.info(
+                f"[PUBLISH] New version created - Old deposition: {deposition_id}, New deposition: {new_deposition_id}"
+            )
+            deposition_id = new_deposition_id
+        else:
+            logger.info(f"[PUBLISH] No new version - Using same deposition: {deposition_id}")
+
+        # Get DOI from publish response (it's already there!)
+        deposition_doi = publish_response.get("doi")
+        if not deposition_doi:
+            # Fallback: get it from API if not in response
+            logger.warning("[PUBLISH] DOI not in publish response, fetching from API")
+            deposition_doi = zenodo_service.get_doi(deposition_id)
+
+        conceptrecid = publish_response.get("conceptrecid")
+        if not conceptrecid:
+            # Fallback: get it from API if not in response
+            conceptrecid = zenodo_service.get_conceptrecid(deposition_id)
+
         logger.info(f"[PUBLISH] DOI retrieved: {deposition_doi}, conceptrecid: {conceptrecid}")
 
-        # Guardar DOI, conceptrecid y fingerprint
+        # Log publish response for debugging
+        logger.info(f"[PUBLISH] Full publish response: {publish_response}")
+
+        # Guardar DOI, conceptrecid, fingerprint y nuevo deposition_id si cambió
         update_data = {"dataset_doi": deposition_doi, "files_fingerprint": current_fingerprint}
+
+        # Actualizar deposition_id si Fakenodo creó una nueva versión
+        if new_deposition_id != dataset.ds_meta_data.deposition_id:
+            update_data["deposition_id"] = new_deposition_id
+            logger.info(
+                f"[PUBLISH] Updating deposition_id from {dataset.ds_meta_data.deposition_id} to {new_deposition_id}"
+            )
+
         if not dataset.ds_meta_data.conceptrecid and conceptrecid:
             update_data["conceptrecid"] = conceptrecid
             logger.info(f"[PUBLISH] Saving conceptrecid={conceptrecid} for dataset {dataset.ds_meta_data_id}")
 
         logger.info(f"[PUBLISH] Updating dataset {dataset.ds_meta_data_id} with {update_data}")
         dataset_service.update_dsmetadata(dataset.ds_meta_data_id, **update_data)
+
+        # Auto-create DatasetVersion to track Zenodo versions
+        try:
+            logger.info(
+                f"[PUBLISH] Checking if version with DOI {deposition_doi} already exists for dataset {dataset.id}"
+            )
+            version_exists = DatasetVersion.query.filter_by(dataset_id=dataset.id, version_doi=deposition_doi).first()
+
+            if version_exists:
+                logger.info(
+                    f"[PUBLISH] Version with DOI {deposition_doi} already exists "
+                    f"(version_id={version_exists.id}, version_number={version_exists.version_number})"
+                )
+
+            if not version_exists:
+                # Determine version number based on DOI
+                # Extract version number from DOI (e.g., "10.9999/dataset.v2" -> "2.0.0")
+                doi_version = deposition_doi.split(".v")[-1] if ".v" in deposition_doi else "1"
+                version_number = f"{doi_version}.0.0"
+
+                logger.info(f"[PUBLISH] Creating new version {version_number} for DOI {deposition_doi}")
+
+                # Generate changelog
+                if is_first_publication:
+                    changelog = "Initial publication to Zenodo"
+                else:
+                    if new_deposition_id != dataset.ds_meta_data.deposition_id:
+                        changelog = "Re-publication with file changes - new Zenodo version created"
+                    else:
+                        changelog = "Re-publication without changes"
+
+                logger.info(f"[PUBLISH] Changelog: {changelog}")
+
+                # Create version snapshot
+                version_class = VersionService._get_version_class(dataset)
+                files_snapshot = VersionService._create_files_snapshot(dataset)
+
+                version = version_class(
+                    dataset_id=dataset.id,
+                    version_number=version_number,
+                    title=dataset.ds_meta_data.title,
+                    description=dataset.ds_meta_data.description,
+                    files_snapshot=files_snapshot,
+                    changelog=changelog,
+                    created_by_id=current_user.id,
+                    version_doi=deposition_doi,  # Store Zenodo DOI
+                )
+
+                # Calculate specific metrics if needed
+                if hasattr(version, "total_features"):
+                    try:
+                        version.total_features = dataset.calculate_total_features() or 0
+                        version.total_constraints = dataset.calculate_total_constraints() or 0
+                        version.model_count = (
+                            dataset.feature_models.count()
+                            if hasattr(dataset.feature_models, "count")
+                            else len(dataset.feature_models or [])
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not calculate metrics: {str(e)}")
+
+                db.session.add(version)
+                db.session.commit()
+                logger.info(
+                    f"[PUBLISH] ✅ Created DatasetVersion {version_number} (id={version.id}) with DOI {deposition_doi}"
+                )
+
+        except Exception as e:
+            logger.error(f"[PUBLISH] ❌ Failed to create DatasetVersion: {str(e)}")
+            logger.exception(e)
+            # Don't fail the publication if version creation fails
 
         action = "published" if is_first_publication else "re-published"
         logger.info(f"[PUBLISH] Dataset {dataset_id} {action} successfully")
@@ -548,8 +676,14 @@ def create_version(dataset_id):
     if dataset.user_id != current_user.id:
         abort(403)
 
-    # Permitir crear versiones locales incluso si está publicado
-    # Las versiones locales son independientes de las versiones de Zenodo
+    # Block manual version creation for published datasets
+    # Published datasets use automatic Zenodo versioning only
+    if dataset.ds_meta_data.dataset_doi:
+        flash(
+            "Cannot create local versions for published datasets. Use 'Republish to Zenodo' to create new versions.",
+            "warning",
+        )
+        return redirect(url_for("dataset.list_versions", dataset_id=dataset_id))
 
     changelog = request.form.get("changelog", "").strip()
     bump_type = request.form.get("bump_type", "patch")
@@ -711,7 +845,12 @@ def edit_dataset(dataset_id):
             try:
                 db.session.commit()
 
+                # Determine if changes are metadata-only or include files
+                metadata_changes = [c for c in changes if not c.startswith("Added file:")]
+                file_changes = [c for c in changes if c.startswith("Added file:")]
+
                 if not dataset.ds_meta_data.dataset_doi:
+                    # Unpublished dataset: create local version as before
                     try:
                         changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
                         version = VersionService.create_version(
@@ -731,7 +870,85 @@ def edit_dataset(dataset_id):
                             "warning",
                         )
                 else:
-                    flash("Dataset updated successfully! ✅", "success")
+                    # Published dataset
+                    if metadata_changes and not file_changes:
+                        # Only metadata changed: create minor/patch version (without DOI)
+                        # Get user's choice of version bump type
+                        version_bump_type = request.form.get("version_bump_type", "patch")
+                        if version_bump_type not in ["minor", "patch"]:
+                            version_bump_type = "patch"
+
+                        try:
+                            version_type_label = "Minor" if version_bump_type == "minor" else "Patch"
+                            changelog = f"{version_type_label} edition (metadata only):\n" + "\n".join(
+                                f"- {c}" for c in metadata_changes
+                            )
+
+                            # Get latest version to determine next version number
+                            latest_version = dataset.get_latest_version()
+                            if latest_version:
+                                # Parse current version and increment according to type
+                                parts = latest_version.version_number.split(".")
+                                if len(parts) == 3:
+                                    major, minor, patch = parts
+                                    if version_bump_type == "minor":
+                                        new_version_number = f"{major}.{int(minor) + 1}.0"
+                                    else:  # patch
+                                        new_version_number = f"{major}.{minor}.{int(patch) + 1}"
+                                else:
+                                    new_version_number = f"{latest_version.version_number}.1"
+                            else:
+                                # Shouldn't happen for published datasets, but fallback
+                                new_version_number = "1.0.1" if version_bump_type == "patch" else "1.1.0"
+
+                            version_class = VersionService._get_version_class(dataset)
+                            files_snapshot = VersionService._create_files_snapshot(dataset)
+
+                            version = version_class(
+                                dataset_id=dataset.id,
+                                version_number=new_version_number,
+                                title=dataset.ds_meta_data.title,
+                                description=dataset.ds_meta_data.description,
+                                files_snapshot=files_snapshot,
+                                changelog=changelog,
+                                created_by_id=current_user.id,
+                                version_doi=None,  # Minor versions don't get a DOI
+                            )
+
+                            # Calculate metrics if needed
+                            if hasattr(version, "total_features"):
+                                try:
+                                    version.total_features = dataset.calculate_total_features() or 0
+                                    version.total_constraints = dataset.calculate_total_constraints() or 0
+                                    version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
+                                except Exception as e:
+                                    logger.warning(f"Could not calculate metrics: {str(e)}")
+
+                            db.session.add(version)
+                            db.session.commit()
+
+                            flash(
+                                f"Dataset updated successfully! {version_type_label} version: "
+                                f"v{version.version_number} (metadata only) 📝",
+                                "success",
+                            )
+                            logger.info(
+                                f"[EDIT] Created {version_bump_type} version {version.version_number} "
+                                "for metadata changes"
+                            )
+                        except Exception as e:
+                            logger.error(f"[EDIT] Could not create minor version: {str(e)}")
+                            flash("Dataset updated but version creation failed", "warning")
+                    elif file_changes:
+                        # Files changed: user needs to republish for major version
+                        flash(
+                            "Dataset updated successfully! ✅ New files added - "
+                            "click 'Republish to Zenodo' to create a new major version.",
+                            "success",
+                        )
+                        logger.info("[EDIT] Files changed, user needs to republish for major version")
+                    else:
+                        flash("Dataset updated successfully! ✅", "success")
 
                 if dataset.ds_meta_data.dataset_doi:
                     return redirect(

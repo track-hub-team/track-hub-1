@@ -63,7 +63,7 @@ class DSMetrics(db.Model):
 class DSMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
-    conceptrecid = db.Column(db.Integer, nullable=True)
+    conceptrecid = db.Column(db.String(120), nullable=True)
     files_fingerprint = db.Column(db.String(64), nullable=True)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
@@ -417,6 +417,9 @@ class DatasetVersion(db.Model):
     # Mensaje de cambios (changelog)
     changelog = db.Column(db.Text)
 
+    # DOI específico de esta versión (si está publicada en Zenodo)
+    version_doi = db.Column(db.String(120))
+
     # Usuario que creó esta versión
     created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
@@ -442,6 +445,7 @@ class DatasetVersion(db.Model):
             "created_by": self.created_by.profile.name if self.created_by else None,
             "title": self.title,
             "description": self.description,
+            "version_doi": self.version_doi,
         }
 
     def compare_with(self, other_version):

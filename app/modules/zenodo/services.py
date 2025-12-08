@@ -267,8 +267,9 @@ class ZenodoService(BaseService):
         """
         return self.get_deposition(deposition_id).get("doi")
 
-    def get_conceptrecid(self, deposition_id: int) -> int:
+    def get_conceptrecid(self, deposition_id: int):
         """
         Obtiene el conceptrecid de una deposición.
+        Puede ser string o int dependiendo de Zenodo/Fakenodo.
         """
         return self.get_deposition(deposition_id).get("conceptrecid")

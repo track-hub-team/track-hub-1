@@ -55,7 +55,7 @@
                     <div class="col-md-6 mb-3 mb-md-0">
                         <h6 class="text-muted mb-2">
                             <i data-feather="bookmark" style="width: 16px; height: 16px;"></i>
-                            Conceptual DOI (Always points to latest version)
+                            Conceptual DOI (Always points to latest published version)
                         </h6>
                         <div class="input-group">
                             <input type="text" class="form-control" id="conceptual_doi"
@@ -69,12 +69,12 @@
                     </div>
                     <div class="col-md-6">
                         <h6 class="text-muted mb-2">
-                            <i data-feather="tag" style="width: 16px; height: 16px;"></i>
-                            Version-Specific DOIs
+                            <i data-feather="git-branch" style="width: 16px; height: 16px;"></i>
+                            Version Types
                         </h6>
                         <p class="mb-0 small text-muted">
-                            Each version below has its own permanent DOI that never changes.
-                            Use version-specific DOIs for citations to ensure reproducibility.
+                            <strong>Major versions</strong> (with DOI) are published to Zenodo and include file changes.
+                            <strong>Minor/Patch versions</strong> (no DOI) track metadata improvements locally.
                         </p>
                     </div>
                 </div>
@@ -94,14 +94,14 @@
                             <div class="col-md-8 col-12 mb-2 mb-md-0">
                                 <h4 class="mb-1">
                                     <!-- Badge de versión -->
-                                    <span class="badge {% if version.id == latest_version.id %}bg-success{% else %}bg-secondary{% endif %}">
+                                    <span class="badge {% if version.id == latest_version.id %}bg-primary{% else %}bg-dark{% endif %} fs-5 me-2 px-3 py-2">
                                         v{{ version.version_number }}
                                     </span>
                                     {{ version.title }}
 
                                     <!-- Badge "Current" solo en la última -->
                                     {% if version.id == latest_version.id %}
-                                    <span class="badge bg-success">Current</span>
+                                    <span class="badge bg-success fs-6 px-3 py-2">Current</span>
                                     {% endif %}
                                 </h4>
                                 <p class="mb-0 {% if loop.first %}text-white-50{% else %}text-muted{% endif %}">
@@ -122,26 +122,26 @@
                             <a href="{{ url_for('dataset.compare_versions',
                                                 version1_id=version.id,
                                                 version2_id=previous_version.id) }}"
-                            class="btn btn-sm ...">
+                            class="btn btn-light btn-sm">
                                 Compare with previous
                             </a>
 
                             <a href="{{ url_for('dataset.view_version',
                                                 dataset_id=dataset.id,
                                                 version_id=version.id) }}"
-                            class="btn btn-outline-secondary btn-sm ms-2">
+                            class="btn btn-outline-light btn-sm ms-2">
                                 <i data-feather="eye"></i> View version
                             </a>
 
                         {% else %}
-                            <span class="badge bg-secondary fs-6 py-2 px-3">
+                            <span class="badge bg-light text-dark fs-6 py-2 px-3">
                                 <i data-feather="award"></i> First version
                             </span>
 
                             <a href="{{ url_for('dataset.view_version',
                                                 dataset_id=dataset.id,
                                                 version_id=version.id) }}"
-                            class="btn btn-outline-secondary btn-sm ms-2">
+                            class="btn btn-outline-light btn-sm ms-2">
                                 <i data-feather="eye"></i> View version
                             </a>
                         {% endif %}
@@ -151,27 +151,42 @@
 
                     <div class="card-body">
                         <!-- Version-Specific DOI -->
-                        {% if dataset.ds_meta_data.dataset_doi %}
-                        {% set base_doi = dataset.ds_meta_data.dataset_doi.rsplit('.v', 1)[0] if '.v' in dataset.ds_meta_data.dataset_doi else dataset.ds_meta_data.dataset_doi %}
-                        {% set version_number_for_doi = (versions|length - loop.index0) %}
-                        {% set version_doi = base_doi + '.v' + version_number_for_doi|string %}
-                        <div class="mb-3 p-2 bg-light rounded">
+                        {% if version.version_doi %}
+                        <div class="mb-3 p-2 bg-success bg-opacity-10 rounded border border-success">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="flex-grow-1">
                                     <small class="text-muted d-block mb-1">
                                         <i data-feather="link" style="width: 14px; height: 14px;"></i>
-                                        Version-specific DOI:
+                                        <strong>📌 Major version (X.0.0)</strong> - Published to Zenodo with DOI
                                     </small>
                                     <input type="text" class="form-control form-control-sm"
                                            id="version_doi_{{ version.id }}"
-                                           value="{{ version_doi }}" readonly>
+                                           value="{{ version.version_doi }}" readonly>
                                 </div>
                                 <button class="btn btn-sm btn-outline-secondary ms-2"
                                         type="button"
-                                        onclick="navigator.clipboard.writeText('{{ version_doi }}'); this.innerHTML='<i data-feather=\'check\'></i> Copied'; setTimeout(() => this.innerHTML='<i data-feather=\'copy\'></i>', 2000); feather.replace();">
+                                        onclick="navigator.clipboard.writeText('{{ version.version_doi }}'); this.innerHTML='<i data-feather=\'check\'></i> Copied'; setTimeout(() => this.innerHTML='<i data-feather=\'copy\'></i>', 2000); feather.replace();">
                                     <i data-feather="copy"></i>
                                 </button>
                             </div>
+                        </div>
+                        {% elif dataset.ds_meta_data.dataset_doi and version.version_number.split('.')[0]|int >= 1 %}
+                        <div class="mb-3 p-2 bg-info bg-opacity-10 rounded border border-info">
+                            <small class="text-muted">
+                                <i data-feather="edit-3" style="width: 14px; height: 14px;"></i>
+                                {% if version.version_number.split('.')[1]|int > 0 %}
+                                <strong>📝 Minor version (X.Y.0)</strong> - Metadata improvements (no DOI)
+                                {% else %}
+                                <strong>🔧 Patch version (X.Y.Z)</strong> - Metadata corrections (no DOI)
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="mb-3 p-2 bg-warning bg-opacity-10 rounded border border-warning">
+                            <small class="text-muted">
+                                <i data-feather="info" style="width: 14px; height: 14px;"></i>
+                                <strong>📦 Local version</strong> - Created before publication to Zenodo
+                            </small>
                         </div>
                         {% endif %}
 
@@ -305,15 +320,18 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <small>A snapshot of the current state will be saved.</small>
+                        <small>
+                            <strong>Local version:</strong> A snapshot of the current state will be saved.
+                            When you publish to Zenodo, it will start with v1.0.0 regardless of your local version numbers.
+                        </small>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Version Type</label>
                         <select class="form-select" name="bump_type" id="bump_type">
-                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Bug fixes</option>
-                            <option value="minor">✨ Minor (X.Y+1.0) - New features</option>
-                            <option value="major">🚀 Major (X+1.0.0) - Breaking changes</option>
+                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Bug fixes, small changes</option>
+                            <option value="minor">✨ Minor (X.Y+1.0) - New features, compatible changes</option>
+                            <option value="major">🚀 Major (X+1.0.0) - Breaking changes, major updates</option>
                         </select>
                         <small class="text-muted" id="versionPreview">
                             Current version: <strong>v{{ latest_version.version_number if latest_version else '0.0.0' }}</strong>
@@ -328,7 +346,7 @@
                             name="changelog"
                             rows="4"
                             required
-                            placeholder="Describe the changes made in this version...&#10;Example:&#10;- Fixed bug in GPX parsing&#10;- Added new elevation metrics&#10;- Updated documentation"
+                            placeholder="Describe the changes made in this version...&#10;Example:&#10;- Added new feature models&#10;- Updated dataset metadata&#10;- Fixed file naming"
                         ></textarea>
                         <small class="text-muted">Describe what changed in this version</small>
                     </div>

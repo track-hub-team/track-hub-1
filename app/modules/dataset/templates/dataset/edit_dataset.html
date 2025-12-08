@@ -30,7 +30,7 @@
             {% else %}
             <div class="alert alert-info">
                 <i data-feather="info"></i>
-                <strong>Auto-versioning enabled:</strong> Changes will create a new version automatically (patch increment).
+                <strong>Auto-versioning enabled:</strong> Changes will create a new local version automatically.
             </div>
             {% endif %}
 
@@ -103,6 +103,28 @@
                             accept=".uvl,.gpx">
                         <small class="text-muted">Supported formats: UVL, GPX</small>
                     </div>
+
+                    <!-- Version Type (solo para datasets publicados sin cambios de archivos) -->
+                    {% if dataset.ds_meta_data.dataset_doi %}
+                    <div class="mb-3" id="versionTypeSelector">
+                        <label for="version_bump_type" class="form-label">
+                            <i data-feather="git-branch" style="width: 16px;"></i>
+                            Version Type (for metadata changes)
+                        </label>
+                        <select class="form-select" id="version_bump_type" name="version_bump_type">
+                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Minor corrections, typos</option>
+                            <option value="minor">✨ Minor (X.Y+1.0) - Significant metadata improvements</option>
+                        </select>
+                        <small class="text-muted">
+                            This applies only if you change metadata. Adding files requires republishing for a major version.
+                        </small>
+                    </div>
+                    <div class="alert alert-warning d-none" id="filesAddedWarning">
+                        <i data-feather="alert-triangle"></i>
+                        <strong>Files selected:</strong> Adding files will require republishing to Zenodo to create a new major version (X+1.0.0).
+                        The version type selector above will be ignored.
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="card-footer d-flex justify-content-between">
@@ -122,6 +144,26 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     feather.replace();
+
+    // Monitor file input changes
+    const filesInput = document.getElementById('files');
+    const versionTypeSelector = document.getElementById('versionTypeSelector');
+    const filesAddedWarning = document.getElementById('filesAddedWarning');
+
+    if (filesInput && versionTypeSelector && filesAddedWarning) {
+        filesInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                // Files selected: dim the version selector and show warning
+                versionTypeSelector.style.opacity = '0.5';
+                filesAddedWarning.classList.remove('d-none');
+                feather.replace(); // Refresh feather icons
+            } else {
+                // No files: restore version selector and hide warning
+                versionTypeSelector.style.opacity = '1';
+                filesAddedWarning.classList.add('d-none');
+            }
+        });
+    }
 });
 </script>
 
