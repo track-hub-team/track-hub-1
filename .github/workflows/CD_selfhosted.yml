@@ -23,22 +23,11 @@ jobs:
             -f docker/images/Dockerfile.selfhosted \
             -t trackhub-selfhosted:trunk .
 
-      - name: Deploy pre container
+      - name: Deploy using docker-compose.pre.yml
         run: |
-          docker rm -f trackhub-pre || true
-
-          docker run -d \
-            --name trackhub-pre \
-            -p 5001:5000 \
-            --env-file /home/pabolimor/trackhub-pre.env \
-            -v /etc/mysql/ssl/ca.pem:/etc/ssl/certs/mariadb-ca.pem:ro \
-            --add-host=host.docker.internal:host-gateway \
-            --restart always \
-            trackhub-selfhosted:trunk
-
-      - name: Seed pre database
-        run: |
-          docker exec -w /app trackhub-pre python -m rosemary.cli db:seed -y
+          cd /home/pabolimor/trackhub-deploy
+          docker compose -f docker-compose.pre.yml pull
+          docker compose -f docker-compose.pre.yml up -d --remove-orphans
 
   deploy-prod:
     if: github.ref_name == 'main'
@@ -55,15 +44,8 @@ jobs:
             -f docker/images/Dockerfile.selfhosted \
             -t trackhub-selfhosted:${{ github.sha }} .
 
-      - name: Deploy prod container
+      - name: Deploy using docker-compose.prod.yml
         run: |
-          docker rm -f trackhub-prod || true
-
-          docker run -d \
-            --name trackhub-prod \
-            -p 5002:5000 \
-            --env-file /home/pabolimor/trackhub-prod.env \
-            -v /etc/mysql/ssl/ca.pem:/etc/ssl/certs/mariadb-ca.pem:ro \
-            --add-host=host.docker.internal:host-gateway \
-            --restart always \
-            trackhub-selfhosted:${{ github.sha }}
+          cd /home/pabolimor/trackhub-deploy
+          docker compose -f docker-compose.prod.yml pull
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
