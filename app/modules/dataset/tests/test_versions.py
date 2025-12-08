@@ -139,20 +139,37 @@ def test_publish_dataset_unauthorized(test_client, dataset):
     assert res.status_code == 400
 
 
-def test_publish_dataset_already_published(test_client, dataset, user):
-    """Test que no se puede publicar un dataset ya publicado"""
+def test_publish_dataset_already_published(test_client, dataset, user, monkeypatch):
+    """Test que permite republicar un dataset ya publicado (nuevo comportamiento)"""
     from app.modules.conftest import logout
 
-    dataset.ds_meta_data.dataset_doi = "10.1234/test"
+    dataset.ds_meta_data.deposition_id = 123
+    dataset.ds_meta_data.dataset_doi = "10.1234/test.v1"
     dataset.ds_meta_data.tags = "test,tags"
+    dataset.ds_meta_data.files_fingerprint = "old_fingerprint"
     db.session.commit()
+
+    # Mock Zenodo para simular republicación sin cambios
+    class MockZenodoService:
+        def publish_deposition(self, deposition_id):
+            return None
+
+        def get_doi(self, deposition_id):
+            return "10.1234/test.v1"  # Mismo DOI
+
+        def get_conceptrecid(self, deposition_id):
+            return 123
+
+    from app.modules.dataset import routes
+
+    monkeypatch.setattr(routes, "zenodo_service", MockZenodoService())
 
     logout(test_client)
     login(test_client, "testversions@test.com", "password")
     res = test_client.post(f"/dataset/{dataset.id}/publish")
-    assert res.status_code == 400
+    assert res.status_code == 200
     data = res.get_json()
-    assert "already published" in data["message"]
+    assert "re-published" in data["message"]
 
 
 def test_publish_dataset_no_deposition(test_client, dataset, user):
@@ -178,6 +195,9 @@ def test_publish_dataset_success(test_client, dataset, user, monkeypatch):
 
         def get_doi(self, deposition_id):
             return "10.9999/fakenodo.test123"
+
+        def get_conceptrecid(self, deposition_id):
+            return 999
 
     from app.modules.conftest import logout
     from app.modules.dataset import routes

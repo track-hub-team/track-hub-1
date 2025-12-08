@@ -324,6 +324,27 @@ class DataSetService(BaseService):
         extracted_root = self.datasource_manager.fetch_to_user_temp(str(zip_path), current_user)
         return self._collect_models_into_temp(extracted_root, dest_dir)
 
+    def calculate_files_fingerprint(self, dataset: BaseDataset) -> str:
+        """
+        Calcula un fingerprint SHA256 de los archivos del dataset.
+        Returns:
+            str: Hash hexadecimal SHA256
+        """
+        import hashlib
+
+        h = hashlib.sha256()
+        files_data = []
+
+        for feature_model in dataset.feature_models:
+            for file in feature_model.files:
+                files_data.append({"filename": file.name, "size": file.size})
+
+        for f in sorted(files_data, key=lambda x: x["filename"]):
+            h.update(f["filename"].encode())
+            h.update(str(f["size"]).encode())
+
+        return h.hexdigest()
+
 
 class VersionService:
     """Servicio para gestionar versiones de datasets"""

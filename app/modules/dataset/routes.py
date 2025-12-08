@@ -142,7 +142,12 @@ def list_dataset():
 @login_required
 def publish_dataset(dataset_id):
     """
-    Publica un dataset en Zenodo/Fakenodo.
+    Publica o republi un dataset en Zenodo/Fakenodo.
+    Soporta tres flujos:
+    1. Primera publicación: Crea deposición, sube archivos, publica → v1
+    2. Republicación sin cambios: Vuelve a publicar la misma deposición → mismo DOI
+    3. Republicación con cambios: Fakenodo detecta cambios y crea nueva versión → nuevo DOI (.v2)
+
     Solo puede publicarlo el propietario del dataset.
     """
     dataset = BaseDataset.query.get_or_404(dataset_id)
@@ -150,15 +155,26 @@ def publish_dataset(dataset_id):
     if dataset.user_id != current_user.id:
         return jsonify({"message": "Unauthorized"}), 403
 
-    if dataset.ds_meta_data.dataset_doi:
-        return jsonify({"message": "Dataset already published"}), 400
-
     if not dataset.ds_meta_data.deposition_id:
         return jsonify({"message": "Dataset not uploaded to Zenodo"}), 400
 
     try:
         deposition_id = dataset.ds_meta_data.deposition_id
-        logger.info(f"[PUBLISH] Publishing deposition {deposition_id} for dataset {dataset_id}")
+        is_first_publication = not dataset.ds_meta_data.dataset_doi
+
+        current_fingerprint = dataset_service.calculate_files_fingerprint(dataset)
+        logger.info(f"[PUBLISH] Current files fingerprint: {current_fingerprint}")
+
+        if is_first_publication:
+            logger.info(f"[PUBLISH] First publication for dataset {dataset_id}, deposition {deposition_id}")
+        else:
+            old_fingerprint = dataset.ds_meta_data.files_fingerprint
+            if old_fingerprint == current_fingerprint:
+                logger.info("[PUBLISH] Re-publication without changes - files unchanged")
+            else:
+                logger.info("[PUBLISH] Re-publication with changes - files modified")
+                logger.info(f"[PUBLISH] Old fingerprint: {old_fingerprint}")
+                logger.info(f"[PUBLISH] New fingerprint: {current_fingerprint}")
 
         zenodo_service.publish_deposition(deposition_id)
 
@@ -167,17 +183,19 @@ def publish_dataset(dataset_id):
         conceptrecid = zenodo_service.get_conceptrecid(deposition_id)
         logger.info(f"[PUBLISH] DOI retrieved: {deposition_doi}, conceptrecid: {conceptrecid}")
 
-        # Guardar DOI y conceptrecid si no lo tenemos ya
-        update_data = {"dataset_doi": deposition_doi}
+        # Guardar DOI, conceptrecid y fingerprint
+        update_data = {"dataset_doi": deposition_doi, "files_fingerprint": current_fingerprint}
         if not dataset.ds_meta_data.conceptrecid and conceptrecid:
             update_data["conceptrecid"] = conceptrecid
             logger.info(f"[PUBLISH] Saving conceptrecid={conceptrecid} for dataset {dataset.ds_meta_data_id}")
 
         logger.info(f"[PUBLISH] Updating dataset {dataset.ds_meta_data_id} with {update_data}")
         dataset_service.update_dsmetadata(dataset.ds_meta_data_id, **update_data)
-        logger.info(f"[PUBLISH] Dataset {dataset_id} published successfully")
 
-        return jsonify({"message": "Dataset published successfully", "doi": deposition_doi}), 200
+        action = "published" if is_first_publication else "re-published"
+        logger.info(f"[PUBLISH] Dataset {dataset_id} {action} successfully")
+
+        return jsonify({"message": f"Dataset {action} successfully", "doi": deposition_doi}), 200
     except Exception as e:
         logger.exception(f"[PUBLISH] Failed to publish dataset {dataset_id}: {e}")
         return jsonify({"message": f"Failed to publish dataset: {str(e)}"}), 500
@@ -530,9 +548,8 @@ def create_version(dataset_id):
     if dataset.user_id != current_user.id:
         abort(403)
 
-    if dataset.ds_meta_data.dataset_doi:
-        flash("Cannot create versions for synchronized datasets. Unsynchronize first.", "warning")
-        return redirect(url_for("dataset.list_versions", dataset_id=dataset_id))
+    # Permitir crear versiones locales incluso si está publicado
+    # Las versiones locales son independientes de las versiones de Zenodo
 
     changelog = request.form.get("changelog", "").strip()
     bump_type = request.form.get("bump_type", "patch")
