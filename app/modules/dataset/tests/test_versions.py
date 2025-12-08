@@ -151,8 +151,14 @@ def test_publish_dataset_already_published(test_client, dataset, user, monkeypat
 
     # Mock Zenodo para simular republicación sin cambios
     class MockZenodoService:
+        def get_deposition(self, deposition_id):
+            return {"id": 123, "files": []}
+
+        def upload_file(self, dataset, deposition_id, feature_model, user):
+            return True
+
         def publish_deposition(self, deposition_id):
-            return None
+            return {"id": 123, "doi": "10.1234/test.v1"}  # Mismo deposition_id y DOI
 
         def get_doi(self, deposition_id):
             return "10.1234/test.v1"  # Mismo DOI
@@ -191,7 +197,7 @@ def test_publish_dataset_success(test_client, dataset, user, monkeypatch):
 
     class MockZenodoService:
         def publish_deposition(self, deposition_id):
-            return {"doi": "10.9999/fakenodo.test123"}
+            return {"id": 123, "doi": "10.9999/fakenodo.test123"}
 
         def get_doi(self, deposition_id):
             return "10.9999/fakenodo.test123"
