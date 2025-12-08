@@ -63,6 +63,7 @@ class DSMetrics(db.Model):
 class DSMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
+    conceptrecid = db.Column(db.Integer, nullable=True)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
     # Guardamos como Enum real. En formularios conviene enviar .value ("none", "article", ...)

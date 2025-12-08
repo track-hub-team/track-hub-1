@@ -90,8 +90,14 @@ def create_dataset():
 
         if data.get("conceptrecid"):
             deposition_id = data.get("id")
-            logger.info(f"[UPLOAD] Updating dataset {dataset.ds_meta_data_id} with deposition_id={deposition_id}")
-            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+            conceptrecid = data.get("conceptrecid")
+            logger.info(
+                f"[UPLOAD] Updating dataset {dataset.ds_meta_data_id} with "
+                f"deposition_id={deposition_id}, conceptrecid={conceptrecid}"
+            )
+            dataset_service.update_dsmetadata(
+                dataset.ds_meta_data_id, deposition_id=deposition_id, conceptrecid=conceptrecid
+            )
 
             try:
                 logger.info(f"[UPLOAD] Starting file upload for {len(dataset.feature_models)} feature models")
@@ -156,12 +162,19 @@ def publish_dataset(dataset_id):
 
         zenodo_service.publish_deposition(deposition_id)
 
-        logger.info(f"[PUBLISH] Getting DOI for deposition {deposition_id}")
+        logger.info(f"[PUBLISH] Getting DOI and conceptrecid for deposition {deposition_id}")
         deposition_doi = zenodo_service.get_doi(deposition_id)
-        logger.info(f"[PUBLISH] DOI retrieved: {deposition_doi}")
+        conceptrecid = zenodo_service.get_conceptrecid(deposition_id)
+        logger.info(f"[PUBLISH] DOI retrieved: {deposition_doi}, conceptrecid: {conceptrecid}")
 
-        logger.info(f"[PUBLISH] Updating dataset {dataset.ds_meta_data_id} with DOI={deposition_doi}")
-        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+        # Guardar DOI y conceptrecid si no lo tenemos ya
+        update_data = {"dataset_doi": deposition_doi}
+        if not dataset.ds_meta_data.conceptrecid and conceptrecid:
+            update_data["conceptrecid"] = conceptrecid
+            logger.info(f"[PUBLISH] Saving conceptrecid={conceptrecid} for dataset {dataset.ds_meta_data_id}")
+
+        logger.info(f"[PUBLISH] Updating dataset {dataset.ds_meta_data_id} with {update_data}")
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, **update_data)
         logger.info(f"[PUBLISH] Dataset {dataset_id} published successfully")
 
         return jsonify({"message": "Dataset published successfully", "doi": deposition_doi}), 200

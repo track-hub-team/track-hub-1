@@ -266,3 +266,9 @@ class ZenodoService(BaseService):
         Obtiene el DOI de una deposición publicada.
         """
         return self.get_deposition(deposition_id).get("doi")
+
+    def get_conceptrecid(self, deposition_id: int) -> int:
+        """
+        Obtiene el conceptrecid de una deposición.
+        """
+        return self.get_deposition(deposition_id).get("conceptrecid")
