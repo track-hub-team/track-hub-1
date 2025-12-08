@@ -26,7 +26,6 @@ jobs:
       - name: Deploy using docker-compose.pre.yml
         run: |
           cd /home/pabolimor/trackhub-deploy
-          docker compose -f docker-compose.pre.yml pull
           docker compose -f docker-compose.pre.yml up -d --remove-orphans
 
   deploy-prod:
@@ -47,5 +46,4 @@ jobs:
       - name: Deploy using docker-compose.prod.yml
         run: |
           cd /home/pabolimor/trackhub-deploy
-          docker compose -f docker-compose.prod.yml pull
           docker compose -f docker-compose.prod.yml up -d --remove-orphans
