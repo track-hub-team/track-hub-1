@@ -26,7 +26,7 @@ jobs:
       - name: Deploy using docker-compose.pre.yml
         run: |
           cd /home/pabolimor/trackhub-deploy
-          docker compose -f docker-compose.pre.yml up -d --remove-orphans
+          docker compose -f docker-compose.pre.yml up -d --force-recreate
 
   deploy-prod:
     if: github.ref_name == 'main'
@@ -46,4 +46,4 @@ jobs:
       - name: Deploy using docker-compose.prod.yml
         run: |
           cd /home/pabolimor/trackhub-deploy
-          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+          docker compose -f docker-compose.prod.yml up -d --force-recreate
