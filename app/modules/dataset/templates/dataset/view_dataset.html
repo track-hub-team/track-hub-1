@@ -81,6 +81,13 @@
                         </a>
                         {% endif %}
 
+                        <!-- Publicar en Zenodo (solo propietario de datasets NO publicados pero con deposition_id) -->
+                        {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi and dataset.ds_meta_data.deposition_id %}
+                        <button type="button" class="btn btn-success btn-sm" onclick="publishToZenodo({{ dataset.id }})">
+                            <i data-feather="upload-cloud"></i> Publish to Zenodo
+                        </button>
+                        {% endif %}
+
                         <!-- Crear versión (solo propietario de datasets NO sincronizados) -->
                         {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
                         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createVersionModal">
@@ -680,6 +687,37 @@ document.addEventListener("DOMContentLoaded", function () {
     // ===============================
     loadComments();
 });
+
+// ===============================
+// Publicar en Zenodo
+// ===============================
+function publishToZenodo(datasetId) {
+    if (!confirm('Are you sure you want to publish this dataset to Zenodo? Once published, you cannot create new versions.')) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    fetch(`/dataset/${datasetId}/publish`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.doi) {
+            // Redirigir a la ruta del dataset publicado
+            window.location.href = `/doi/${data.doi}`;
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
 </script>
 
 

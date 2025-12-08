@@ -100,19 +100,14 @@ def create_dataset():
                     zenodo_service.upload_file(dataset, deposition_id, feature_model)
                 logger.info("[UPLOAD] All files uploaded successfully")
 
-                logger.info(f"[UPLOAD] Publishing deposition {deposition_id}")
-                zenodo_service.publish_deposition(deposition_id)
-
-                logger.info(f"[UPLOAD] Getting DOI for deposition {deposition_id}")
-                deposition_doi = zenodo_service.get_doi(deposition_id)
-                logger.info(f"[UPLOAD] DOI retrieved: {deposition_doi}")
-
-                logger.info(f"[UPLOAD] Updating dataset {dataset.ds_meta_data_id} with DOI={deposition_doi}")
-                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
-                logger.info(f"[UPLOAD] Dataset {dataset.id} sync completed successfully")
+                # NOTE: La publicación ahora es manual para permitir crear versiones antes de publicar
+                # El usuario puede publicar desde el botón "Publish to Zenodo" en la vista del dataset
+                logger.info(
+                    f"[UPLOAD] Dataset {dataset.id} uploaded to Zenodo (deposition {deposition_id}), ready to publish"
+                )
             except Exception as e:
-                logger.exception(f"[UPLOAD] Failed during upload/publish: {e}")
-                msg = f"Failed to upload files or publish to Zenodo: {str(e)}"
+                logger.exception(f"[UPLOAD] Failed during file upload: {e}")
+                msg = f"Failed to upload files to Zenodo: {str(e)}"
                 return jsonify({"message": msg}), 500
 
         temp_folder = current_user.temp_folder()
@@ -135,6 +130,44 @@ def list_dataset():
         datasets=dataset_service.get_synchronized(current_user.id),
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
     )
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/publish", methods=["POST"])
+@login_required
+def publish_dataset(dataset_id):
+    """
+    Publica un dataset en Zenodo/Fakenodo.
+    Solo puede publicarlo el propietario del dataset.
+    """
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+
+    if dataset.user_id != current_user.id:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    if dataset.ds_meta_data.dataset_doi:
+        return jsonify({"message": "Dataset already published"}), 400
+
+    if not dataset.ds_meta_data.deposition_id:
+        return jsonify({"message": "Dataset not uploaded to Zenodo"}), 400
+
+    try:
+        deposition_id = dataset.ds_meta_data.deposition_id
+        logger.info(f"[PUBLISH] Publishing deposition {deposition_id} for dataset {dataset_id}")
+
+        zenodo_service.publish_deposition(deposition_id)
+
+        logger.info(f"[PUBLISH] Getting DOI for deposition {deposition_id}")
+        deposition_doi = zenodo_service.get_doi(deposition_id)
+        logger.info(f"[PUBLISH] DOI retrieved: {deposition_doi}")
+
+        logger.info(f"[PUBLISH] Updating dataset {dataset.ds_meta_data_id} with DOI={deposition_doi}")
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+        logger.info(f"[PUBLISH] Dataset {dataset_id} published successfully")
+
+        return jsonify({"message": "Dataset published successfully", "doi": deposition_doi}), 200
+    except Exception as e:
+        logger.exception(f"[PUBLISH] Failed to publish dataset {dataset_id}: {e}")
+        return jsonify({"message": f"Failed to publish dataset: {str(e)}"}), 500
 
 
 # ========== FILE UPLOAD GENÉRICO (UVL/GPX/etc) ==========

@@ -1,3 +1,4 @@
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
@@ -6,6 +7,8 @@ from flask import request
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------
@@ -265,13 +268,39 @@ class UVLDataset(BaseDataset):
 
     def calculate_total_features(self):
         """Calcular total de features en todos los modelos UVL"""
-        # TODO: Implementar según lógica UVL existente
-        return 0
+        try:
+            from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+
+            total = 0
+            for feature_model in self.feature_models:
+                for file in feature_model.files:
+                    try:
+                        fm = UVLReader(file.get_path()).transform()
+                        total += len(fm.get_features())
+                    except Exception:
+                        continue
+            return total
+        except Exception as e:
+            logger.error(f"Error calculating total features: {e}")
+            return 0
 
     def calculate_total_constraints(self):
         """Calcular total de constraints en todos los modelos UVL"""
-        # TODO: Implementar según lógica UVL existente
-        return 0
+        try:
+            from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+
+            total = 0
+            for feature_model in self.feature_models:
+                for file in feature_model.files:
+                    try:
+                        fm = UVLReader(file.get_path()).transform()
+                        total += len(fm.get_constraints())
+                    except Exception:
+                        continue
+            return total
+        except Exception as e:
+            logger.error(f"Error calculating total constraints: {e}")
+            return 0
 
 
 class GPXDataset(BaseDataset):

@@ -38,6 +38,7 @@ from app.modules.dataset.repositories import (
     DSMetaDataRepository,
     DSViewRecordRepository,
 )
+from app.modules.featuremodel.models import FeatureModel
 from app.modules.featuremodel.repositories import FeatureModelRepository, FMMetaDataRepository
 from app.modules.hubfile.repositories import HubfileDownloadRecordRepository, HubfileRepository
 from core.services.BaseService import BaseService
@@ -376,12 +377,7 @@ class VersionService:
                 version.total_features = dataset.calculate_total_features() or 0
                 version.total_constraints = dataset.calculate_total_constraints() or 0
 
-                if hasattr(dataset.feature_models, "count"):
-                    # Es una query de SQLAlchemy
-                    version.model_count = dataset.feature_models.count()
-                else:
-                    # Es una lista Python
-                    version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
+                version.model_count = db.session.query(FeatureModel).filter_by(data_set_id=dataset.id).count()
 
             except Exception as e:
                 logger.warning(f"Could not calculate UVL metrics for dataset {dataset.id}: {str(e)}")

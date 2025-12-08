@@ -234,7 +234,7 @@
                             <div class="col-md-4 col-6 mb-2">
                                 <div class="card bg-light">
                                     <div class="card-body py-2">
-                                        <h6 class="mb-0"><strong>{{ version.model_count or '-' }}</strong></h6>
+                                        <h6 class="mb-0"><strong>{{ version.model_count if version.model_count is not none else '-' }}</strong></h6>
                                         <p class="mb-0"><small>Models</small></p>
                                     </div>
                                 </div>
@@ -242,7 +242,7 @@
                             <div class="col-md-4 col-6 mb-2">
                                 <div class="card bg-light">
                                     <div class="card-body py-2">
-                                        <h6 class="mb-0"><strong>{{ version.total_features or '-' }}</strong></h6>
+                                        <h6 class="mb-0"><strong>{{ version.total_features if version.total_features is not none else '-' }}</strong></h6>
                                         <p class="mb-0"><small>Features</small></p>
                                     </div>
                                 </div>
@@ -250,7 +250,7 @@
                             <div class="col-md-4 col-6 mb-2">
                                 <div class="card bg-light">
                                     <div class="card-body py-2">
-                                        <h6 class="mb-0"><strong>{{ version.total_constraints or '-' }}</strong></h6>
+                                        <h6 class="mb-0"><strong>{{ version.total_constraints if version.total_constraints is not none else '-' }}</strong></h6>
                                         <p class="mb-0"><small>Constraints</small></p>
                                     </div>
                                 </div>

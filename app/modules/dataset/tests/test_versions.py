@@ -75,7 +75,7 @@ def test_list_versions(test_client, dataset, versions):
 
 
 def test_view_version(test_client, dataset, versions):
-    v = versions[0]  # v0.0.1
+    v = versions[0]
     res = test_client.get(f"/version/{dataset.id}/{v.id}/")
     assert res.status_code == 200
     html = res.data.decode()
@@ -131,3 +131,145 @@ def test_create_version(test_client, dataset, user):
     assert res.status_code == 200
     new_version = DatasetVersion.query.filter_by(changelog="Test changes").first()
     assert new_version is not None
+
+
+def test_publish_dataset_unauthorized(test_client, dataset):
+    """Test que usuario no autenticado no puede publicar"""
+    res = test_client.post(f"/dataset/{dataset.id}/publish")
+    assert res.status_code == 400
+
+
+def test_publish_dataset_already_published(test_client, dataset, user):
+    """Test que no se puede publicar un dataset ya publicado"""
+    from app.modules.conftest import logout
+
+    dataset.ds_meta_data.dataset_doi = "10.1234/test"
+    dataset.ds_meta_data.tags = "test,tags"
+    db.session.commit()
+
+    logout(test_client)
+    login(test_client, "testversions@test.com", "password")
+    res = test_client.post(f"/dataset/{dataset.id}/publish")
+    assert res.status_code == 400
+    data = res.get_json()
+    assert "already published" in data["message"]
+
+
+def test_publish_dataset_no_deposition(test_client, dataset, user):
+    """Test que no se puede publicar sin deposition_id"""
+    from app.modules.conftest import logout
+
+    logout(test_client)
+    login(test_client, "testversions@test.com", "password")
+    res = test_client.post(f"/dataset/{dataset.id}/publish")
+    assert res.status_code == 400
+    data = res.get_json()
+    assert "not uploaded to Zenodo" in data["message"]
+
+
+def test_publish_dataset_success(test_client, dataset, user, monkeypatch):
+    """Test publicación exitosa de dataset"""
+    dataset.ds_meta_data.deposition_id = 123
+    db.session.commit()
+
+    class MockZenodoService:
+        def publish_deposition(self, deposition_id):
+            return {"doi": "10.9999/fakenodo.test123"}
+
+        def get_doi(self, deposition_id):
+            return "10.9999/fakenodo.test123"
+
+    from app.modules.conftest import logout
+    from app.modules.dataset import routes
+
+    monkeypatch.setattr(routes, "zenodo_service", MockZenodoService())
+
+    logout(test_client)
+    login(test_client, "testversions@test.com", "password")
+    res = test_client.post(f"/dataset/{dataset.id}/publish")
+
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["doi"] == "10.9999/fakenodo.test123"
+    assert "successfully" in data["message"]
+
+    db.session.refresh(dataset)
+    assert dataset.ds_meta_data.dataset_doi == "10.9999/fakenodo.test123"
+
+
+def test_cannot_create_version_after_publish(test_client, dataset, user):
+    """Test que no se pueden crear versiones después de publicar"""
+    from app.modules.conftest import logout
+
+    dataset.ds_meta_data.dataset_doi = "10.1234/test"
+    dataset.ds_meta_data.tags = "test,tags"
+    db.session.commit()
+
+    logout(test_client)
+    login(test_client, "testversions@test.com", "password")
+    data = {"bump_type": "patch", "changelog": "Should fail"}
+    res = test_client.post(f"/dataset/{dataset.id}/create_version", data=data, follow_redirects=False)
+
+    assert res.status_code == 302
+
+
+def test_uvl_statistics_calculation(test_client, user, metadata):
+    """Test que las estadísticas UVL se calculan correctamente"""
+    from app.modules.dataset.models import UVLDataset
+    from app.modules.featuremodel.models import FeatureModel, FMMetaData
+    from app.modules.hubfile.models import Hubfile
+
+    dataset = UVLDataset(user_id=user.id, ds_meta_data_id=metadata.id, created_at=datetime.utcnow())
+    db.session.add(dataset)
+    db.session.commit()
+
+    fm_meta = FMMetaData(
+        filename="test.uvl", title="Test Model", description="Test", publication_type=PublicationType.NONE
+    )
+    db.session.add(fm_meta)
+    db.session.commit()
+
+    feature_model = FeatureModel(data_set_id=dataset.id, fm_meta_data_id=fm_meta.id)
+    db.session.add(feature_model)
+    db.session.commit()
+
+    file = Hubfile(name="test.uvl", checksum="abc123", size=100, feature_model_id=feature_model.id)
+    db.session.add(file)
+    db.session.commit()
+
+    assert len(dataset.feature_models) == 1
+
+
+def test_model_count_in_version(test_client, dataset, user):
+    """Test que el conteo de modelos funciona en versiones"""
+    from app.modules.dataset.models import UVLDataset
+    from app.modules.featuremodel.models import FeatureModel, FMMetaData
+
+    uvl_dataset = UVLDataset(user_id=user.id, ds_meta_data_id=dataset.ds_meta_data_id, created_at=datetime.utcnow())
+    db.session.add(uvl_dataset)
+    db.session.commit()
+
+    for i in range(3):
+        fm_meta = FMMetaData(
+            filename=f"model{i}.uvl", title=f"Model {i}", description="Test", publication_type=PublicationType.NONE
+        )
+        db.session.add(fm_meta)
+        db.session.commit()
+
+        feature_model = FeatureModel(data_set_id=uvl_dataset.id, fm_meta_data_id=fm_meta.id)
+        db.session.add(feature_model)
+
+    db.session.commit()
+
+    from app.modules.conftest import logout
+
+    logout(test_client)
+    login(test_client, "testversions@test.com", "password")
+    data = {"bump_type": "patch", "changelog": "Test version"}
+    res = test_client.post(f"/dataset/{uvl_dataset.id}/create_version", data=data, follow_redirects=True)
+
+    assert res.status_code == 200
+
+    version = DatasetVersion.query.filter_by(dataset_id=uvl_dataset.id).first()
+    assert version is not None
+    assert version.model_count == 3
