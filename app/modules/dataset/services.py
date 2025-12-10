@@ -572,6 +572,9 @@ class DSMetaDataService(BaseService):
     def filter_by_doi(self, doi: str) -> Optional[DSMetaData]:
         return self.repository.filter_by_doi(doi)
 
+    def filter_by_conceptrecid(self, conceptrecid: str) -> Optional[DSMetaData]:
+        return self.repository.filter_by_conceptrecid(conceptrecid)
+
 
 class DSViewRecordService(BaseService):
     def __init__(self):

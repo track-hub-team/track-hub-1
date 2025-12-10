@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import uuid
@@ -530,6 +531,21 @@ def subdomain_index(doi):
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
         return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
+
+    # Check if this is a conceptual DOI
+    if not re.search(r"\.v\d+$", doi):
+        # If conceptual DOI - redirect to latest version
+        match = re.search(r"fakenodo\.(.+)$", doi)
+        if match:
+            conceptrecid = match.group(1)
+            ds_meta_data = dsmetadata_service.filter_by_conceptrecid(conceptrecid)
+            if ds_meta_data and ds_meta_data.data_set:
+                dataset = ds_meta_data.data_set
+                # Get latest version with DOI
+                latest_version = dataset.get_latest_published_version()
+                if latest_version and latest_version.version_doi:
+                    # Redirect to the specific version DOI
+                    return redirect(url_for("dataset.subdomain_index", doi=latest_version.version_doi), code=302)
 
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
     if not ds_meta_data:

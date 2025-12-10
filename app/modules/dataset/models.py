@@ -209,6 +209,10 @@ class BaseDataset(db.Model):
         """Obtener la última versión del dataset"""
         return self.versions.first()
 
+    def get_latest_published_version(self):
+        """Obtener la última versión publicada en fakenodo"""
+        return self.versions.filter(DatasetVersion.version_doi.isnot(None)).first()
+
     def get_version_count(self):
         """Contar número de versiones"""
         return self.versions.count()

@@ -33,6 +33,9 @@ class DSMetaDataRepository(BaseRepository):
     def filter_by_doi(self, doi: str) -> Optional[DSMetaData]:
         return self.model.query.filter_by(dataset_doi=doi).first()
 
+    def filter_by_conceptrecid(self, conceptrecid: str) -> Optional[DSMetaData]:
+        return self.model.query.filter_by(conceptrecid=conceptrecid).first()
+
 
 class DSViewRecordRepository(BaseRepository):
     def __init__(self):
