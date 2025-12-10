@@ -19,14 +19,14 @@ El sistema de comentarios de Track Hub incluye un mecanismo de moderación que p
 ```python
 class Comment(db.Model):
     __tablename__ = 'comments'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey('data_set.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relaciones
     dataset = db.relationship('DataSet', backref='comments')
     user = db.relationship('User', backref='comments')
@@ -51,29 +51,29 @@ class CommentService(BaseService):
 def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
     """
     Crear un nuevo comentario en un dataset.
-    
+
     Validaciones:
     - Contenido no vacío
     - Longitud máxima 1000 caracteres
     - Sanitización HTML/XSS
     - Dataset existente
     """
-    
+
     # Validar y sanitizar contenido
     clean_content = self._validate_content(content)
-    
+
     # Verificar que existe el dataset
     dataset = self.dataset_repository.get_by_id(dataset_id)
     if not dataset:
         raise ValueError("Dataset not found")
-    
+
     # Crear comentario
     comment = self.repository.create(
         dataset_id=dataset_id,
         user_id=user_id,
         content=clean_content
     )
-    
+
     return comment.to_dict()
 ```
 
@@ -90,24 +90,24 @@ def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
 def delete_comment(self, comment_id: int, user_id: int) -> bool:
     """
     Eliminar un comentario.
-    
+
     Permisos:
     - El autor del comentario puede eliminarlo
     - El propietario del dataset puede eliminarlo (moderación)
     - Otros usuarios NO pueden eliminarlo
     """
-    
+
     comment = self.repository.get_by_id(comment_id)
     if not comment:
         raise ValueError("Comment not found")
-    
+
     # Verificar permisos
     is_owner = self._is_comment_owner(comment, user_id)
     is_moderator = self._is_dataset_owner(comment, user_id)
-    
+
     if not (is_owner or is_moderator):
         raise PermissionError("You don't have permission to delete this comment")
-    
+
     return self.repository.delete(comment_id)
 ```
 
@@ -122,28 +122,28 @@ def delete_comment(self, comment_id: int, user_id: int) -> bool:
 def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:
     """
     Actualizar el contenido de un comentario.
-    
+
     Permisos:
     - SOLO el autor del comentario puede editarlo
     - El moderador NO puede editar comentarios ajenos
     """
-    
+
     comment = self.repository.get_by_id(comment_id)
     if not comment:
         raise ValueError("Comment not found")
-    
+
     # Verificar que es el autor (moderador NO puede editar)
     if not self._is_comment_owner(comment, user_id):
         raise PermissionError("Only the comment author can edit it")
-    
+
     # Validar y sanitizar nuevo contenido
     clean_content = self._validate_content(new_content)
-    
+
     # Actualizar
     updated = self.repository.update_content(comment_id, clean_content)
     if not updated:
         raise ValueError("Failed to update comment")
-    
+
     return updated.to_dict()
 ```
 
@@ -176,28 +176,28 @@ def _is_dataset_owner(self, comment, user_id: int) -> bool:
 def _validate_content(self, content: str) -> str:
     """
     Validar y sanitizar el contenido de un comentario.
-    
+
     Protecciones:
     - XSS: html.escape() convierte <script> en &lt;script&gt;
     - Inyección: Escapado de caracteres especiales
     - Límites: Validación de longitud
     """
-    
+
     # Eliminar espacios en blanco
     clean_content = content.strip() if content else ""
-    
+
     # Verificar que no esté vacío
     if not clean_content:
         raise ValueError("Comment content cannot be empty")
-    
+
     # Verificar longitud máxima (1000 caracteres)
     if len(clean_content) > 1000:
         raise ValueError("Comment content too long (max 1000 characters)")
-    
+
     # Sanitizar HTML (evitar XSS)
     import html
     clean_content = html.escape(clean_content)
-    
+
     return clean_content
 ```
 
@@ -360,11 +360,11 @@ def test_delete_comment_dataset_owner(app, dataset, user, user2, comment_service
     """Test eliminar comentario siendo el propietario del dataset (moderador)."""
     # user2 comenta en el dataset de user
     comment = comment_repository.create(
-        dataset_id=dataset, 
-        user_id=user2, 
+        dataset_id=dataset,
+        user_id=user2,
         content="Comment by user2"
     )
-    
+
     # user (propietario del dataset) puede eliminarlo
     result = comment_service.delete_comment(comment.id, user)
     assert result is True
@@ -372,11 +372,11 @@ def test_delete_comment_dataset_owner(app, dataset, user, user2, comment_service
 def test_update_comment_dataset_owner_cannot_edit(app, dataset, user, user2):
     """Test propietario del dataset NO puede editar comentarios ajenos."""
     comment = comment_repository.create(
-        dataset_id=dataset, 
-        user_id=user2, 
+        dataset_id=dataset,
+        user_id=user2,
         content="Original"
     )
-    
+
     # user (moderador) NO puede editar el comentario
     with pytest.raises(PermissionError):
         comment_service.update_comment(comment.id, user, "Edited by moderator")

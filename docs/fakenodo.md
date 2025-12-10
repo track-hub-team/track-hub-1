@@ -247,7 +247,7 @@ def test_roundtrip_create_upload_publish_delete(fakenodo_server, tmp_path):
 
     # 3) Publicar
     pub = requests.post(
-        f"{FAKENODO_DEPOSITIONS}/{dep_id}/actions/publish", 
+        f"{FAKENODO_DEPOSITIONS}/{dep_id}/actions/publish",
         timeout=10
     )
     assert pub.status_code == 202
@@ -286,7 +286,7 @@ def fakenodo_server():
 
     proc = subprocess.Popen([sys.executable, app_path], env=env)
     ok = _wait_for_healthy(FAKENODO_DEPOSITIONS, timeout=15.0)
-    
+
     if not ok:
         proc.terminate()
         proc.wait(timeout=3)

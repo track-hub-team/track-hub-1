@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
+from typing import cast
 
 from app import db
+from app.modules.auth.models import User
 
 
 def utc_now():
@@ -104,7 +106,7 @@ class Community(db.Model):
         return f"Community<{self.id}:{self.name}>"
 
 
-class CommunityCurator(Model): 
+class CommunityCurator(db.Model):
     """
     Tabla de asociación entre comunidades y usuarios curadores.
     ...
@@ -128,7 +130,7 @@ class CommunityCurator(Model):
         return f"CommunityCurator<community_id={self.community_id}, user_id={self.user_id}>"
 
 
-class CommunityDataset(Model): 
+class CommunityDataset(db.Model):
     """
     Tabla de asociación entre comunidades y datasets.
     ...
@@ -166,7 +168,7 @@ class CommunityDataset(Model):
         return f"CommunityDataset<community_id={self.community_id}, dataset_id={self.dataset_id}>"
 
 
-class CommunityRequest(Model):
+class CommunityRequest(db.Model):
     """
     Solicitud para añadir un dataset a una comunidad.
     ...
@@ -285,7 +287,7 @@ class CommunityRequest(Model):
 # ----------------------------------------------------------------------
 
 
-class Follower(Model):  
+class Follower(db.Model):
     """
     Tabla de asociación para el seguimiento de usuarios (User sigue a otro User).
     """
@@ -306,7 +308,7 @@ class Follower(Model):
         return f"Follower<follower_id={self.follower_id}, followed_id={self.followed_id}>"
 
 
-class CommunityFollower(Model):
+class CommunityFollower(db.Model):
     """
     Tabla de asociación para el seguimiento de Comunidades por parte de Usuarios.
     """

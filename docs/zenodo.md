@@ -70,14 +70,14 @@ def get_zenodo_url(self) -> str:
 
     # 2) Si no hay Fakenodo, usa Zenodo según entorno
     FLASK_ENV = os.getenv("FLASK_ENV", "development").lower()
-    
+
     # Sandbox por defecto en desarrollo
     default = "https://sandbox.zenodo.org/api/deposit/depositions"
-    
+
     # Zenodo real en producción
     if FLASK_ENV == "production":
         default = "https://zenodo.org/api/deposit/depositions"
-    
+
     # Permite override con ZENODO_API_URL
     return os.getenv("ZENODO_API_URL", default).rstrip("/")
 ```
@@ -92,9 +92,9 @@ def test_connection(self) -> bool:
     """Verifica conectividad básica con Zenodo/Fakenodo."""
     try:
         response = requests.get(
-            self.ZENODO_API_URL, 
-            params=self._params(), 
-            headers=self.headers, 
+            self.ZENODO_API_URL,
+            params=self._params(),
+            headers=self.headers,
             timeout=30
         )
         return response.status_code == 200
@@ -127,7 +127,7 @@ def test_full_connection(self) -> Response:
 ```python
 def create_new_deposition(self, dataset: BaseDataset) -> dict:
     """Crea deposición usando metadatos del DataSet."""
-    
+
     metadata = {
         "title": dataset.ds_meta_data.title,
         "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
@@ -145,54 +145,54 @@ def create_new_deposition(self, dataset: BaseDataset) -> dict:
         "access_right": "open",
         "license": "CC-BY-4.0",
     }
-    
+
     data = {"metadata": metadata}
     response = requests.post(
-        self.ZENODO_API_URL, 
-        params=self._params(), 
-        json=data, 
-        headers=self.headers, 
+        self.ZENODO_API_URL,
+        params=self._params(),
+        json=data,
+        headers=self.headers,
         timeout=30
     )
-    
+
     if response.status_code != 201:
         raise Exception(f"Failed to create deposition. Status: {response.status_code}")
-    
+
     return response.json()
 ```
 
 ### 3. Subir Archivo
 
 ```python
-def upload_file(self, dataset: BaseDataset, deposition_id: int, 
+def upload_file(self, dataset: BaseDataset, deposition_id: int,
                 feature_model: FeatureModel, user=None) -> dict:
     """Sube un archivo a una deposición existente."""
-    
+
     filename = feature_model.fm_meta_data.filename
     user_id = current_user.id if user is None else user.id
     file_path = os.path.join(
-        uploads_folder_name(), 
-        f"user_{str(user_id)}", 
-        f"dataset_{dataset.id}/", 
+        uploads_folder_name(),
+        f"user_{str(user_id)}",
+        f"dataset_{dataset.id}/",
         filename
     )
-    
+
     publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
-    
+
     with open(file_path, "rb") as fh:
         files = {"file": fh}
         data = {"name": filename}
         response = requests.post(
-            publish_url, 
-            params=self._params(), 
-            data=data, 
-            files=files, 
+            publish_url,
+            params=self._params(),
+            data=data,
+            files=files,
             timeout=60
         )
-    
+
     if response.status_code != 201:
         raise Exception(f"Failed to upload files. Error: {response.json()}")
-    
+
     return response.json()
 ```
 
@@ -201,18 +201,18 @@ def upload_file(self, dataset: BaseDataset, deposition_id: int,
 ```python
 def publish_deposition(self, deposition_id: int) -> dict:
     """Publica una deposición y obtiene el DOI."""
-    
+
     publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/actions/publish"
     response = requests.post(
-        publish_url, 
-        params=self._params(), 
-        headers=self.headers, 
+        publish_url,
+        params=self._params(),
+        headers=self.headers,
         timeout=30
     )
-    
+
     if response.status_code != 202:
         raise Exception("Failed to publish deposition")
-    
+
     return response.json()
 ```
 
@@ -230,15 +230,15 @@ def get_doi(self, deposition_id: int) -> str:
 def get_all_depositions(self) -> dict:
     """Lista todas las deposiciones del usuario."""
     response = requests.get(
-        self.ZENODO_API_URL, 
-        params=self._params(), 
-        headers=self.headers, 
+        self.ZENODO_API_URL,
+        params=self._params(),
+        headers=self.headers,
         timeout=30
     )
-    
+
     if response.status_code != 200:
         raise Exception("Failed to get depositions")
-    
+
     return response.json()
 ```
 
@@ -388,7 +388,7 @@ def test_test_full_connection_success(env_ok):
         svc = ZenodoService()
         resp = svc.test_full_connection()
         payload = resp.get_json()
-        
+
         assert resp.status_code == 200
         assert isinstance(payload, dict)
         assert payload.get("success") is True
@@ -405,7 +405,7 @@ def test_test_full_connection_fails_gracefully(env_fail):
         svc = ZenodoService()
         resp = svc.test_full_connection()
         payload = resp.get_json()
-        
+
         assert resp.status_code == 200
         assert payload.get("success") is False
         assert len(payload.get("messages", [])) > 0
