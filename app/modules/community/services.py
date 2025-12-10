@@ -367,3 +367,6 @@ class CommunityService(BaseService):
         except Exception as e:
             db.session.rollback()
             return False, f"Error unfollowing community: {str(e)}"
+
+    def is_following_community(self, user_id: int, community_id: int) -> bool:
+        return self.follower_repository.is_following(user_id, community_id)

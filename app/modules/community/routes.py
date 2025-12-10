@@ -47,9 +47,12 @@ def view(slug):
     datasets = community_service.get_community_datasets(community.id)
 
     is_curator = False
-    is_following = False
     if current_user.is_authenticated:
         is_curator = community_service.is_curator(community.id, current_user.id)
+
+    is_following = False
+    if current_user.is_authenticated:
+        is_following = community_service.is_following_community(current_user.id, community.id)
 
     return render_template(
         "community/view.html",
@@ -215,7 +218,7 @@ def reject_request(slug, request_id):
 # ======================================================================
 
 
-@community_bp.route("/community/<int:community_id>/follow", methods=["POST"])
+@community_bp.route("/community/<string:slug>/follow", methods=["POST"])
 @login_required
 def follow_community(community_id):
     """Permite al usuario actual seguir una comunidad."""
@@ -231,10 +234,10 @@ def follow_community(community_id):
     else:
         flash(f"You are now following {community.name}.", "success")
 
-    return redirect(url_for("community.view", community_id=community_id))
+    return redirect(url_for("community.view", slug=community.slug))
 
 
-@community_bp.route("/community/<int:community_id>/unfollow", methods=["POST"])
+@community_bp.route("/community/<string:slug>/unfollow", methods=["POST"])
 @login_required
 def unfollow_community(community_id):
     """Permite al usuario actual dejar de seguir una comunidad."""
@@ -250,7 +253,7 @@ def unfollow_community(community_id):
     else:
         flash(f"You have unfollowed {community.name}.", "success")
 
-    return redirect(url_for("community.view", community_id=community_id))
+    return redirect(url_for("community.view", slug=community.slug))
 
 
 # Nota: Las rutas para seguir/dejar de seguir *usuarios* generalmente se colocan
