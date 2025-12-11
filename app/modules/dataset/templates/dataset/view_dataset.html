@@ -123,19 +123,18 @@
                         </a>
 
                         {% if current_user.is_authenticated and current_user.id != dataset.user.id %}
-                            <button
-                                class="btn btn-sm btn-outline-primary follow-user-btn"
-                                data-user-id="{{ dataset.user.id }}"
-                                {% if current_user.id in dataset.user.followers_ids %}
-                                    disabled
-                                    style="background-color: #28a745; color: white;"
-                                {% endif %}>
-                                {% if current_user.id in dataset.user.followers_ids %}
-                                    Following
-                                {% else %}
-                                    Follow
-                                {% endif %}
-                            </button>
+                        <button
+                            id="follow-user-btn"
+                            class="btn btn-sm
+                                {% if is_following_author %}btn-success{% else %}btn-outline-primary{% endif %}"
+                            data-user-id="{{ dataset.user.id }}"
+                        >
+                            {% if is_following_author %}
+                                <i class="fa fa-check"></i> Following
+                            {% else %}
+                                <i class="fa fa-user-plus"></i> Follow Author
+                            {% endif %}
+                        </button>
                         {% endif %}
                     </div>
                 </div>
@@ -732,6 +731,41 @@ function publishToZenodo(datasetId, isRepublish) {
     });
 }
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("follow-user-btn");
+    if (!btn) return;
 
+    btn.addEventListener("click", function () {
+        const userId = btn.dataset.userId;
+        const isFollowing = btn.classList.contains("btn-success");
+
+        const url = isFollowing
+            ? `/community/user/${userId}/unfollow`
+            : `/community/user/${userId}/follow`;
+
+        fetch(url, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return alert("Error updating follow state.");
+
+            if (isFollowing) {
+                // NOW NOT FOLLOWING
+                btn.classList.remove("btn-success");
+                btn.classList.add("btn-outline-primary");
+                btn.innerHTML = `<i class="fa fa-user-plus"></i> Follow Author`;
+            } else {
+                // NOW FOLLOWING
+                btn.classList.remove("btn-outline-primary");
+                btn.classList.add("btn-success");
+                btn.innerHTML = `<i class="fa fa-check"></i> Following`;
+            }
+        });
+    });
+});
+</script>
 
 {% endblock %}

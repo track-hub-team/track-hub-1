@@ -24,6 +24,7 @@ from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
 from app import db
+from app.modules.community.services import CommunityService
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.fetchers.base import FetchError
 from app.modules.dataset.forms import DataSetForm
@@ -53,6 +54,7 @@ dsmetadata_service = DSMetaDataService()
 zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
+community_service = CommunityService()
 
 
 # ========== CREATE DATASET (FORM + UVL/GPX) ==========
@@ -535,8 +537,14 @@ def subdomain_index(doi):
 
     dataset = ds_meta_data.data_set
 
+    is_following_author = False
+    if current_user.is_authenticated:
+        is_following_author = community_service.is_following_user(current_user.id, dataset.user.id)
+
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp = make_response(
+        render_template("dataset/view_dataset.html", dataset=dataset, is_following_author=is_following_author)
+    )
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -551,10 +559,13 @@ def get_unsynchronized_dataset(dataset_id):
     dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
     if not dataset:
         abort(404)
-
+    is_following_author = False
+    if current_user.is_authenticated:
+        is_following_author = community_service.is_following_user(current_user.id, dataset.user.id)
     return render_template(
         "dataset/view_dataset.html",
         dataset=dataset,
+        is_following_author=is_following_author,
         FLASK_ENV=os.getenv("FLASK_ENV", "development"),
     )
 

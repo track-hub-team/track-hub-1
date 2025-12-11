@@ -253,7 +253,7 @@ def unfollow_community(slug):
 # ya que se relacionan con las funciones de seguimiento.
 
 
-@community_bp.route("/user/<int:followed_id>/follow", methods=["POST"])
+@community_bp.route("/community/user/<int:followed_id>/follow", methods=["POST"])
 @login_required
 def follow_user(followed_id):
     if current_user.id == followed_id:
@@ -269,7 +269,7 @@ def follow_user(followed_id):
     return redirect(request.referrer or url_for("public.index"))
 
 
-@community_bp.route("/user/<int:followed_id>/unfollow", methods=["POST"])
+@community_bp.route("/community/user/<int:followed_id>/unfollow", methods=["POST"])
 @login_required
 def unfollow_user(followed_id):
     ok, error = community_service.unfollow_user(current_user.id, followed_id)

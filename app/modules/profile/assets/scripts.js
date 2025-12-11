@@ -20,74 +20,95 @@ document.addEventListener("DOMContentLoaded", function () {
             li.classList.add("mb-3");
 
             li.innerHTML = `
-                <a href="/community/${comm.slug}" class="d-flex align-items-center text-decoration-none">
+                <a href="/community/${comm.slug}" class="d-flex align-items-center text-decoration-none text-dark">
                     <img src="${comm.logo}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;">
                     <div>
                         <strong>${comm.name}</strong><br>
-                        <span class="text-muted small">${comm.description.substring(0, 60)}...</span><br>
-                        <span class="badge bg-primary mt-1">${comm.datasets_count} datasets</span>
+                        <span class="text-muted small">${comm.description.substring(0, 60)}...</span>
                     </div>
                 </a>
             `;
-
+            li.style.listStyle = "none";
+            li.style.borderBottom = "1px solid #ccc";
+            li.style.padding = "12px 4px";
             communitiesList.appendChild(li);
         });
     }
     // -------------------------------
-    // 2. MOCK: Users Followed
+    // 2. USERS FOLLOWED FROM BACKEND
     // -------------------------------
-    const mockUsers = [
-        {
-            id: 100,
-            name: "Laura",
-            surname: "Martinez",
-            email: "laura.martinez@example.com",
-            affiliation: "University of Barcelona"
-        },
-        {
-            id: 101,
-            name: "Carlos",
-            surname: "Ruiz",
-            email: "cruiz@example.com",
-            affiliation: "Data Science Institute"
-        },
-        {
-            id: 102,
-            name: "Marta",
-            surname: "Lopez",
-            email: "marta.lopez@example.com",
-            affiliation: "Open Research Labs"
-        }
-    ];
-
     const usersList = document.getElementById("followed-users-list");
+    const usersJsonEl = document.getElementById("followed-users-json");
 
-    mockUsers.forEach(user => {
-        const li = document.createElement("li");
-        li.classList.add("mb-3");
+    let followedUsers = [];
+    if (usersJsonEl) {
+        followedUsers = JSON.parse(usersJsonEl.textContent || "[]");
+    }
 
-        li.innerHTML = `
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center me-3"
-                         style="width:45px; height:45px; font-size:18px;">
-                         ${user.name.charAt(0)}${user.surname.charAt(0)}
+    if (followedUsers.length === 0) {
+        usersList.innerHTML = `<li class="text-muted">You are not following any users yet.</li>`;
+    } else {
+        followedUsers.forEach(user => {
+            const initials =
+                ((user.name || "").charAt(0) + (user.surname || "").charAt(0)).toUpperCase();
+
+            const li = document.createElement("li");
+            li.classList.add("mb-3");
+
+            li.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between">
+
+                    <div class="d-flex align-items-center">
+                        <div class="follow-avatar me-3">${initials}</div>
+
+                        <div>
+                            <strong>${user.name} ${user.surname}</strong><br>
+                            <span class="text-muted small">${user.email}</span>
+                        </div>
                     </div>
 
-                    <div>
-                        <strong>${user.name} ${user.surname}</strong><br>
-                        <span class="text-muted small">${user.email}</span><br>
-                        <span class="small">${user.affiliation}</span>
-                    </div>
+                    <button
+                        class="btn btn-sm btn-outline-danger unfollow-user-btn"
+                        data-user-id="${user.id}">
+                        Unfollow
+                    </button>
                 </div>
+            `;
+            li.style.listStyle = "none";
+            li.style.borderBottom = "1px solid #ccc";
+            li.style.padding = "12px 4px";
+            usersList.appendChild(li);
+        });
+    }
 
-                <!-- Botón UNFOLLOW -->
-                <button type="button" class="btn btn-sm btn-danger">
-                    Unfollow
-                </button>
-            </div>
-        `;
+    // ---------------------------
+    // UNFOLLOW USER FROM PROFILE
+    // ---------------------------
+    document.addEventListener("click", function (event) {
+        if (!event.target.classList.contains("unfollow-user-btn")) return;
 
-        usersList.appendChild(li);
+        const btn = event.target;
+        const userId = btn.dataset.userId;
+
+        fetch(`/community/user/${userId}/unfollow`, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the element from DOM
+                btn.closest("li").remove();
+
+                // If no users left, show empty message
+                if (usersList.children.length === 0) {
+                    usersList.innerHTML = `<li class="text-muted">You are not following any users yet.</li>`;
+                }
+            } else {
+                alert(data.error || "Could not unfollow user.");
+            }
+        })
+        .catch(err => console.error(err));
     });
+
 });

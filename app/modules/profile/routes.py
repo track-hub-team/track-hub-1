@@ -47,7 +47,7 @@ def my_profile():
     total_datasets_count = db.session.query(BaseDataset).filter(BaseDataset.user_id == current_user.id).count()
 
     followed_communities = community_service.get_followed_communities(current_user.id)
-    # Convertimos cada comunidad a dict sin tocar el modelo:
+
     followed_communities_json = [
         {
             "id": c.id,
@@ -58,6 +58,17 @@ def my_profile():
             "datasets_count": len(c.datasets),
         }
         for c in followed_communities
+    ]
+    followed_users = community_service.get_followed_users(current_user.id)
+    followed_users_json = [
+        {
+            "id": u.id,
+            "name": u.profile.name if u.profile else "",
+            "surname": u.profile.surname if u.profile else "",
+            "email": u.email,
+            "affiliation": u.profile.affiliation if u.profile else "",
+        }
+        for u in followed_users
     ]
 
     print(user_datasets_pagination.items)
@@ -70,4 +81,5 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
         followed_communities_json=followed_communities_json,
+        followed_users_json=followed_users_json,
     )

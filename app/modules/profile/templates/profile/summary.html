@@ -1,6 +1,5 @@
 {% extends "base_template.html" %}
 
-
 {% block title %}User Profile{% endblock %}
 
 {% block content %}
@@ -35,7 +34,10 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
-                <ul id="followed-communities-list">
+                <ul id="followed-communities-list" style="list-style: none; padding-left: 0; margin: 0;"></ul>
+                <script id="followed-communities-json" type="application/json">
+                    {{ followed_communities_json | tojson }}
+                </script>
                 </ul>
             </div>
         </div>
@@ -47,11 +49,10 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
-                <ul id="followed-users-list">
-                <script id="followed-communities-json" type="application/json">
-                    {{ followed_communities_json | tojson }}
+                <ul id="followed-users-list" style="list-style: none; padding-left: 0; margin: 0;"></ul>
+                <script id="followed-users-json" type="application/json">
+                    {{ followed_users_json | tojson }}
                 </script>
-                </ul>
             </div>
         </div>
     </div>
