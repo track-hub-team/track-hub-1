@@ -150,3 +150,11 @@ class CommunityFollowerRepository(BaseRepository):
     def get_follower_record(self, user_id: int, community_id: int) -> Optional[CommunityFollower]:
         """Obtener el registro de seguimiento específico."""
         return self.model.query.filter_by(user_id=user_id, community_id=community_id).first()
+
+    def get_followed_communities(self, user_id: int):
+        return (
+            Community.query.join(CommunityFollower)
+            .filter(CommunityFollower.user_id == user_id)
+            .order_by(Community.created_at.desc())
+            .all()
+        )

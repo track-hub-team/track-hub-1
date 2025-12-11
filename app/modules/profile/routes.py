@@ -3,10 +3,13 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.modules.auth.services import AuthenticationService
+from app.modules.community.services import CommunityService
 from app.modules.dataset.models import BaseDataset
 from app.modules.profile import profile_bp
 from app.modules.profile.forms import UserProfileForm
 from app.modules.profile.services import UserProfileService
+
+community_service = CommunityService()
 
 
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])
@@ -43,6 +46,20 @@ def my_profile():
 
     total_datasets_count = db.session.query(BaseDataset).filter(BaseDataset.user_id == current_user.id).count()
 
+    followed_communities = community_service.get_followed_communities(current_user.id)
+    # Convertimos cada comunidad a dict sin tocar el modelo:
+    followed_communities_json = [
+        {
+            "id": c.id,
+            "slug": c.slug,
+            "name": c.name,
+            "description": c.description or "",
+            "logo": c.get_logo_url(),
+            "datasets_count": len(c.datasets),
+        }
+        for c in followed_communities
+    ]
+
     print(user_datasets_pagination.items)
 
     return render_template(
@@ -52,4 +69,5 @@ def my_profile():
         datasets=user_datasets_pagination.items,
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
+        followed_communities_json=followed_communities_json,
     )

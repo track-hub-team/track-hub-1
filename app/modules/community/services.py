@@ -370,3 +370,6 @@ class CommunityService(BaseService):
 
     def is_following_community(self, user_id: int, community_id: int) -> bool:
         return self.follower_repository.is_following(user_id, community_id)
+
+    def get_followed_communities(self, user_id: int):
+        return self.follower_repository.get_followed_communities(user_id)

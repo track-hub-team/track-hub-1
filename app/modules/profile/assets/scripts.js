@@ -1,63 +1,38 @@
 document.addEventListener("DOMContentLoaded", function () {
-    console.log("PROFILE MOCK SCRIPT LOADED");
-
-    // -------------------------------
-    // 1. MOCK: Communities Followed
-    // -------------------------------
-    const mockCommunities = [
-        {
-            id: 1,
-            name: "AI Research Hub",
-            slug: "ai-research-hub",
-            description: "A community focused on Artificial Intelligence datasets.",
-            datasets_count: 12,
-            logo_path: "/static/img/mock_logo1.png",
-            creator: { name: "John", surname: "Doe" }
-        },
-        {
-            id: 2,
-            name: "Climate Data Group",
-            slug: "climate-data-group",
-            description: "Datasets about climate change, environment and sustainability.",
-            datasets_count: 8,
-            logo_path: "/static/img/mock_logo2.png",
-            creator: { name: "Anna", surname: "Smith" }
-        }
-    ];
+    console.log("PROFILE REAL SCRIPT LOADED");
 
     const communitiesList = document.getElementById("followed-communities-list");
 
-    mockCommunities.forEach(comm => {
-        const li = document.createElement("li");
-        li.classList.add("mb-3");
+    // Leer JSON insertado por backend
+    const jsonEl = document.getElementById("followed-communities-json");
+    let followedCommunities = [];
 
-        li.innerHTML = `
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <img src="${comm.logo_path}"
-                         alt="${comm.name}"
-                         class="me-3 rounded"
-                         style="width:50px; height:50px; object-fit:cover;">
+    if (jsonEl) {
+        followedCommunities = JSON.parse(jsonEl.textContent);
+    }
 
+    // Renderizar lista
+    if (followedCommunities.length === 0) {
+        communitiesList.innerHTML = `<li class="text-muted">You are not following any communities yet.</li>`;
+    } else {
+        followedCommunities.forEach(comm => {
+            const li = document.createElement("li");
+            li.classList.add("mb-3");
+
+            li.innerHTML = `
+                <a href="/community/${comm.slug}" class="d-flex align-items-center text-decoration-none">
+                    <img src="${comm.logo}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;">
                     <div>
                         <strong>${comm.name}</strong><br>
                         <span class="text-muted small">${comm.description.substring(0, 60)}...</span><br>
-                        <span class="badge bg-primary mt-1">${comm.datasets_count} datasets</span><br>
-                        <span class="small">Creator: ${comm.creator.name} ${comm.creator.surname}</span>
+                        <span class="badge bg-primary mt-1">${comm.datasets_count} datasets</span>
                     </div>
-                </div>
+                </a>
+            `;
 
-                <!-- Botón UNFOLLOW (solo visual, sin funcionalidad de momento) -->
-                <button type="button" class="btn btn-sm btn-danger">
-                    Unfollow
-                </button>
-            </div>
-        `;
-
-        communitiesList.appendChild(li);
-    });
-
-
+            communitiesList.appendChild(li);
+        });
+    }
     // -------------------------------
     // 2. MOCK: Users Followed
     // -------------------------------
