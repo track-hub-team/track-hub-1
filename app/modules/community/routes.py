@@ -220,40 +220,32 @@ def reject_request(slug, request_id):
 
 @community_bp.route("/community/<string:slug>/follow", methods=["POST"])
 @login_required
-def follow_community(community_id):
-    """Permite al usuario actual seguir una comunidad."""
-    community = community_service.get_by_id(community_id)
+def follow_community(slug):
+    community = community_service.get_by_slug(slug)
     if not community:
-        flash("Community not found", "error")
-        return redirect(url_for("community.list_communities"))
+        return jsonify({"success": False, "error": "Community not found"}), 404
 
-    success, error = community_service.follow_community(current_user.id, community_id)
+    success, error = community_service.follow_community(current_user.id, community.id)
 
-    if error:
-        flash(f"Error following community: {error}", "error")
-    else:
-        flash(f"You are now following {community.name}.", "success")
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": success, "error": error, "following": True}), (200 if success else 400)
 
-    return redirect(url_for("community.view", slug=community.slug))
+    return redirect(url_for("community.view", slug=slug))
 
 
 @community_bp.route("/community/<string:slug>/unfollow", methods=["POST"])
 @login_required
-def unfollow_community(community_id):
-    """Permite al usuario actual dejar de seguir una comunidad."""
-    community = community_service.get_by_id(community_id)
+def unfollow_community(slug):
+    community = community_service.get_by_slug(slug)
     if not community:
-        flash("Community not found", "error")
-        return redirect(url_for("community.list_communities"))
+        return jsonify({"success": False, "error": "Community not found"}), 404
 
-    success, error = community_service.unfollow_community(current_user.id, community_id)
+    success, error = community_service.unfollow_community(current_user.id, community.id)
 
-    if error:
-        flash(f"Error unfollowing community: {error}", "error")
-    else:
-        flash(f"You have unfollowed {community.name}.", "success")
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": success, "error": error, "following": False}), (200 if success else 400)
 
-    return redirect(url_for("community.view", slug=community.slug))
+    return redirect(url_for("community.view", slug=slug))
 
 
 # Nota: Las rutas para seguir/dejar de seguir *usuarios* generalmente se colocan

@@ -46,9 +46,17 @@
                                 <div>
                                     {% if not current_user.is_anonymous %}
                                         <!-- Follow button -->
-                                        <a href="#" class="btn btn-outline-danger me-2" id="follow-btn">
-                                            <i data-feather="heart"></i> Follow
-                                        </a>
+                                        <button
+                                            id="follow-btn"
+                                            class="btn {{ 'btn-danger' if is_following else 'btn-outline-danger' }} me-2"
+                                            data-following="{{ '1' if is_following else '0' }}"
+                                            data-slug="{{ community.slug }}"
+                                        >
+                                            <i data-feather="heart"></i>
+                                            <span id="follow-btn-text">
+                                                {{ 'Unfollow' if is_following else 'Follow' }}
+                                            </span>
+                                        </button>
                                         <a href="{{ url_for('community.propose_dataset', slug=community.slug) }}"
                                            class="btn btn-primary">
                                             <i data-feather="upload"></i> Propose Dataset
@@ -265,5 +273,48 @@
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const followBtn = document.getElementById("follow-btn");
+    if (!followBtn) return;
+
+    followBtn.addEventListener("click", async function () {
+        const isFollowing = followBtn.getAttribute("data-following") === "1";
+        const slug = followBtn.getAttribute("data-slug");
+
+        const url = isFollowing
+            ? `/community/${slug}/unfollow`
+            : `/community/${slug}/follow`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert("Error: " + (data.error || "Unknown error"));
+            return;
+        }
+
+        if (isFollowing) {
+            // Cambiar a Follow
+            followBtn.classList.remove("btn-danger");
+            followBtn.classList.add("btn-outline-danger");
+            followBtn.setAttribute("data-following", "0");
+            document.getElementById("follow-btn-text").innerText = "Follow";
+        } else {
+            // Cambiar a Unfollow
+            followBtn.classList.remove("btn-outline-danger");
+            followBtn.classList.add("btn-danger");
+            followBtn.setAttribute("data-following", "1");
+            document.getElementById("follow-btn-text").innerText = "Unfollow";
+        }
+
+        feather.replace();
+    });
+});
 </script>
 {% endblock %}
