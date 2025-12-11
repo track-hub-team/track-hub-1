@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from app import db
+from app.modules.auth.models import User
 from app.modules.community.models import (  # Añadidos para el seguimiento:
     Community,
     CommunityCurator,
@@ -132,9 +134,31 @@ class FollowerRepository(BaseRepository):
     def __init__(self):
         super().__init__(Follower)
 
-    def get_follower_record(self, follower_id: int, followed_id: int) -> Optional[Follower]:
-        """Obtener el registro de seguimiento específico."""
-        return self.model.query.filter_by(follower_id=follower_id, followed_id=followed_id).first()
+    def is_following(self, follower_id: int, followed_id: int) -> bool:
+        return self.model.query.filter_by(follower_id=follower_id, followed_id=followed_id).first() is not None
+
+    def follow(self, follower_id: int, followed_id: int):
+        if self.is_following(follower_id, followed_id):
+            return self.model.query.filter_by(follower_id=follower_id, followed_id=followed_id).first()
+
+        record = Follower(follower_id=follower_id, followed_id=followed_id)
+        db.session.add(record)
+        db.session.commit()
+        return record
+
+    def unfollow(self, follower_id: int, followed_id: int) -> bool:
+        record = self.model.query.filter_by(follower_id=follower_id, followed_id=followed_id).first()
+
+        if not record:
+            return False
+
+        db.session.delete(record)
+        db.session.commit()
+        return True
+
+    def get_followed_users(self, user_id: int):
+        """Usuarios que el user_id sigue."""
+        return User.query.join(Follower, Follower.followed_id == User.id).filter(Follower.follower_id == user_id).all()
 
 
 class CommunityFollowerRepository(BaseRepository):

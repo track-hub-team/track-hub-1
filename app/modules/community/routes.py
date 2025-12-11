@@ -256,34 +256,29 @@ def unfollow_community(slug):
 @community_bp.route("/user/<int:followed_id>/follow", methods=["POST"])
 @login_required
 def follow_user(followed_id):
-    """Permite al usuario actual seguir a otro usuario."""
     if current_user.id == followed_id:
-        flash("You cannot follow yourself.", "error")
-        return redirect(request.referrer or url_for("public.index"))
+        return jsonify({"success": False, "error": "You cannot follow yourself"}), 400
 
-    followed_user, error = user_profile_service.follow_user(current_user.id, followed_id)
+    record, error = community_service.follow_user(current_user.id, followed_id)
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": error is None, "error": error, "following": True})
 
     if error:
-        flash(f"Error following user: {error}", "error")
-    elif followed_user:
-        flash(f"You are now following {followed_user.email}.", "success")
-
-    # Redirige a la página anterior o a la página principal
+        flash(error, "error")
     return redirect(request.referrer or url_for("public.index"))
 
 
 @community_bp.route("/user/<int:followed_id>/unfollow", methods=["POST"])
 @login_required
 def unfollow_user(followed_id):
-    """Permite al usuario actual dejar de seguir a otro usuario."""
-    followed_user, error = user_profile_service.unfollow_user(current_user.id, followed_id)
+    ok, error = community_service.unfollow_user(current_user.id, followed_id)
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": error is None, "error": error, "following": False})
 
     if error:
-        flash(f"Error unfollowing user: {error}", "error")
-    elif followed_user:
-        flash(f"You have unfollowed {followed_user.email}.", "success")
-
-    # Redirige a la página anterior o a la página principal
+        flash(error, "error")
     return redirect(request.referrer or url_for("public.index"))
 
 

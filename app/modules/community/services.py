@@ -15,6 +15,7 @@ from app.modules.community.repositories import (
     CommunityFollowerRepository,
     CommunityRepository,
     CommunityRequestRepository,
+    FollowerRepository,
 )
 from app.modules.dataset.models import BaseDataset
 from app.modules.mail.services import MailService
@@ -36,6 +37,7 @@ class CommunityService(BaseService):
         self.dataset_repository = CommunityDatasetRepository()
         self.request_repository = CommunityRequestRepository()
         self.follower_repository = CommunityFollowerRepository()  # <-- agregado
+        self.user_follower_repository = FollowerRepository()
 
     def get_all(self, query: Optional[str] = None) -> List[Community]:
         if query:
@@ -336,9 +338,9 @@ class CommunityService(BaseService):
         logo_file.save(file_path)
         return f"/uploads/communities/{unique_filename}"
 
-    # ----------------------
-    # MÉTODOS DE SEGUIMIENTO
-    # ----------------------
+    # ----------------------------------
+    # MÉTODOS DE SEGUIMIENTO COMUNIDADES
+    # ----------------------------------
     def follow_community(self, user_id: int, community_id: int) -> Tuple[bool, Optional[str]]:
         community = self.repository.get_by_id(community_id)
         if not community:
@@ -373,3 +375,33 @@ class CommunityService(BaseService):
 
     def get_followed_communities(self, user_id: int):
         return self.follower_repository.get_followed_communities(user_id)
+
+    # --------------------------------------------------
+    #    MÉTODOS DE SEGUIMIENTO DE USUARIOS
+    # --------------------------------------------------
+
+    def follow_user(self, follower_id: int, followed_id: int):
+        if follower_id == followed_id:
+            return None, "You cannot follow yourself"
+        try:
+            record = self.user_follower_repository.follow(follower_id, followed_id)
+            return record, None
+        except Exception as e:
+            db.session.rollback()
+            return None, f"Error following user: {str(e)}"
+
+    def unfollow_user(self, follower_id: int, followed_id: int):
+        try:
+            ok = self.user_follower_repository.unfollow(follower_id, followed_id)
+            if not ok:
+                return None, "You are not following this user"
+            return True, None
+        except Exception as e:
+            db.session.rollback()
+            return None, f"Error unfollowing user: {str(e)}"
+
+    def is_following_user(self, follower_id: int, followed_id: int) -> bool:
+        return self.user_follower_repository.is_following(follower_id, followed_id)
+
+    def get_followed_users(self, follower_id: int):
+        return self.user_follower_repository.get_followed_users(follower_id)
