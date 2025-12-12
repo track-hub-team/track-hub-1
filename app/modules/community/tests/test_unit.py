@@ -188,3 +188,40 @@ def test_reject_request_does_not_add_dataset(test_client, setup_user):
     db.session.delete(dataset)
     db.session.delete(metadata)
     db.session.commit()
+
+
+# ----------------------------
+# TEST FOLLOW / UNFOLLOW
+# ----------------------------
+
+
+def test_follow_and_unfollow_community(test_client, setup_user):
+    service = CommunityService()
+
+    community, _ = service.create_community(
+        name="Test Community Follow", description="Comunidad para probar follow", creator_id=setup_user.id
+    )
+
+    follower = User(email="follower@example.com", password="test1234")
+    db.session.add(follower)
+    db.session.commit()
+
+    success, error = service.follow_community(follower.id, community.id)
+    assert success is True
+    assert error is None
+
+    success, error = service.follow_community(follower.id, community.id)
+    assert success is False
+    assert error == "User is already following this community"
+
+    success, error = service.unfollow_community(follower.id, community.id)
+    assert success is True
+    assert error is None
+
+    success, error = service.unfollow_community(follower.id, community.id)
+    assert success is False
+    assert error == "User is not currently following this community"
+
+    db.session.delete(follower)
+    db.session.delete(community)
+    db.session.commit()
