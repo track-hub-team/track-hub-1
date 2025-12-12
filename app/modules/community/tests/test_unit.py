@@ -10,7 +10,7 @@ from app.modules.community.models import (
     CommunityFollower,
     CommunityRequest,
 )
-from app.modules.community.repositories import CommunityCuratorRepository, CommunityRepository
+from app.modules.community.repositories import CommunityCuratorRepository, CommunityRepository, FollowerRepository
 from app.modules.community.seeders import CommunitySeeder
 from app.modules.community.services import CommunityService
 from app.modules.dataset.models import DSMetaData, GPXDataset, PublicationType
@@ -421,3 +421,52 @@ def test_seeder_runs_minimal(test_client, setup_user):
     assert len(seeded) == 2
 
     db.session.rollback()
+
+
+# ----------------------------
+# TEST FREPOSITORY FOLLOW EMAIL
+# ----------------------------
+
+
+def test_get_followers_users_returns_followers(test_client):
+    repo = FollowerRepository()
+
+    user = User(email="author@example.com", password="test1234")
+    follower1 = User(email="f1@example.com", password="test1234")
+    follower2 = User(email="f2@example.com", password="test1234")
+
+    db.session.add_all([user, follower1, follower2])
+    db.session.commit()
+
+    repo.follow(follower1.id, user.id)
+    repo.follow(follower2.id, user.id)
+
+    followers = repo.get_followers_users(user.id)
+    follower_ids = {u.id for u in followers}
+
+    assert follower1.id in follower_ids
+    assert follower2.id in follower_ids
+    assert user.id not in follower_ids
+
+    repo.unfollow(follower1.id, user.id)
+    repo.unfollow(follower2.id, user.id)
+
+    db.session.delete(follower1)
+    db.session.delete(follower2)
+    db.session.delete(user)
+    db.session.commit()
+
+
+def test_get_followers_users_empty(test_client):
+    repo = FollowerRepository()
+
+    user = User(email="lonely@example.com", password="test1234")
+    db.session.add(user)
+    db.session.commit()
+
+    followers = repo.get_followers_users(user.id)
+
+    assert followers == []
+
+    db.session.delete(user)
+    db.session.commit()

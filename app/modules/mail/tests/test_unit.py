@@ -76,6 +76,59 @@ class TestMailService:
             print("\nCorreo real enviado correctamente")
             print("Revisa la bandeja: pabcasmor1@alum.us.es")
 
+    @patch("app.modules.mail.services.mail.send")
+    def test_send_new_dataset_in_community_notification_calls_mail_send(self, mock_send):
+        """Verifica que se envía email al notificar nuevo dataset en comunidad"""
+        recipients = ["user1@test.com", "user2@test.com"]
+
+        success, error = MailService.send_new_dataset_in_community_notification(
+            recipients=recipients,
+            community_name="Test Community",
+            dataset_name="Test Dataset",
+        )
+
+        assert success is True
+        assert error is None
+        assert mock_send.called
+        assert mock_send.call_count == 1
+
+        message = mock_send.call_args[0][0]
+        assert set(message.recipients) == set(recipients)
+
+    @patch("app.modules.mail.services.mail.send")
+    def test_send_new_dataset_by_followed_user_notification_calls_mail_send(self, mock_send):
+        """Verifica que se envía email cuando un usuario seguido publica dataset"""
+        recipients = ["follower@test.com"]
+
+        success, error = MailService.send_new_dataset_by_followed_user_notification(
+            recipients=recipients,
+            author_name="Test Author",
+            dataset_name="Dataset X",
+        )
+
+        assert success is True
+        assert error is None
+        assert mock_send.called
+        assert mock_send.call_count == 1
+
+        message = mock_send.call_args[0][0]
+        assert set(message.bcc) == set(recipients)
+
+    @patch(
+        "app.modules.mail.services.mail.send",
+        side_effect=Exception("SMTP error"),
+    )
+    def test_new_dataset_notification_handles_exception(self, mock_send):
+        """Verifica que el servicio maneja excepciones al enviar correo"""
+        success, error = MailService.send_new_dataset_in_community_notification(
+            recipients=["user@test.com"],
+            community_name="Fail Community",
+            dataset_name="Fail Dataset",
+        )
+
+        assert success is False
+        assert error is not None
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

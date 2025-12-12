@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from app import db
@@ -195,3 +197,87 @@ def test_curator_management_full_workflow(test_client):
     db.session.delete(community)
     db.session.delete(user2)
     db.session.commit()
+
+
+def _create_user(email):
+    user = User(email=email, password="test1234")
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def _create_dataset(user_id, title="Dataset Test"):
+    meta = DSMetaData(
+        title=title,
+        description="desc",
+        publication_type=PublicationType.NONE,
+    )
+    db.session.add(meta)
+    db.session.flush()
+
+    ds = GPXDataset(user_id=user_id, ds_meta_data_id=meta.id)
+    db.session.add(ds)
+    db.session.commit()
+    return ds, meta
+
+
+def test_notify_followers_when_dataset_approved(test_client):
+    service = CommunityService()
+
+    creator = _create_user("creator_comm@example.com")
+    follower = _create_user("follower_comm@example.com")
+
+    community, _ = service.create_community(
+        name="Notify Community",
+        description="Test",
+        creator_id=creator.id,
+    )
+
+    # ✅ FOLLOW CORRECTO
+    service.follow_community(follower.id, community.id)
+
+    dataset, meta = _create_dataset(creator.id)
+
+    service.propose_dataset(community.id, dataset.id, creator.id, "please")
+    request = service.get_pending_requests(community.id)[0]
+
+    with patch(
+        "app.modules.mail.services.MailService.send_new_dataset_in_community_notification",
+        return_value=(True, None),
+    ) as mail_mock:
+
+        success, error = service.approve_request(request.id, creator.id, "ok")
+
+        assert success is True
+        mail_mock.assert_called_once()
+
+    db.session.rollback()
+
+
+def test_no_email_if_community_has_no_followers(test_client):
+    service = CommunityService()
+
+    creator = _create_user("creator_nof@example.com")
+
+    community, _ = service.create_community(
+        name="No Followers Community",
+        description="Test",
+        creator_id=creator.id,
+    )
+
+    dataset, meta = _create_dataset(creator.id)
+
+    service.propose_dataset(community.id, dataset.id, creator.id, "please")
+    request = service.get_pending_requests(community.id)[0]
+
+    with patch(
+        "app.modules.mail.services.MailService.send_new_dataset_in_community_notification",
+        return_value=(True, None),
+    ) as mail_mock:
+
+        success, error = service.approve_request(request.id, creator.id, "ok")
+
+        assert success is True
+        mail_mock.assert_not_called()
+
+    db.session.rollback()
