@@ -102,6 +102,70 @@ class MailService:
         )
 
     @staticmethod
+    def send_new_dataset_by_followed_user_notification(
+        recipients,
+        author_name,
+        dataset_name,
+    ):
+        subject = f"Nuevo dataset publicado por {author_name}"
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+        </head>
+        <body>
+            <p>
+                <strong>{author_name}</strong> ha publicado un nuevo dataset:
+            </p>
+
+            <p>
+                <strong>{dataset_name}</strong>
+            </p>
+
+            <p>
+                Puedes acceder a la plataforma para verlo.
+            </p>
+
+            <p>
+                Saludos,<br>
+                El equipo de TrackHub
+            </p>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        {author_name} ha publicado un nuevo dataset.
+
+        Dataset: {dataset_name}
+
+        Saludos,
+        El equipo de TrackHub
+        """
+
+        from flask import current_app
+        from flask_mail import Message
+
+        from app import mail
+
+        msg = Message(
+            subject=subject,
+            recipients=[current_app.config["MAIL_DEFAULT_SENDER"]],
+            bcc=recipients,
+            html=html_body,
+            body=text_body,
+            sender=("TrackHub - Notificaciones", current_app.config["MAIL_DEFAULT_SENDER"]),
+        )
+
+        try:
+            mail.send(msg)
+            return True, None
+        except Exception as e:
+            return False, str(e)
+
+    @staticmethod
     def send_dataset_approved_notification(requester_email, requester_name, dataset_name, community_name):
         subject = f"Dataset aprobado en {community_name}"
 

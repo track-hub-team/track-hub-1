@@ -14,6 +14,7 @@ from flask import request
 
 from app import db
 from app.modules.auth.services import AuthenticationService
+from app.modules.community.repositories import FollowerRepository
 from app.modules.dataset.fetchers.base import FetchError
 from app.modules.dataset.fetchers.github import GithubFetcher
 from app.modules.dataset.fetchers.registry import DataSourceManager
@@ -41,6 +42,7 @@ from app.modules.dataset.repositories import (
 from app.modules.featuremodel.models import FeatureModel
 from app.modules.featuremodel.repositories import FeatureModelRepository, FMMetaDataRepository
 from app.modules.hubfile.repositories import HubfileDownloadRecordRepository, HubfileRepository
+from app.modules.mail.services import MailService
 from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
@@ -207,7 +209,37 @@ class DataSetService(BaseService):
 
         # Commit final
         self.repository.session.commit()
+        # ---------------------------------------------
+        # Notificar a seguidores del autor del dataset
+        # ---------------------------------------------
+        try:
+            follower_repository = FollowerRepository()
 
+            author = current_user
+            author_name = (
+                f"{author.profile.name} {author.profile.surname}".strip()
+                if author.profile and author.profile.name
+                else author.email
+            )
+
+            dataset_name = dataset.ds_meta_data.title or f"Dataset #{dataset.id}"
+
+            followers = follower_repository.get_followers_users(author.id)
+
+            recipients = sorted({u.email for u in followers if u.email})
+
+            if recipients:
+                success, error = MailService.send_new_dataset_by_followed_user_notification(
+                    recipients=recipients,
+                    author_name=author_name,
+                    dataset_name=dataset_name,
+                )
+
+                if not success:
+                    logger.warning(f"Failed to send new-dataset-by-user email for user {author.id}: {error}")
+
+        except Exception as e:
+            logger.error(f"Exception sending new-dataset-by-user notifications: {str(e)}")
         try:
             version = VersionService.create_version(
                 dataset=dataset,

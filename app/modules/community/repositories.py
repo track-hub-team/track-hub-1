@@ -160,6 +160,12 @@ class FollowerRepository(BaseRepository):
         """Usuarios que el user_id sigue."""
         return User.query.join(Follower, Follower.followed_id == User.id).filter(Follower.follower_id == user_id).all()
 
+    def get_followers_users(self, followed_id: int) -> list[User]:
+        """Devuelve los usuarios que siguen a un usuario concreto."""
+        return (
+            User.query.join(Follower, Follower.follower_id == User.id).filter(Follower.followed_id == followed_id).all()
+        )
+
 
 class CommunityFollowerRepository(BaseRepository):
     """Repositorio para la tabla de seguimiento de Usuario a Comunidad."""
