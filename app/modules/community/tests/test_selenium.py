@@ -106,3 +106,7 @@ def test_propose_and_reject_dataset():
 
     finally:
         close_driver(driver)
+
+
+# Call the test function
+test_propose_and_reject_dataset()

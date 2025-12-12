@@ -270,9 +270,9 @@ Dropzone.options.uvlDropzone = {
                         <label class="form-label">Publication type</label>
                         <select class="form-control" name="feature_models-${id}-publication_type">
                             <option value="none">None</option>
-                            <option value="conference_paper">Conference paper</option>
-                            <option value="journal_article">Journal article</option>
-                            <option value="technical_note">Technical note</option>
+                            <option value="conferencepaper">Conference paper</option>
+                            <option value="article">Journal article</option>
+                            <option value="technicalnote">Technical note</option>
                             <option value="other">Other</option>
                         </select>
                     </div>
@@ -408,9 +408,9 @@ Dropzone.options.gpxDropzone = {
                         <label class="form-label">Publication type</label>
                         <select class="form-control" name="feature_models-${id}-publication_type">
                             <option value="none">None</option>
-                            <option value="conference_paper">Conference paper</option>
-                            <option value="journal_article">Journal article</option>
-                            <option value="technical_note">Technical note</option>
+                            <option value="conferencepaper">Conference paper</option>
+                            <option value="article">Journal article</option>
+                            <option value="technicalnote">Technical note</option>
                             <option value="other">Other</option>
                         </select>
                     </div>

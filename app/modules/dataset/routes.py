@@ -29,7 +29,7 @@ from app.modules.community.services import CommunityService
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.fetchers.base import FetchError
 from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import BaseDataset, DatasetVersion, DSDownloadRecord
+from app.modules.dataset.models import BaseDataset, DatasetVersion, DSDownloadRecord, PublicationType
 from app.modules.dataset.registry import (
     get_allowed_extensions,
     get_descriptor,
@@ -990,7 +990,7 @@ def add_files_to_dataset(dataset_id):
             filename=filename,
             title=filename,
             description=f"Added via {source}",
-            publication_type="none",
+            publication_type=PublicationType.NONE,
         )
 
         fm = FeatureModelRepository().create(
