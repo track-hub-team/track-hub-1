@@ -327,17 +327,23 @@
         <div class="card mt-3">
             <div class="card-body">
                 <h1 class="h3 mb-3">Comments on this dataset</h1>
-                <div id="comments-list"  style="max-height: 300px; overflow-y: auto;">
+
+                <!-- Div donde se cargarán los comentarios y se almacena el slug de la comunidad -->
+                <div id="comments-list"
+                    data-dataset-id="{{ dataset.id }}"
+                    style="max-height: 300px; overflow-y: auto;">
                 </div>
-                 {% if current_user.is_authenticated %}
+
+
+                {% if current_user.is_authenticated %}
                 <div class="mt-3">
                     <h5>Add a comment</h5>
                     <textarea id="comment-text" class="form-control" rows="3" placeholder="Write your comment..."></textarea>
                     <button id="submit-comment" class="btn btn-primary mt-2">Post Comment</button>
                 </div>
                 {% else %}
-            <p class="text-muted">You need to be logged in to post a comment.</p>
-            {% endif %}
+                <p class="text-muted">You need to be logged in to post a comment.</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -496,15 +502,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 data.comments.forEach(c => renderComment(c));
             })
-            .catch(err => {
-                console.error("Error loading comments:", err);
-            });
+            .catch(err => console.error("Error loading comments:", err));
     }
 
     // ===============================
-    // 2. Renderizar comentario
+    // 2. Renderizar comentario (recursivo)
     // ===============================
-    function renderComment(comment) {
+    function renderComment(comment, parentContainer = commentsContainer) {
         const item = document.createElement("div");
         item.classList.add("mb-3", "border-bottom", "pb-3", "border-light");
         item.setAttribute("data-comment-id", comment.id);
@@ -530,38 +534,59 @@ document.addEventListener("DOMContentLoaded", function () {
         item.appendChild(contentP);
 
         // ===============================
-        // 3. Botones: borrar y editar
+        // Botones: Edit, Delete, Reply
         // ===============================
         const datasetOwnerId = {{ dataset.user_id }};
         const isAuthor = comment.user_id === currentUserId;
         const isOwner = currentUserId === datasetOwnerId;
 
-        // --- Botón editar (solo autor) ---
+        const actionDiv = document.createElement("div");
+        actionDiv.classList.add("mt-2");
+
+        // --- Edit ---
         if (isAuthenticated && isAuthor) {
             const editBtn = document.createElement("button");
             editBtn.textContent = "Edit";
-            editBtn.classList.add("btn", "btn-outline-secondary", "btn-sm", "mt-2", "me-2");
-
+            editBtn.classList.add("btn", "btn-outline-secondary", "btn-sm", "me-2");
             editBtn.addEventListener("click", () => enableEditMode(comment, item, contentP));
-
-            item.appendChild(editBtn);
+            actionDiv.appendChild(editBtn);
         }
 
-        // --- Botón borrar (autor o dueño dataset) ---
+        // --- Delete ---
         if (isAuthenticated && (isAuthor || isOwner)) {
             const delBtn = document.createElement("button");
             delBtn.textContent = "Delete";
-            delBtn.classList.add("btn", "btn-danger", "btn-sm", "mt-2");
-
+            delBtn.classList.add("btn", "btn-danger", "btn-sm", "me-2");
             delBtn.addEventListener("click", () => deleteComment(comment.id, item));
-
-            item.appendChild(delBtn);
+            actionDiv.appendChild(delBtn);
         }
-        commentsContainer.appendChild(item);
+
+        // --- Reply ---
+        if (isAuthenticated) {
+            const replyBtn = document.createElement("button");
+            replyBtn.textContent = "Reply";
+            replyBtn.classList.add("btn", "btn-outline-primary", "btn-sm");
+            replyBtn.addEventListener("click", () => showReplyBox(comment.id, item));
+            actionDiv.appendChild(replyBtn);
+        }
+
+        item.appendChild(actionDiv);
+
+        // Contenedor de replies
+        const repliesContainer = document.createElement("div");
+        repliesContainer.classList.add("ms-4", "mt-2"); // indent
+        item.appendChild(repliesContainer);
+
+        // Render replies recursivamente
+        if (comment.replies && comment.replies.length > 0) {
+            comment.replies.forEach(reply => renderComment(reply, repliesContainer));
+        }
+
+        parentContainer.appendChild(item);
     }
 
     // ===============================
-    // 4. Crear comentario
+    // 3. Crear comentario
     // ===============================
     if (submitBtn) {
         submitBtn.addEventListener("click", function () {
@@ -576,60 +601,108 @@ document.addEventListener("DOMContentLoaded", function () {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content })
             })
-                .then(res => res.json().then(data => ({ ok: res.ok, data })))
-                .then(({ ok, data }) => {
-                    if (!ok || !data.success) {
-                        alert(data.message || "Error posting comment");
-                        return;
-                    }
-
-                    textarea.value = "";
-                    renderComment(data.comment);
-                })
-                .catch(err => {
-                    console.error("Error creating comment:", err);
-                });
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data.success) return alert(data.message || "Error posting comment");
+                textarea.value = "";
+                renderComment(data.comment);
+            })
+            .catch(err => console.error("Error creating comment:", err));
         });
     }
+
+    // ===============================
+    // 4. Crear reply a comentario
+    // ===============================
+    function showReplyBox(commentId, commentElement) {
+        if (commentElement.querySelector(".reply-box")) return;
+
+        const replyBoxDiv = document.createElement("div");
+        replyBoxDiv.classList.add("reply-box", "mt-2");
+
+        const textarea = document.createElement("textarea");
+        textarea.classList.add("form-control", "mb-2");
+        textarea.rows = 2;
+        textarea.placeholder = "Write your reply...";
+
+        const submitBtn = document.createElement("button");
+        submitBtn.textContent = "Post Reply";
+        submitBtn.classList.add("btn", "btn-primary", "btn-sm");
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.classList.add("btn", "btn-secondary", "btn-sm", "ms-2");
+
+        replyBoxDiv.append(textarea, submitBtn, cancelBtn);
+        commentElement.appendChild(replyBoxDiv);
+
+        cancelBtn.addEventListener("click", () => replyBoxDiv.remove());
+
+        submitBtn.addEventListener("click", () => {
+            const content = textarea.value.trim();
+            if (!content) return alert("Reply cannot be empty.");
+
+            fetch(`/dataset/${datasetId}/comments/${commentId}/reply`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content })
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data.success) {
+                    console.error(data);
+                    return alert(data.message || "Error posting reply");
+                }
+
+                replyBoxDiv.remove();
+
+                let repliesContainer = commentElement.querySelector(".ms-4");
+                if (!repliesContainer) {
+                    repliesContainer = document.createElement("div");
+                    repliesContainer.classList.add("ms-4", "mt-2");
+                    commentElement.appendChild(repliesContainer);
+                }
+
+                renderComment(data.comment, repliesContainer);
+            })
+            .catch(err => {
+                console.error("Reply error:", err);
+                alert("Unexpected error while posting reply.");
+            });
+        });
+    }
+
+
+
+
+
 
     // ===============================
     // 5. Eliminar comentario
     // ===============================
     function deleteComment(commentId, elementNode) {
-        fetch(`/dataset/comments/${commentId}`, {
-            method: "DELETE"
-        })
+        fetch(`/dataset/comments/${commentId}`, { method: "DELETE" })
             .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
-                if (!ok || !data.success) {
-                    alert(data.message || "Error deleting comment");
-                    return;
-                }
-
+                if (!ok || !data.success) return alert(data.message || "Error deleting comment");
                 elementNode.remove();
             })
-            .catch(err => {
-                console.error("Error deleting comment:", err);
-            });
+            .catch(err => console.error("Error deleting comment:", err));
     }
+
     // ===============================
-    // EDITAR COMENTARIO (solo autor)
+    // 6. Editar comentario (solo autor)
     // ===============================
     function enableEditMode(comment, container, contentElement) {
         const originalText = comment.content;
 
-        // Crear textarea con contenido actual
         const textarea = document.createElement("textarea");
         textarea.classList.add("form-control", "mt-2");
         textarea.value = originalText;
 
-        // Ocultar el contenido original
         contentElement.style.display = "none";
-
-        // Insertar textarea
         container.insertBefore(textarea, contentElement.nextSibling);
 
-        // Crear botones Save y Cancel
         const actionRow = document.createElement("div");
         actionRow.classList.add("mt-2");
 
@@ -645,22 +718,16 @@ document.addEventListener("DOMContentLoaded", function () {
         actionRow.appendChild(cancelBtn);
         container.appendChild(actionRow);
 
-        // --- Cancelar edición ---
         cancelBtn.addEventListener("click", () => {
             textarea.remove();
             actionRow.remove();
             contentElement.style.display = "block";
         });
 
-        // --- Guardar cambios ---
         saveBtn.addEventListener("click", () => {
             const newContent = textarea.value.trim();
-            if (!newContent) {
-                alert("Comment cannot be empty.");
-                return;
-            }
+            if (!newContent) return alert("Comment cannot be empty.");
 
-            // PUT al backend
             fetch(`/dataset/comments/${comment.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -668,15 +735,9 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
-                if (!ok || !data.success) {
-                    alert(data.error || "Error updating comment");
-                    return;
-                }
-
-                // Actualizar UI con nuevo contenido
+                if (!ok || !data.success) return alert(data.error || "Error updating comment");
                 contentElement.textContent = data.comment.content;
                 comment.content = data.comment.content;
-
                 textarea.remove();
                 actionRow.remove();
                 contentElement.style.display = "block";
@@ -685,87 +746,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
     // ===============================
-    // 6. Inicializar
+    // 7. Inicializar
     // ===============================
     loadComments();
 });
 
-// ===============================
-// Publicar en Zenodo
-// ===============================
-function publishToZenodo(datasetId, isRepublish) {
-    const message = isRepublish
-        ? 'Are you sure you want to re-publish this dataset to Zenodo? If files have changed, a new version will be created.'
-        : 'Are you sure you want to publish this dataset to Zenodo?';
-
-    if (!confirm(message)) {
-        return;
-    }
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-    fetch(`/dataset/${datasetId}/publish`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            alert(data.message);
-        }
-        if (data.doi) {
-            // Redirigir a la ruta del dataset publicado
-            window.location.href = `/doi/${data.doi}`;
-        } else {
-            location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error publishing dataset. Please try again.');
-    });
-}
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("follow-user-btn");
-    if (!btn) return;
-
-    btn.addEventListener("click", function () {
-        const userId = btn.dataset.userId;
-        const isFollowing = btn.classList.contains("btn-success");
-
-        const url = isFollowing
-            ? `/community/user/${userId}/unfollow`
-            : `/community/user/${userId}/follow`;
-
-        fetch(url, {
-            method: "POST",
-            headers: { "X-Requested-With": "XMLHttpRequest" }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return alert("Error updating follow state.");
-
-            if (isFollowing) {
-                // NOW NOT FOLLOWING
-                btn.classList.remove("btn-success");
-                btn.classList.add("btn-outline-primary");
-                btn.innerHTML = `<i class="fa fa-user-plus"></i> Follow Author`;
-            } else {
-                // NOW FOLLOWING
-                btn.classList.remove("btn-outline-primary");
-                btn.classList.add("btn-success");
-                btn.innerHTML = `<i class="fa fa-check"></i> Following`;
-            }
-        });
-    });
-});
 </script>
 
 {% endblock %}

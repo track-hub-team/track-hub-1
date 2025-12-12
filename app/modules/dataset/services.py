@@ -840,3 +840,38 @@ class CommentService(BaseService):
         if not dataset:
             return False
         return dataset.user_id == user_id
+
+    def get_comment_by_id(self, comment_id: int):
+        """Obtener comentario por ID"""
+        return self.repository.get_by_id(comment_id)
+
+    def reply_to_comment(self, original_comment_id: int, user_id: int, content: str) -> dict:
+        """
+        Crear una respuesta a un comentario existente.
+        Devuelve un dict igual que create_comment.
+        """
+        original_comment = self.repository.get_by_id(original_comment_id)
+        if not original_comment:
+            raise ValueError(f"Original comment {original_comment_id} not found")
+
+        clean_content = self._validate_content(content)
+
+        # Crear reply (parent_id)
+        reply = self.repository.create(
+            dataset_id=original_comment.dataset_id,
+            user_id=user_id,
+            content=clean_content,
+            parent_id=original_comment.id,
+        )
+
+        reply_dict = reply.to_dict()
+        reply_dict["replies"] = []  # ⚠️ evitar recursión
+
+        logger.info(
+            "Reply %s created by user %s to comment %s",
+            reply["id"] if isinstance(reply, dict) else reply.id,
+            user_id,
+            original_comment.id,
+        )
+
+        return reply_dict

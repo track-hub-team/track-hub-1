@@ -1142,3 +1142,43 @@ def update_comment(comment_id):
     except Exception as e:
         logger.error(f"Error updating comment {comment_id}: {str(e)}")
         return jsonify({"success": False, "error": "Failed to update comment"}), 500
+
+
+# ======================================================================
+# RUTAS DE COMENTARIOS
+# ======================================================================
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/comments/<int:comment_id>/reply", methods=["POST"])
+@login_required
+def reply_to_comment(dataset_id, comment_id):
+    """
+    Crear una respuesta (reply) a un comentario de un dataset.
+    """
+    from app.modules.dataset.services import CommentService
+
+    comment_service = CommentService()
+
+    comment = comment_service.get_comment_by_id(comment_id)
+    if not comment or comment.dataset_id != dataset_id:
+        return jsonify({"success": False, "message": "Comment not found"}), 404
+
+    data = request.get_json() or request.form
+    content = data.get("content")
+
+    if not content or not content.strip():
+        return jsonify({"success": False, "message": "Message cannot be empty"}), 400
+
+    try:
+        reply = comment_service.reply_to_comment(
+            original_comment_id=comment_id,
+            user_id=current_user.id,
+            content=content.strip(),
+        )
+        return jsonify({"success": True, "comment": reply}), 201
+
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+    except Exception:
+        logger.exception("Error posting reply")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
