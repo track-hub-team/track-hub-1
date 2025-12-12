@@ -248,3 +248,37 @@ def test_community_request_status_helpers():
     r = CommunityRequest(community_id=1, dataset_id=2, requester_id=3, status=CommunityRequest.STATUS_PENDING)
     assert r.is_pending() is True
     assert r.status == CommunityRequest.STATUS_PENDING
+
+
+# ----------------------------
+# TEST GET CURATOR INFO / USER IDS
+# ----------------------------
+
+
+def test_get_curator_info_returns_dict(test_client, setup_user):
+    db.session.rollback()
+    service = CommunityService()
+
+    info = service.get_curator_info(setup_user.id)
+
+    assert isinstance(info, dict)
+    assert info["id"] == setup_user.id
+    assert info["email"] == setup_user.email
+    assert isinstance(info["name"], str)
+    assert isinstance(info["surname"], str)
+
+
+def test_get_curator_user_ids_returns_list(test_client, setup_user):
+    db.session.rollback()
+    service = CommunityService()
+
+    community, _ = service.create_community(
+        "CuratorListCommunity",
+        "Desc",
+        setup_user.id,
+    )
+    ids = service.get_curator_user_ids(community.id)
+    assert setup_user.id in ids
+
+    db.session.delete(community)
+    db.session.commit()
