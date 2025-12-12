@@ -8,7 +8,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Optional
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from flask import request
 
@@ -264,6 +264,8 @@ class DataSetService(BaseService):
         """
         Copia desde source_root todos los .uvl/.gpx válidos a dest_dir.
         Valida cada archivo con el registry.
+        Si encuentra ZIPs dentro del repositorio, los extrae temporamente y
+        busca modelos dentro de ellos.
         Devuelve lista de los archivos copiados.
         """
 
@@ -271,6 +273,41 @@ class DataSetService(BaseService):
 
         for path in Path(source_root).rglob("*"):
             if not path.is_file():
+                continue
+
+            # Detectar y procesar ZIPs
+            if path.suffix.lower() == ".zip":
+                logger.info(f"Found ZIP file: {path.name}, extracting...")
+
+                try:
+                    # Crear carpeta temporal para extraer el ZIP
+                    with tempfile.TemporaryDirectory() as temp_extract_dir:
+                        temp_extract_path = Path(temp_extract_dir)
+
+                        # Extraer el ZIP
+                        with ZipFile(path, "r") as zip_ref:
+                            # Seguridad: validar paths antes de extraer
+                            for zip_info in zip_ref.infolist():
+                                # Prevenir path traversal attacks
+                                if zip_info.filename.startswith("/") or ".." in zip_info.filename:
+                                    logger.warning(f"Skipping dangerous path in ZIP: {zip_info.filename}")
+                                    continue
+                                zip_ref.extract(zip_info, temp_extract_path)
+
+                        logger.info(f"ZIP extracted to {temp_extract_path}, searching for models...")
+
+                        # RECURSIÓN: buscar modelos dentro del ZIP extraído
+                        zip_models = self._collect_models_into_temp(temp_extract_path, dest_dir)
+                        added.extend(zip_models)
+
+                        logger.info(f"Found {len(zip_models)} models inside {path.name}")
+
+                except BadZipFile:
+                    logger.warning(f"Invalid ZIP file: {path.name}, skipping...")
+                except Exception as e:
+                    logger.error(f"Error processing ZIP {path.name}: {e}")
+
+                # Continuar con el siguiente archivo
                 continue
 
             # Inferir tipo de archivo
