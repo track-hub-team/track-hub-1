@@ -3,7 +3,7 @@
 ## Portada
 
 ### Nombre del proyecto
-**[TRACK-HUB-1]**  
+**[TRACK-HUB-1]**
 
 ### Grupo
 **Grupo 3 tarde**
