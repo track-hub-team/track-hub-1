@@ -4,7 +4,13 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.community.models import Community, CommunityDataset, CommunityFollower, CommunityRequest
+from app.modules.community.models import (
+    Community,
+    CommunityDataset,
+    CommunityFollower,
+    CommunityRequest,
+)
+from app.modules.community.repositories import CommunityCuratorRepository, CommunityRepository
 from app.modules.community.services import CommunityService
 from app.modules.dataset.models import DSMetaData, GPXDataset, PublicationType
 
@@ -281,4 +287,50 @@ def test_get_curator_user_ids_returns_list(test_client, setup_user):
     assert setup_user.id in ids
 
     db.session.delete(community)
+    db.session.commit()
+
+    # ----------------------------
+
+
+# TEST REPOSITORY
+# ----------------------------
+
+
+def test_repository_get_by_slug(test_client):
+    repo = CommunityRepository()
+    c = Community(name="Repo Test", slug="repo-test", description="", creator_id=1)
+    db.session.add(c)
+    db.session.commit()
+
+    found = repo.get_by_slug("repo-test")
+    assert found is not None
+    assert found.slug == "repo-test"
+
+    db.session.delete(c)
+    db.session.commit()
+
+
+def test_repository_search_by_name_or_description(test_client):
+    repo = CommunityRepository()
+    c = Community(name="SearchableName", slug="search-test", description="desc", creator_id=1)
+    db.session.add(c)
+    db.session.commit()
+
+    results = repo.search_by_name_or_description("Searchable")
+    assert any(x.id == c.id for x in results)
+
+    db.session.delete(c)
+    db.session.commit()
+
+
+def test_repository_get_community_curators(test_client):
+    curator_repo = CommunityCuratorRepository()
+    c = Community(name="Curator Repo Test", slug="curator-repo-test", description="", creator_id=1)
+    db.session.add(c)
+    db.session.commit()
+
+    curators = curator_repo.get_community_curators(c.id)
+    assert isinstance(curators, list)
+
+    db.session.delete(c)
     db.session.commit()
