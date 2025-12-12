@@ -4,7 +4,7 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.community.models import CommunityDataset, CommunityRequest
+from app.modules.community.models import Community, CommunityDataset, CommunityFollower, CommunityRequest
 from app.modules.community.services import CommunityService
 from app.modules.dataset.models import DSMetaData, GPXDataset, PublicationType
 
@@ -225,3 +225,26 @@ def test_follow_and_unfollow_community(test_client, setup_user):
     db.session.delete(follower)
     db.session.delete(community)
     db.session.commit()
+
+
+# ----------------------------
+# TEST MODELOS (repr y helpers)
+# ----------------------------
+
+
+def test_community_repr_contains_name():
+    c = Community(name="Test", slug="test-slug", description="desc", creator_id=1)
+    r = repr(c)
+    assert "Community<" in r
+    assert "Test" in r
+
+
+def test_follower_model_repr():
+    f = CommunityFollower(user_id=1, community_id=2)
+    assert repr(f) == "CommunityFollower<user_id=1, community_id=2>"
+
+
+def test_community_request_status_helpers():
+    r = CommunityRequest(community_id=1, dataset_id=2, requester_id=3, status=CommunityRequest.STATUS_PENDING)
+    assert r.is_pending() is True
+    assert r.status == CommunityRequest.STATUS_PENDING
