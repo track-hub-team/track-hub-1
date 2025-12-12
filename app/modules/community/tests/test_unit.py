@@ -289,9 +289,8 @@ def test_get_curator_user_ids_returns_list(test_client, setup_user):
     db.session.delete(community)
     db.session.commit()
 
-    # ----------------------------
 
-
+# ----------------------------
 # TEST REPOSITORY
 # ----------------------------
 
@@ -333,4 +332,39 @@ def test_repository_get_community_curators(test_client):
     assert isinstance(curators, list)
 
     db.session.delete(c)
+    db.session.commit()
+
+
+# ----------------------------
+# TEST RUTAS SIMPLES
+# ----------------------------
+
+
+def test_route_follow_redirects(test_client):
+    user = User(email="routeuser@example.com", password="test1234")
+    db.session.add(user)
+    db.session.commit()
+
+    with test_client.session_transaction() as sess:
+        sess["user_id"] = user.id
+
+    response = test_client.post("/community/1/follow", follow_redirects=False)
+    assert response.status_code in (302, 303)
+
+    db.session.delete(user)
+    db.session.commit()
+
+
+def test_route_unfollow_redirects(test_client):
+    user = User(email="routeuser2@example.com", password="test1234")
+    db.session.add(user)
+    db.session.commit()
+
+    with test_client.session_transaction() as sess:
+        sess["user_id"] = user.id
+
+    response = test_client.post("/community/1/unfollow", follow_redirects=False)
+    assert response.status_code in (302, 303)
+
+    db.session.delete(user)
     db.session.commit()
