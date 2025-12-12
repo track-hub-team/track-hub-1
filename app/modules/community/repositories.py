@@ -182,3 +182,11 @@ class CommunityFollowerRepository(BaseRepository):
             .order_by(Community.created_at.desc())
             .all()
         )
+
+    def get_followers_users(self, community_id: int) -> list[User]:
+        """Devuelve los usuarios que siguen una comunidad."""
+        return (
+            User.query.join(CommunityFollower, CommunityFollower.user_id == User.id)
+            .filter(CommunityFollower.community_id == community_id)
+            .all()
+        )

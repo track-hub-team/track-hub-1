@@ -197,6 +197,34 @@ class CommunityService(BaseService):
             )
             db.session.commit()
             try:
+                community = request.community
+                dataset = request.dataset
+
+                dataset_name = f"Dataset #{dataset.id}"
+                if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data:
+                    if hasattr(dataset.ds_meta_data, "title") and dataset.ds_meta_data.title:
+                        dataset_name = dataset.ds_meta_data.title
+
+                followers = self.follower_repository.get_followers_users(request.community_id)
+
+                # Emails (evita mandar a None y evita duplicados)
+                recipients = sorted({u.email for u in followers if u.email})
+
+                # (Opcional) evitar mandar correo al requester si también sigue la comunidad
+                # recipients = [e for e in recipients if e != request.requester.email]
+
+                if recipients:
+                    success, error = MailService.send_new_dataset_in_community_notification(
+                        recipients=recipients,
+                        community_name=community.name,
+                        dataset_name=dataset_name,
+                    )
+                    if not success:
+                        logger.warning(f"Failed to send new-dataset email to followers: {error}")
+
+            except Exception as e:
+                logger.error(f"Exception sending new-dataset-to-followers email: {str(e)}")
+            try:
                 requester = request.requester
                 dataset = request.dataset
                 community = request.community
