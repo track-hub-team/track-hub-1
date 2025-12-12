@@ -11,6 +11,7 @@ from app.modules.community.models import (
     CommunityRequest,
 )
 from app.modules.community.repositories import CommunityCuratorRepository, CommunityRepository
+from app.modules.community.seeders import CommunitySeeder
 from app.modules.community.services import CommunityService
 from app.modules.dataset.models import DSMetaData, GPXDataset, PublicationType
 
@@ -196,6 +197,19 @@ def test_reject_request_does_not_add_dataset(test_client, setup_user):
     db.session.commit()
 
 
+def test_create_community_prevents_duplicate_name(test_client):
+    service = CommunityService()
+    c, _ = service.create_community("UniqueName", "d", 1)
+    assert c is not None
+
+    c2, error = service.create_community("UniqueName", "d2", 1)
+    assert c2 is None
+    assert isinstance(error, str) and "already exists" in error
+
+    db.session.delete(c)
+    db.session.commit()
+
+
 # ----------------------------
 # TEST FOLLOW / UNFOLLOW
 # ----------------------------
@@ -368,3 +382,42 @@ def test_route_unfollow_redirects(test_client):
 
     db.session.delete(user)
     db.session.commit()
+
+
+# ----------------------------
+# TEST SEEDER
+# ----------------------------
+
+
+def test_seeder_runs_minimal(test_client, setup_user):
+
+    users = User.query.limit(2).all()
+    while len(users) < 2:
+        u = User(email=f"seeduser{len(users)}@example.com", password="test1234")
+        db.session.add(u)
+        db.session.commit()
+        users.append(u)
+
+    datasets = GPXDataset.query.limit(2).all()
+    while len(datasets) < 2:
+        meta = DSMetaData(
+            title=f"Seed Dataset {len(datasets)}",
+            description="Auto-generated",
+            publication_type=PublicationType.NONE,
+        )
+        db.session.add(meta)
+        db.session.commit()
+        ds = GPXDataset(user_id=users[0].id, ds_meta_data_id=meta.id)
+        db.session.add(ds)
+        db.session.commit()
+        datasets.append(ds)
+
+    seeder = CommunitySeeder()
+    seeder.run()
+
+    seeded = Community.query.filter(
+        Community.name.in_(["Software Engineering Research", "Machine Learning Models"])
+    ).all()
+    assert len(seeded) == 2
+
+    db.session.rollback()
