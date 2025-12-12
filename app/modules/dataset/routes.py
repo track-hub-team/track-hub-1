@@ -765,6 +765,8 @@ def edit_dataset(dataset_id):
         abort(403)
 
     if request.method == "POST":
+        # Solo procesar cambios de metadatos (title, description, tags)
+        # Los archivos se procesan en add_files_to_dataset
         changes = []
 
         new_title = request.form.get("title", "").strip()
@@ -783,87 +785,13 @@ def edit_dataset(dataset_id):
             dataset.ds_meta_data.tags = new_tags
             changes.append("Updated tags")
 
-        uploaded_files = request.files.getlist("files")
-        if uploaded_files and uploaded_files[0].filename:
-            for file in uploaded_files:
-                if not file.filename:
-                    continue
-
-                filename = secure_filename(file.filename)
-                file_kind = infer_kind_from_filename(filename)
-
-                if file_kind != dataset.dataset_kind:
-                    flash(
-                        f"File type mismatch: {filename} is {file_kind.upper()} "
-                        f"but dataset is {dataset.dataset_kind.upper()}",
-                        "danger",
-                    )
-                    continue
-
-                working_dir = os.getenv("WORKING_DIR", "")
-                dest_dir = os.path.join(
-                    working_dir,
-                    "uploads",
-                    f"user_{current_user.id}",
-                    f"dataset_{dataset.id}",
-                )
-                os.makedirs(dest_dir, exist_ok=True)
-
-                file_path = os.path.join(dest_dir, filename)
-                file.save(file_path)
-
-                descriptor = get_descriptor(file_kind)
-                try:
-                    descriptor.handler.validate(file_path)
-                except Exception as e:
-                    os.remove(file_path)
-                    flash(f"File validation failed for {filename}: {str(e)}", "danger")
-                    continue
-
-                from app.modules.featuremodel.repositories import (
-                    FeatureModelRepository,
-                    FMMetaDataRepository,
-                )
-                from app.modules.hubfile.repositories import HubfileRepository
-
-                fmmetadata = FMMetaDataRepository().create(
-                    commit=False,
-                    filename=filename,
-                    title=filename,
-                    description="Added via edit",
-                    publication_type="none",
-                )
-
-                fm = FeatureModelRepository().create(
-                    commit=False,
-                    data_set_id=dataset.id,
-                    fm_meta_data_id=fmmetadata.id,
-                )
-
-                checksum, size = calculate_checksum_and_size(file_path)
-
-                HubfileRepository().create(
-                    commit=False,
-                    name=filename,
-                    checksum=checksum,
-                    size=size,
-                    feature_model_id=fm.id,
-                )
-
-                changes.append(f"Added file: {filename}")
-
         if changes:
             try:
                 db.session.commit()
 
-                # Determine if changes are metadata-only or include files
-                metadata_changes = [c for c in changes if not c.startswith("Added file:")]
-                file_changes = [c for c in changes if c.startswith("Added file:")]
-
                 if not dataset.ds_meta_data.dataset_doi:
-                    # Unpublished dataset: create local version as before
                     try:
-                        changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
+                        changelog = "Metadata update:\n" + "\n".join(f"- {c}" for c in changes)
                         version = VersionService.create_version(
                             dataset=dataset,
                             changelog=changelog,
@@ -871,7 +799,7 @@ def edit_dataset(dataset_id):
                             bump_type="patch",
                         )
                         flash(
-                            f"Dataset updated successfully! New version: v{version.version_number} 🎉",
+                            f"Dataset updated successfully! New version: v{version.version_number}",
                             "success",
                         )
                     except Exception as e:
@@ -881,109 +809,231 @@ def edit_dataset(dataset_id):
                             "warning",
                         )
                 else:
-                    # Published dataset
-                    if metadata_changes and not file_changes:
-                        # Only metadata changed: create minor/patch version (without DOI)
-                        # Get user's choice of version bump type
-                        version_bump_type = request.form.get("version_bump_type", "patch")
-                        if version_bump_type not in ["minor", "patch"]:
-                            version_bump_type = "patch"
-
-                        try:
-                            version_type_label = "Minor" if version_bump_type == "minor" else "Patch"
-                            changelog = f"{version_type_label} edition (metadata only):\n" + "\n".join(
-                                f"- {c}" for c in metadata_changes
-                            )
-
-                            # Get latest version to determine next version number
-                            latest_version = dataset.get_latest_version()
-                            if latest_version:
-                                # Parse current version and increment according to type
-                                parts = latest_version.version_number.split(".")
-                                if len(parts) == 3:
-                                    major, minor, patch = parts
-                                    if version_bump_type == "minor":
-                                        new_version_number = f"{major}.{int(minor) + 1}.0"
-                                    else:  # patch
-                                        new_version_number = f"{major}.{minor}.{int(patch) + 1}"
-                                else:
-                                    new_version_number = f"{latest_version.version_number}.1"
-                            else:
-                                # Shouldn't happen for published datasets, but fallback
-                                new_version_number = "1.0.1" if version_bump_type == "patch" else "1.1.0"
-
-                            version_class = VersionService._get_version_class(dataset)
-                            files_snapshot = VersionService._create_files_snapshot(dataset)
-
-                            version = version_class(
-                                dataset_id=dataset.id,
-                                version_number=new_version_number,
-                                title=dataset.ds_meta_data.title,
-                                description=dataset.ds_meta_data.description,
-                                files_snapshot=files_snapshot,
-                                changelog=changelog,
-                                created_by_id=current_user.id,
-                                version_doi=None,  # Minor versions don't get a DOI
-                            )
-
-                            # Calculate metrics if needed
-                            if hasattr(version, "total_features"):
-                                try:
-                                    version.total_features = dataset.calculate_total_features() or 0
-                                    version.total_constraints = dataset.calculate_total_constraints() or 0
-                                    version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
-                                except Exception as e:
-                                    logger.warning(f"Could not calculate metrics: {str(e)}")
-
-                            db.session.add(version)
-                            db.session.commit()
-
-                            flash(
-                                f"Dataset updated successfully! {version_type_label} version: "
-                                f"v{version.version_number} (metadata only) 📝",
-                                "success",
-                            )
-                            logger.info(
-                                f"[EDIT] Created {version_bump_type} version {version.version_number} "
-                                "for metadata changes"
-                            )
-                        except Exception as e:
-                            logger.error(f"[EDIT] Could not create minor version: {str(e)}")
-                            flash("Dataset updated but version creation failed", "warning")
-                    elif file_changes:
-                        # Files changed: user needs to republish for major version
-                        flash(
-                            "Dataset updated successfully! ✅ New files added - "
-                            "click 'Republish to Zenodo' to create a new major version.",
-                            "success",
-                        )
-                        logger.info("[EDIT] Files changed, user needs to republish for major version")
-                    else:
-                        flash("Dataset updated successfully! ✅", "success")
+                    flash("Dataset updated successfully!", "success")
 
                 if dataset.ds_meta_data.dataset_doi:
-                    return redirect(
-                        url_for(
-                            "dataset.subdomain_index",
-                            doi=dataset.ds_meta_data.dataset_doi,
-                        )
-                    )
+                    return redirect(url_for("dataset.subdomain_index", doi=dataset.ds_meta_data.dataset_doi))
                 else:
-                    return redirect(
-                        url_for(
-                            "dataset.get_unsynchronized_dataset",
-                            dataset_id=dataset.id,
-                        )
-                    )
+                    return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset.id))
 
             except Exception as e:
                 db.session.rollback()
-                logger.error(f"Error updating dataset {dataset_id}: {str(e)}")
                 flash(f"Error updating dataset: {str(e)}", "danger")
-        else:
-            flash("No changes detected", "info")
 
     return render_template("dataset/edit_dataset.html", dataset=dataset)
+
+
+@dataset_bp.route("/dataset/file/upload_multiple", methods=["POST"])
+@login_required
+def upload_multiple():
+    """
+    Sube múltiples archivos a la vez a la carpeta temporal del usuario.
+    Usado en la página de edición de datasets.
+    """
+    files = request.files.getlist("files")
+    if not files:
+        return jsonify({"success": False, "message": "No files provided"}), 400
+
+    allowed_exts = tuple(get_allowed_extensions())
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    uploaded_files = []
+    errors = []
+
+    for file in files:
+        filename = file.filename or ""
+
+        if not any(filename.lower().endswith(ext) for ext in allowed_exts):
+            errors.append(f"{filename}: Invalid file type")
+            continue
+
+        new_filename = secure_filename(filename)
+        file_path = os.path.join(temp_folder, new_filename)
+
+        # Si existe, añadir sufijo numérico
+        base, ext = os.path.splitext(new_filename)
+        counter = 1
+        while os.path.exists(file_path):
+            new_filename = f"{base}_{counter}{ext}"
+            file_path = os.path.join(temp_folder, new_filename)
+            counter += 1
+
+        file.save(file_path)
+
+        kind = infer_kind_from_filename(new_filename)
+        descriptor = get_descriptor(kind)
+
+        try:
+            descriptor.handler.validate(file_path)
+            uploaded_files.append(new_filename)
+        except Exception as e:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            errors.append(f"{filename}: {str(e)}")
+
+    if errors:
+        return (
+            jsonify(
+                {"success": False, "message": "Some files failed validation", "errors": errors, "files": uploaded_files}
+            ),
+            400,
+        )
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": f"Successfully uploaded {len(uploaded_files)} file(s)",
+                "files": uploaded_files,
+                "count": len(uploaded_files),
+            }
+        ),
+        200,
+    )
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/add_files", methods=["POST"])
+@login_required
+def add_files_to_dataset(dataset_id):
+    """
+    Añade archivos importados (desde GitHub, ZIP o local) a un dataset existente.
+    Los archivos ya deben estar en la carpeta temporal del usuario.
+    """
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+
+    if dataset.user_id != current_user.id:
+        abort(403)
+
+    # Obtener lista de archivos desde el formulario
+    files_to_add = []
+    for key in request.form.keys():
+        if key.startswith("file_"):
+            files_to_add.append(request.form[key])
+
+    if not files_to_add:
+        flash("No files to add", "warning")
+        return redirect(url_for("dataset.edit_dataset", dataset_id=dataset_id))
+
+    source = request.form.get("source", "unknown")
+    temp_folder = current_user.temp_folder()
+
+    working_dir = os.getenv("WORKING_DIR", "")
+    dest_dir = os.path.join(
+        working_dir,
+        "uploads",
+        f"user_{current_user.id}",
+        f"dataset_{dataset.id}",
+    )
+    os.makedirs(dest_dir, exist_ok=True)
+
+    added_count = 0
+    changes = []
+
+    for filename in files_to_add:
+        temp_file_path = os.path.join(temp_folder, filename)
+
+        if not os.path.exists(temp_file_path):
+            logger.warning(f"File not found in temp folder: {filename}")
+            continue
+
+        # Validar tipo de archivo
+        file_kind = infer_kind_from_filename(filename)
+
+        descriptor = get_descriptor(file_kind)
+
+        try:
+            descriptor.handler.validate(temp_file_path)
+        except Exception as e:
+            flash(f"File validation failed for {filename}: {str(e)}", "danger")
+            continue
+
+        # Mover archivo a destino definitivo
+        dest_file_path = os.path.join(dest_dir, filename)
+
+        # Si existe, añadir sufijo
+        base, ext = os.path.splitext(filename)
+        counter = 1
+        while os.path.exists(dest_file_path):
+            new_filename = f"{base}_{counter}{ext}"
+            dest_file_path = os.path.join(dest_dir, new_filename)
+            counter += 1
+            filename = new_filename
+
+        shutil.move(temp_file_path, dest_file_path)
+
+        # Crear registros en BD
+        from app.modules.featuremodel.repositories import (
+            FeatureModelRepository,
+            FMMetaDataRepository,
+        )
+        from app.modules.hubfile.repositories import HubfileRepository
+
+        fmmetadata = FMMetaDataRepository().create(
+            commit=False,
+            filename=filename,
+            title=filename,
+            description=f"Added via {source}",
+            publication_type="none",
+        )
+
+        fm = FeatureModelRepository().create(
+            commit=False,
+            data_set_id=dataset.id,
+            fm_meta_data_id=fmmetadata.id,
+        )
+
+        checksum, size = calculate_checksum_and_size(dest_file_path)
+
+        HubfileRepository().create(
+            commit=False,
+            name=filename,
+            checksum=checksum,
+            size=size,
+            feature_model_id=fm.id,
+        )
+
+        added_count += 1
+        changes.append(f"Added file from {source}: {filename}")
+
+    if added_count > 0:
+        try:
+            db.session.commit()
+
+            # Crear versión automática si no está sincronizado
+            if not dataset.ds_meta_data.dataset_doi:
+                try:
+                    changelog = f"Added {added_count} file(s) from {source}:\n" + "\n".join(f"- {c}" for c in changes)
+                    version = VersionService.create_version(
+                        dataset=dataset,
+                        changelog=changelog,
+                        user=current_user,
+                        bump_type="minor",
+                    )
+                    flash(
+                        f"Successfully added {added_count} file(s)! New version: v{version.version_number} 🎉",
+                        "success",
+                    )
+                except Exception as e:
+                    logger.error(f"Could not create automatic version: {str(e)}")
+                    flash(
+                        f"Files added successfully but version creation failed ({added_count} files)",
+                        "warning",
+                    )
+            else:
+                flash(f"Successfully added {added_count} file(s)! ✅", "success")
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error saving files: {str(e)}", "danger")
+            return redirect(url_for("dataset.edit_dataset", dataset_id=dataset_id))
+    else:
+        flash("No files were added", "warning")
+
+    if dataset.ds_meta_data.dataset_doi:
+        return redirect(url_for("dataset.subdomain_index", doi=dataset.ds_meta_data.dataset_doi))
+    else:
+        return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset.id))
 
 
 # ========== DATASET COMMENTS ==========

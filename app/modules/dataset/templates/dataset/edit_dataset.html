@@ -6,7 +6,7 @@
 
 <div class="container my-4">
     <div class="row">
-        <div class="col-lg-8 offset-lg-2">
+        <div class="col-lg-10 offset-lg-1">
             <!-- Header -->
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
@@ -34,8 +34,8 @@
             </div>
             {% endif %}
 
-            <!-- Formulario -->
-            <form method="POST" enctype="multipart/form-data" class="card">
+            <!-- Formulario de información básica -->
+            <form method="POST" id="editDatasetForm" class="card mb-4">
                 <div class="card-body">
                     <!-- Título -->
                     <div class="mb-3">
@@ -90,41 +90,6 @@
                             {% endfor %}
                         </ul>
                     </div>
-
-                    <!-- Subir nuevos archivos -->
-                    <div class="mb-3">
-                        <label for="files" class="form-label">Add New Files</label>
-                        <input
-                            type="file"
-                            class="form-control"
-                            id="files"
-                            name="files"
-                            multiple
-                            accept=".uvl,.gpx">
-                        <small class="text-muted">Supported formats: UVL, GPX</small>
-                    </div>
-
-                    <!-- Version Type (solo para datasets publicados sin cambios de archivos) -->
-                    {% if dataset.ds_meta_data.dataset_doi %}
-                    <div class="mb-3" id="versionTypeSelector">
-                        <label for="version_bump_type" class="form-label">
-                            <i data-feather="git-branch" style="width: 16px;"></i>
-                            Version Type (for metadata changes)
-                        </label>
-                        <select class="form-select" id="version_bump_type" name="version_bump_type">
-                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Minor corrections, typos</option>
-                            <option value="minor">✨ Minor (X.Y+1.0) - Significant metadata improvements</option>
-                        </select>
-                        <small class="text-muted">
-                            This applies only if you change metadata. Adding files requires republishing for a major version.
-                        </small>
-                    </div>
-                    <div class="alert alert-warning d-none" id="filesAddedWarning">
-                        <i data-feather="alert-triangle"></i>
-                        <strong>Files selected:</strong> Adding files will require republishing to Zenodo to create a new major version (X+1.0.0).
-                        The version type selector above will be ignored.
-                    </div>
-                    {% endif %}
                 </div>
 
                 <div class="card-footer d-flex justify-content-between">
@@ -137,6 +102,146 @@
                     </button>
                 </div>
             </form>
+
+            <!-- ✅ NUEVA SECCIÓN: Añadir archivos -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="plus"></i> Add New Files</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información de tipo de dataset -->
+                    <div class="alert alert-info mb-4">
+                        <i data-feather="info"></i>
+                        <strong>Dataset type:</strong> {{ dataset.dataset_kind|upper }}
+                        <br>
+                        <small>You can add files from multiple sources. Files will be validated based on dataset type.</small>
+                    </div>
+
+                    <!-- Tabs para diferentes métodos de carga -->
+                    <ul class="nav nav-tabs mb-4" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="local-tab" data-bs-toggle="tab" data-bs-target="#local-upload" type="button" role="tab">
+                                <i data-feather="upload"></i> Local Files
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="github-tab" data-bs-toggle="tab" data-bs-target="#github-import" type="button" role="tab">
+                                <i data-feather="github"></i> GitHub
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="zip-tab" data-bs-toggle="tab" data-bs-target="#zip-import" type="button" role="tab">
+                                <i data-feather="package"></i> ZIP File
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Tab 1: Local Files -->
+                        <div class="tab-pane fade show active" id="local-upload" role="tabpanel">
+                            <form id="localFilesForm" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="local_files" class="form-label">Select Files</label>
+                                    <input
+                                        type="file"
+                                        class="form-control"
+                                        id="local_files"
+                                        name="files"
+                                        multiple
+                                        accept=".uvl,.gpx">
+                                    <small class="text-muted">Supported formats:
+                                        {% if dataset.dataset_kind == 'uvl' %}
+                                            UVL (.uvl)
+                                        {% elif dataset.dataset_kind == 'gpx' %}
+                                            GPX (.gpx)
+                                        {% else %}
+                                            UVL, GPX
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div id="local-upload-alerts"></div>
+                                <button type="button" class="btn btn-primary" onclick="addLocalFiles()">
+                                    <i data-feather="plus"></i> Add Selected Files
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Tab 2: GitHub Import -->
+                        <div class="tab-pane fade" id="github-import" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="edit_github_url" class="form-label">GitHub Repository URL *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="edit_github_url"
+                                       placeholder="https://github.com/owner/repo">
+                                <div class="form-text">
+                                    <strong>Supported formats:</strong>
+                                    <ul class="mb-0">
+                                        <li><code>https://github.com/owner/repo</code></li>
+                                        <li><code>https://github.com/owner/repo/tree/branch</code></li>
+                                        <li><code>https://github.com/owner/repo/tree/branch/path/to/folder</code></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div id="edit-github-alerts"></div>
+
+                            <button type="button" class="btn btn-primary" id="edit_import_github_btn">
+                                <i data-feather="download"></i> Import from GitHub
+                            </button>
+
+                            <div id="edit-github-imported-files" class="mt-4" style="display: none;">
+                                <h6>Imported Files:</h6>
+                                <ul id="edit-github-file-list" class="list-unstyled"></ul>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: ZIP Import -->
+                        <div class="tab-pane fade" id="zip-import" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="edit_zip_file" class="form-label">ZIP File *</label>
+                                <input type="file"
+                                       class="form-control"
+                                       id="edit_zip_file"
+                                       accept=".zip">
+                                <div class="form-text">
+                                    Maximum file size: <strong>100 MB</strong>
+                                </div>
+                            </div>
+
+                            <div id="edit-zip-alerts"></div>
+
+                            <button type="button" class="btn btn-warning" id="edit_import_zip_btn">
+                                <i data-feather="upload"></i> Import from ZIP
+                            </button>
+
+                            <div id="edit-zip-imported-files" class="mt-4" style="display: none;">
+                                <h6>Imported Files:</h6>
+                                <ul id="edit-zip-file-list" class="list-unstyled"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de archivos pendientes de añadir -->
+                    <div id="pending-files-section" class="mt-4" style="display: none;">
+                        <hr>
+                        <h6><i data-feather="clock"></i> Files Ready to Add</h6>
+                        <ul id="pending-files-list" class="list-group"></ul>
+
+                        <form method="POST" action="{{ url_for('dataset.add_files_to_dataset', dataset_id=dataset.id) }}" id="addFilesForm" class="mt-3">
+                            <input type="hidden" name="source" id="filesSource" value="">
+                            <div id="hiddenFileInputs"></div>
+
+                            <button type="submit" class="btn btn-success">
+                                <i data-feather="check"></i> Confirm and Add Files
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearPendingFiles()">
+                                <i data-feather="x"></i> Clear All
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -144,27 +249,277 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     feather.replace();
-
-    // Monitor file input changes
-    const filesInput = document.getElementById('files');
-    const versionTypeSelector = document.getElementById('versionTypeSelector');
-    const filesAddedWarning = document.getElementById('filesAddedWarning');
-
-    if (filesInput && versionTypeSelector && filesAddedWarning) {
-        filesInput.addEventListener('change', function() {
-            if (this.files && this.files.length > 0) {
-                // Files selected: dim the version selector and show warning
-                versionTypeSelector.style.opacity = '0.5';
-                filesAddedWarning.classList.remove('d-none');
-                feather.replace(); // Refresh feather icons
-            } else {
-                // No files: restore version selector and hide warning
-                versionTypeSelector.style.opacity = '1';
-                filesAddedWarning.classList.add('d-none');
-            }
-        });
-    }
 });
+
+// Variable global para almacenar archivos pendientes
+let pendingFiles = [];
+
+// ========================================
+// FUNCIONES AUXILIARES
+// ========================================
+
+function showAlert(containerId, message, type) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+}
+
+function addToPendingFiles(files, source) {
+    files.forEach(file => {
+        if (!pendingFiles.find(f => f.name === file)) {
+            pendingFiles.push({
+                name: file,
+                source: source,
+                type: file.toLowerCase().endsWith('.uvl') ? 'uvl' : 'gpx'
+            });
+        }
+    });
+
+    updatePendingFilesList();
+}
+
+function updatePendingFilesList() {
+    const section = document.getElementById('pending-files-section');
+    const list = document.getElementById('pending-files-list');
+    const hiddenInputs = document.getElementById('hiddenFileInputs');
+
+    if (pendingFiles.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+
+    // Actualizar lista visual
+    list.innerHTML = pendingFiles.map((file, index) => `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+                <i data-feather="${file.type === 'uvl' ? 'git-branch' : 'map'}"></i>
+                <span class="badge bg-${file.type === 'uvl' ? 'success' : 'info'} me-2">${file.type.toUpperCase()}</span>
+                ${file.name}
+                <small class="text-muted">(from ${file.source})</small>
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFromPending(${index})">
+                <i data-feather="x"></i>
+            </button>
+        </li>
+    `).join('');
+
+    // Actualizar inputs ocultos
+    hiddenInputs.innerHTML = pendingFiles.map((file, index) => `
+        <input type="hidden" name="file_${index}" value="${file.name}">
+    `).join('');
+
+    // Actualizar campo source
+    document.getElementById('filesSource').value = pendingFiles[0]?.source || '';
+
+    feather.replace();
+}
+
+function removeFromPending(index) {
+    pendingFiles.splice(index, 1);
+    updatePendingFilesList();
+}
+
+function clearPendingFiles() {
+    pendingFiles = [];
+    updatePendingFilesList();
+}
+
+// ========================================
+// LOCAL FILES
+// ========================================
+
+function addLocalFiles() {
+    const fileInput = document.getElementById('local_files'); // ✅ ID único
+    const files = Array.from(fileInput.files || []);
+
+    if (files.length === 0) {
+        showAlert('local-upload-alerts', 'Please select at least one file', 'warning');
+        return;
+    }
+
+    // ✅ ELIMINADA LA VALIDACIÓN ESTRICTA
+    // Ahora acepta tanto UVL como GPX independientemente del tipo de dataset
+
+    // Subir archivos al servidor
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+
+    showAlert('local-upload-alerts',
+        '<span class="spinner-border spinner-border-sm me-2"></span>Uploading files...',
+        'info');
+
+    fetch('/dataset/file/upload_multiple', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('local-upload-alerts',
+                `Successfully uploaded ${data.files.length} file(s)`,
+                'success');
+
+            addToPendingFiles(data.files, 'local');
+            fileInput.value = ''; // Limpiar input
+        } else {
+            showAlert('local-upload-alerts', data.message || 'Upload failed', 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('local-upload-alerts', 'Error uploading files: ' + error.message, 'danger');
+    });
+}
+
+// ========================================
+// GITHUB IMPORT
+// ========================================
+
+document.getElementById('edit_import_github_btn')?.addEventListener('click', function() {
+    const githubUrl = document.getElementById('edit_github_url').value.trim();
+
+    if (!githubUrl) {
+        showAlert('edit-github-alerts', 'Please enter a GitHub URL', 'warning');
+        return;
+    }
+
+    if (!githubUrl.includes('github.com')) {
+        showAlert('edit-github-alerts', 'Invalid GitHub URL', 'danger');
+        return;
+    }
+
+    const btn = this;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+    fetch('/dataset/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ github_url: githubUrl })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        feather.replace();
+
+        if (data.files && data.files.length > 0) {
+            showAlert('edit-github-alerts',
+                `Successfully imported ${data.count} file(s) from GitHub`,
+                'success');
+
+            displayImportedFiles('github', data.files, 'edit-github-imported-files', 'edit-github-file-list');
+            addToPendingFiles(data.files, 'GitHub');
+
+            document.getElementById('edit_github_url').value = '';
+        } else {
+            showAlert('edit-github-alerts', data.message || 'No files imported', 'warning');
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        feather.replace();
+        showAlert('edit-github-alerts', 'Error: ' + error.message, 'danger');
+    });
+});
+
+// ========================================
+// ZIP IMPORT
+// ========================================
+
+document.getElementById('edit_import_zip_btn')?.addEventListener('click', function() {
+    const zipFileInput = document.getElementById('edit_zip_file');
+
+    if (!zipFileInput.files || zipFileInput.files.length === 0) {
+        showAlert('edit-zip-alerts', 'Please select a ZIP file', 'warning');
+        return;
+    }
+
+    const file = zipFileInput.files[0];
+
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+        showAlert('edit-zip-alerts', 'Only ZIP files are allowed', 'danger');
+        return;
+    }
+
+    const maxSize = 100 * 1024 * 1024; // 100 MB
+    if (file.size > maxSize) {
+        showAlert('edit-zip-alerts', 'File is too large. Maximum size: 100 MB', 'danger');
+        return;
+    }
+
+    const btn = this;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/dataset/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        feather.replace();
+
+        if (data.files && data.files.length > 0) {
+            showAlert('edit-zip-alerts',
+                `Successfully imported ${data.count} file(s) from ZIP`,
+                'success');
+
+            displayImportedFiles('zip', data.files, 'edit-zip-imported-files', 'edit-zip-file-list');
+            addToPendingFiles(data.files, 'ZIP');
+
+            zipFileInput.value = '';
+        } else {
+            showAlert('edit-zip-alerts', data.message || 'No files imported', 'warning');
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        feather.replace();
+        showAlert('edit-zip-alerts', 'Error: ' + error.message, 'danger');
+    });
+});
+
+function displayImportedFiles(source, files, containerId, listId) {
+    const container = document.getElementById(containerId);
+    const list = document.getElementById(listId);
+
+    if (!container || !list) return;
+
+    list.innerHTML = files.map(filename => {
+        const isUVL = filename.toLowerCase().endsWith('.uvl');
+        const icon = isUVL ? 'git-branch' : 'map-pin';
+        const badge = isUVL ? 'UVL' : 'GPX';
+        const badgeClass = isUVL ? 'bg-success' : 'bg-info';
+
+        return `
+            <li class="mb-2">
+                <i data-feather="${icon}" style="width: 16px; height: 16px;"></i>
+                <span class="badge ${badgeClass} me-2">${badge}</span>
+                <code>${filename}</code>
+            </li>
+        `;
+    }).join('');
+
+    container.style.display = 'block';
+    feather.replace();
+}
 </script>
 
 {% endblock %}
