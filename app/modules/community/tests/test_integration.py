@@ -377,3 +377,19 @@ def test_unfollow_user_not_following_ajax(test_client):
     data = response.get_json()
     assert data["success"] is False
     db.session.rollback()
+
+
+def test_unfollow_community_ajax_not_found(test_client):
+    test_client.post(
+        "/login",
+        data={"email": "test@example.com", "password": "test1234"},
+        follow_redirects=True,
+    )
+
+    response = test_client.post(
+        "/community/does-not-exist/unfollow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["success"] is False
