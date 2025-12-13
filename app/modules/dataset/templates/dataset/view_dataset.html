@@ -752,6 +752,81 @@ document.addEventListener("DOMContentLoaded", function () {
     loadComments();
 });
 
+// ===============================
+// Publicar en Zenodo
+// ===============================
+function publishToZenodo(datasetId, isRepublish) {
+    const message = isRepublish
+        ? 'Are you sure you want to re-publish this dataset to Zenodo? If files have changed, a new version will be created.'
+        : 'Are you sure you want to publish this dataset to Zenodo?';
+
+    if (!confirm(message)) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    fetch(`/dataset/${datasetId}/publish`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);
+        }
+        if (data.doi) {
+            // Redirigir a la ruta del dataset publicado
+            window.location.href = `/doi/${data.doi}`;
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error publishing dataset. Please try again.');
+    });
+}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("follow-user-btn");
+    if (!btn) return;
+
+    btn.addEventListener("click", function () {
+        const userId = btn.dataset.userId;
+        const isFollowing = btn.classList.contains("btn-success");
+
+        const url = isFollowing
+            ? `/community/user/${userId}/unfollow`
+            : `/community/user/${userId}/follow`;
+
+        fetch(url, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return alert("Error updating follow state.");
+
+            if (isFollowing) {
+                // NOW NOT FOLLOWING
+                btn.classList.remove("btn-success");
+                btn.classList.add("btn-outline-primary");
+                btn.innerHTML = `<i class="fa fa-user-plus"></i> Follow Author`;
+            } else {
+                // NOW FOLLOWING
+                btn.classList.remove("btn-outline-primary");
+                btn.classList.add("btn-success");
+                btn.innerHTML = `<i class="fa fa-check"></i> Following`;
+            }
+        });
+    });
+});
+
 </script>
 
 {% endblock %}
