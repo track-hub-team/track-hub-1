@@ -582,3 +582,140 @@ def test_is_following_user(test_client):
     assert service.is_following_user(u1.id, u2.id) is True
 
     db.session.rollback()
+
+
+def test_add_curator_community_not_found():
+    service = CommunityService()
+
+    success, error = service.add_curator(community_id=9999, user_id=1)
+
+    assert success is False
+    assert error == "Community not found"
+
+
+def test_remove_curator_community_not_found():
+    service = CommunityService()
+
+    success, error = service.remove_curator(community_id=9999, user_id=1, requester_id=2)
+
+    assert success is False
+    assert error == "Community not found"
+
+
+def test_follow_user_repository_exception(test_client):
+    service = CommunityService()
+
+    with patch(
+        "app.modules.community.services.FollowerRepository.follow",
+        side_effect=Exception("DB error"),
+    ):
+        record, error = service.follow_user(1, 2)
+
+    assert record is None
+    assert "Error following user" in error
+
+
+def test_unfollow_community_not_following_unit(test_client):
+    service = CommunityService()
+
+    user = User(email="unit_unf@example.com", password="1234")
+    community = Community(
+        name="Unit Unfollow",
+        slug="unit-unf",
+        description="desc",
+        creator_id=1,
+    )
+    db.session.add_all([user, community])
+    db.session.commit()
+
+    success, error = service.unfollow_community(user.id, community.id)
+
+    assert success is False
+    assert error == "User is not currently following this community"
+
+    db.session.rollback()
+
+
+def test_follow_community_not_found_unit():
+    service = CommunityService()
+
+    success, error = service.follow_community(user_id=1, community_id=9999)
+
+    assert success is False
+    assert error == "Community not found"
+
+
+def test_follow_user_exception_unit():
+    service = CommunityService()
+
+    with patch(
+        "app.modules.community.services.FollowerRepository.follow",
+        side_effect=Exception("DB fail"),
+    ):
+        record, error = service.follow_user(1, 2)
+
+    assert record is None
+    assert "Error following user" in error
+
+
+def test_follow_user_self_unit():
+    service = CommunityService()
+
+    record, error = service.follow_user(1, 1)
+
+    assert record is None
+    assert error == "You cannot follow yourself"
+
+
+def test_follow_user_followed_not_exists_unit(test_client):
+    service = CommunityService()
+
+    follower = User(email="fu_ne1@example.com", password="1234")
+    db.session.add(follower)
+    db.session.commit()
+
+    record, error = service.follow_user(follower.id, 9999)
+
+    # El repositorio lanza IntegrityError internamente
+    assert record is None
+    assert error is not None
+
+    db.session.rollback()
+
+
+def test_unfollow_user_not_following_unit(test_client):
+    service = CommunityService()
+
+    u1 = User(email="ufu_nf1@example.com", password="1234")
+    u2 = User(email="ufu_nf2@example.com", password="1234")
+    db.session.add_all([u1, u2])
+    db.session.commit()
+
+    ok, error = service.unfollow_user(u1.id, u2.id)
+
+    assert ok is None
+    assert error == "You are not following this user"
+
+    db.session.rollback()
+
+
+def test_get_followed_users_unit(test_client):
+    service = CommunityService()
+
+    u1 = User(email="gfu1@example.com", password="1234")
+    u2 = User(email="gfu2@example.com", password="1234")
+    u3 = User(email="gfu3@example.com", password="1234")
+    db.session.add_all([u1, u2, u3])
+    db.session.commit()
+
+    assert service.get_followed_users(u1.id) == []
+
+    service.follow_user(u1.id, u2.id)
+    service.follow_user(u1.id, u3.id)
+
+    followed = service.get_followed_users(u1.id)
+    followed_ids = {u.id for u in followed}
+
+    assert followed_ids == {u2.id, u3.id}
+
+    db.session.rollback()
