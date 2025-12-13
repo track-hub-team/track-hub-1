@@ -281,3 +281,99 @@ def test_no_email_if_community_has_no_followers(test_client):
         mail_mock.assert_not_called()
 
     db.session.rollback()
+
+
+def login_as(test_client, email: str, password: str):
+    return test_client.post(
+        "/login",
+        data={"email": email, "password": password},
+        follow_redirects=True,
+    )
+
+
+def test_unfollow_community_ajax(test_client):
+    service = CommunityService()
+
+    creator = User(email="c_unf@example.com", password="1234")
+    follower = User(email="f_unf@example.com", password="1234")
+    db.session.add_all([creator, follower])
+    db.session.commit()
+
+    community, _ = service.create_community("Unfollow Comm", "desc", creator.id)
+    service.follow_community(follower.id, community.id)
+
+    login_as(test_client, "f_unf@example.com", "1234")
+
+    response = test_client.post(
+        f"/community/{community.slug}/unfollow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    assert response.is_json
+    data = response.get_json()
+    assert data["following"] is False
+    db.session.rollback()
+
+
+def test_follow_community_twice_ajax(test_client):
+    service = CommunityService()
+
+    creator = User(email="c_twice@example.com", password="1234")
+    follower = User(email="f_twice@example.com", password="1234")
+    db.session.add_all([creator, follower])
+    db.session.commit()
+
+    community, _ = service.create_community("Twice Comm", "desc", creator.id)
+
+    login_as(test_client, "f_twice@example.com", "1234")
+
+    test_client.post(
+        f"/community/{community.slug}/follow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    response = test_client.post(
+        f"/community/{community.slug}/follow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    data = response.get_json()
+    assert data["success"] is False
+    db.session.rollback()
+
+
+def test_follow_user_ajax_ok(test_client):
+    u1 = User(email="fu1@example.com", password="1234")
+    u2 = User(email="fu2@example.com", password="1234")
+    db.session.add_all([u1, u2])
+    db.session.commit()
+
+    login_as(test_client, "fu1@example.com", "1234")
+
+    response = test_client.post(
+        f"/community/user/{u2.id}/follow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    assert response.is_json
+    data = response.get_json()
+    assert data["following"] is True
+    db.session.rollback()
+
+
+def test_unfollow_user_not_following_ajax(test_client):
+    u1 = User(email="u_nf1@example.com", password="1234")
+    u2 = User(email="u_nf2@example.com", password="1234")
+    db.session.add_all([u1, u2])
+    db.session.commit()
+
+    login_as(test_client, "u_nf1@example.com", "1234")
+
+    response = test_client.post(
+        f"/community/user/{u2.id}/unfollow",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    data = response.get_json()
+    assert data["success"] is False
+    db.session.rollback()
