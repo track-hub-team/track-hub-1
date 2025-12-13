@@ -182,6 +182,14 @@ class BaseDataset(db.Model):
 
         return DataSetService().get_uvlhub_doi(self)
 
+    def get_view_url(self):
+        if self.ds_meta_data.dataset_doi:
+            return self.get_uvlhub_doi()
+        else:
+            from flask import url_for
+
+            return url_for("dataset.get_unsynchronized_dataset", dataset_id=self.id, _external=False)
+
     def to_dict(self):
         return {
             "title": self.ds_meta_data.title,
@@ -194,7 +202,7 @@ class BaseDataset(db.Model):
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
-            "url": self.get_uvlhub_doi(),
+            "url": self.get_view_url(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.feature_models for file in fm.files],
