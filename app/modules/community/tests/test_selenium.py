@@ -198,6 +198,159 @@ def test_add_curator_via_manage_interface():
         close_driver(driver)
 
 
-# Call the test function
+def test_follow_unfollow_community():
+    """
+    Test para seguir y dejar de seguir una comunidad.
+    """
+
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        # Login user1
+        driver.get(f"{host}/login")
+        time.sleep(2)
+
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "submit").click()
+        time.sleep(2)
+
+        # Navegar a la lista de comunidades
+        driver.get(f"{host}/community")
+        time.sleep(2)
+
+        # Seleccionar una comunidad específica (Machine Learning Models)
+        driver.find_element(By.LINK_TEXT, "Machine Learning Models").click()
+        time.sleep(2)
+
+        # Buscar el botón de follow/unfollow con diferentes estrategias
+        follow_button = None
+
+        # Estrategia 1: Buscar por diferentes IDs posibles
+        possible_ids = ["followButton", "follow-btn", "followCommunityBtn"]
+        for btn_id in possible_ids:
+            try:
+                follow_button = driver.find_element(By.ID, btn_id)
+                break
+            except NoSuchElementException:
+                continue
+
+        # Estrategia 2: Buscar por clase CSS
+        if not follow_button:
+            try:
+                follow_button = driver.find_element(By.CSS_SELECTOR, ".btn-follow, .follow-btn, .btn-community-follow")
+            except NoSuchElementException:
+                pass
+
+        # Estrategia 3: Buscar formulario de follow y su botón submit
+        if not follow_button:
+            try:
+                follow_form = driver.find_element(By.XPATH, "//form[contains(@action, '/follow')]")
+                follow_button = follow_form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+            except NoSuchElementException:
+                pass
+
+        # Estrategia 4: Buscar cualquier botón que contenga "Follow" en el texto
+        if not follow_button:
+            try:
+                buttons = driver.find_elements(By.TAG_NAME, "button")
+                for btn in buttons:
+                    btn_text = btn.text.strip().lower()
+                    if "follow" in btn_text:
+                        follow_button = btn
+                        break
+            except NoSuchElementException:
+                pass
+
+        # Si aún no encontramos el botón, el test falla
+        if not follow_button:
+            page_source = driver.page_source
+            raise AssertionError(
+                f"No se pudo encontrar el botón de follow/unfollow. "
+                f"Página actual: {driver.current_url}. "
+                f"Busca 'follow' en el HTML: {'follow' in page_source.lower()}"
+            )
+
+        initial_button_text = follow_button.text.strip().lower()
+        print(f"Estado inicial del botón: '{initial_button_text}'")
+
+        # Si ya está siguiendo, primero dejar de seguir para tener un estado conocido
+        if (
+            "unfollow" in initial_button_text
+            or "siguiendo" in initial_button_text
+            or "following" in initial_button_text
+        ):
+            follow_button.click()
+            time.sleep(2)
+            # Volver a buscar el botón
+            buttons = driver.find_elements(By.TAG_NAME, "button")
+            for btn in buttons:
+                if "follow" in btn.text.strip().lower():
+                    follow_button = btn
+                    break
+
+        # Ahora seguir la comunidad
+        follow_button.click()
+        time.sleep(2)
+
+        # Verificar que el estado cambió (buscar el botón nuevamente)
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        follow_button = None
+        for btn in buttons:
+            btn_text = btn.text.strip().lower()
+            if "follow" in btn_text or "siguiendo" in btn_text:
+                follow_button = btn
+                break
+
+        if not follow_button:
+            raise AssertionError("No se encontró el botón después de seguir la comunidad")
+
+        button_text_after_follow = follow_button.text.strip().lower()
+        print(f"Estado después de seguir: '{button_text_after_follow}'")
+        assert (
+            "unfollow" in button_text_after_follow
+            or "siguiendo" in button_text_after_follow
+            or "following" in button_text_after_follow
+        ), f"El botón debería mostrar 'Unfollow' o 'Following', pero muestra: '{button_text_after_follow}'"
+
+        # Dejar de seguir la comunidad
+        follow_button.click()
+        time.sleep(2)
+
+        # Verificar que el botón volvió a "Follow"
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        follow_button = None
+        for btn in buttons:
+            btn_text = btn.text.strip().lower()
+            if "follow" in btn_text:
+                follow_button = btn
+                break
+
+        if not follow_button:
+            raise AssertionError("No se encontró el botón después de dejar de seguir")
+
+        button_text_after_unfollow = follow_button.text.strip().lower()
+        print(f"Estado después de dejar de seguir: '{button_text_after_unfollow}'")
+        assert (
+            "follow" in button_text_after_unfollow and "unfollow" not in button_text_after_unfollow
+        ) or "seguir" in button_text_after_unfollow, (
+            f"El botón debería mostrar 'Follow', pero muestra: '{button_text_after_unfollow}'"
+        )
+
+        print("Test follow/unfollow community passed!")
+
+    except NoSuchElementException as e:
+        raise AssertionError(f"Test failed! Element not found: {e}")
+    except AssertionError as e:
+        raise AssertionError(f"Test failed! Assertion error: {e}")
+
+    finally:
+        close_driver(driver)
+
+
+# Call the test functions
 test_add_curator_via_manage_interface()
 test_propose_and_reject_dataset()
+test_follow_unfollow_community()
