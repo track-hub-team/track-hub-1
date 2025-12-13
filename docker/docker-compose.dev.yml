@@ -7,6 +7,7 @@ services:
       - "5000"
     depends_on:
       - db
+      - fakenodo
     build:
       context: ../
       dockerfile: docker/images/Dockerfile.dev
@@ -14,6 +15,22 @@ services:
       - ../:/app
       - /var/run/docker.sock:/var/run/docker.sock
     command: [ "sh", "-c", "sh /app/docker/entrypoints/development_entrypoint.sh" ]
+    networks:
+      - uvlhub_network
+
+  fakenodo:
+    container_name: fakenodo_container
+    build:
+      context: ../
+      dockerfile: docker/images/Dockerfile.dev
+    volumes:
+      - ../:/app
+    command: [ "sh", "-c", "cd /app && python app/modules/fakenodo/app.py" ]
+    expose:
+      - "5001"
+    environment:
+      - PORT=5001
+      - FAKENODO_FILES_DIR=/app/_fakenodo_files
     networks:
       - uvlhub_network
 
