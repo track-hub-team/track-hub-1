@@ -350,7 +350,124 @@ def test_follow_unfollow_community():
         close_driver(driver)
 
 
+def test_follow_user_and_unfollow_from_profile_list():
+    """
+    Test Selenium:
+    - Seguir a un usuario desde un dataset
+    - Verlo en la lista de usuarios seguidos en el perfil
+    - Dejar de seguirlo desde esa lista
+    """
+
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        # -------------------------
+        # LOGIN user1 (el que sigue)
+        # -------------------------
+        driver.get(f"{host}/login")
+        time.sleep(2)
+
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "submit").click()
+        time.sleep(2)
+
+        # ------------------------------------------
+        # IR A UN DATASET DE user2 (autor del dataset)
+        # ------------------------------------------
+        driver.find_element(By.LINK_TEXT, "GPS Track Collection 2").click()
+        time.sleep(2)
+
+        # -------------------------
+        # FOLLOW USER
+        # -------------------------
+        follow_button = driver.find_element(By.ID, "follow-user-btn")
+        initial_text = follow_button.text.strip().lower()
+
+        # Si ya estaba siguiendo, primero unfollow para estado conocido
+        if "unfollow" in initial_text or "siguiendo" in initial_text or "following" in initial_text:
+            follow_button.click()
+            time.sleep(2)
+            follow_button = driver.find_element(By.ID, "follow-user-btn")
+
+        # Follow
+        follow_button.click()
+        time.sleep(2)
+
+        follow_button = driver.find_element(By.ID, "follow-user-btn")
+        assert (
+            "unfollow" in follow_button.text.lower()
+            or "siguiendo" in follow_button.text.lower()
+            or "following" in follow_button.text.lower()
+        ), "El usuario no aparece como seguido tras hacer follow"
+
+        print("Usuario seguido correctamente")
+
+        # -------------------------
+        # IR AL PERFIL
+        # -------------------------
+        driver.get(f"{host}/profile/summary")
+        time.sleep(2)
+
+        page_source = driver.page_source
+        assert page_source, "La página del perfil no cargó correctamente"
+
+        # Datos que REALMENTE aparecen en la UI (según tu captura)
+        FOLLOWED_USER_EMAIL = "user2@example.com"
+        FOLLOWED_USER_NAME = "Jane Doe"
+
+        assert (
+            FOLLOWED_USER_EMAIL in page_source or FOLLOWED_USER_NAME in page_source
+        ), "El usuario seguido no aparece en la lista de usuarios seguidos"
+
+        print("Usuario aparece en la lista de seguidos")
+
+        # -------------------------
+        # UNFOLLOW DESDE EL PERFIL
+        # -------------------------
+        unfollow_button = None
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+
+        for btn in buttons:
+            if btn.text.strip().lower() == "unfollow":
+                unfollow_button = btn
+                break
+
+        if not unfollow_button:
+            raise AssertionError("No se encontró el botón Unfollow en la lista del perfil")
+
+        unfollow_button.click()
+        time.sleep(2)
+
+        print("Unfollow pulsado desde el perfil")
+
+        # -------------------------
+        # VERIFICAR QUE DESAPARECE
+        # -------------------------
+        driver.get(f"{host}/profile/summary")
+        time.sleep(2)
+        page_source = driver.page_source
+
+        assert (
+            FOLLOWED_USER_EMAIL not in page_source and FOLLOWED_USER_NAME not in page_source
+        ), "El usuario sigue apareciendo tras hacer unfollow desde el perfil"
+
+        print("Usuario eliminado correctamente de la lista de seguidos")
+
+    except NoSuchElementException as e:
+        raise AssertionError(f"Elemento no encontrado: {e}")
+
+    except AssertionError as e:
+        raise AssertionError(f"Test fallido: {e}")
+
+    finally:
+        close_driver(driver)
+
+
 # Call the test functions
 test_add_curator_via_manage_interface()
 test_propose_and_reject_dataset()
 test_follow_unfollow_community()
+test_follow_user_and_unfollow_from_profile_list()
