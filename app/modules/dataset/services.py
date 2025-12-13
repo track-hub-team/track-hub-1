@@ -697,10 +697,13 @@ class CommentService(BaseService):
 
     def delete_comment(self, comment_id: int, user_id: int) -> bool:
         """
-        Eliminar comentario.
+        Eliminar comentario y todas sus respuestas.
         Puede hacerlo:
         - El autor del comentario
         - El propietario del dataset (moderación)
+
+        Returns:
+            bool: True si se eliminó correctamente (mantener compatibilidad con tests)
         """
         comment = self.repository.get_by_id(comment_id)
         if not comment:
@@ -710,7 +713,29 @@ class CommentService(BaseService):
         if not (self._is_comment_owner(comment, user_id) or self._is_dataset_owner(comment, user_id)):
             raise PermissionError("You don't have permission to delete this comment")
 
-        self.repository.delete(comment_id)
+        # Contar respuestas antes de eliminar
+        replies_count = self.repository._count_all_replies(comment)
+
+        # Eliminar comentario y sus respuestas
+        deleted_count = self.repository.delete_with_replies(comment_id)
+
+        # Construir mensaje informativo
+        if replies_count > 0:
+            message = f"Comment and {replies_count} {'reply' if replies_count == 1 else 'replies'} deleted successfully"
+        else:
+            message = "Comment deleted successfully"
+
+        logger.info("Comment %s deleted by user %s (total deleted: %s)", comment_id, user_id, deleted_count)
+
+        # Para la ruta de API, guardamos la info en un atributo temporal
+        self._last_delete_info = {
+            "success": True,
+            "deleted_count": deleted_count,
+            "replies_count": replies_count,
+            "message": message,
+        }
+
+        # Mantener compatibilidad: retornar True para tests existentes
         return True
 
     def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:

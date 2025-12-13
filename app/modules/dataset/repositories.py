@@ -120,7 +120,6 @@ class DOIMappingRepository(BaseRepository):
 class CommentRepository(BaseRepository):
     """
     Repositorio para operaciones CRUD de comentarios.
-    Lógica básica sin moderación ni respuestas anidadas.
     """
 
     def __init__(self):
@@ -129,13 +128,6 @@ class CommentRepository(BaseRepository):
     def get_by_dataset(self, dataset_id: int, order_by: str = "created_at") -> List[Comment]:
         """
         Obtener todos los comentarios de un dataset.
-
-        Args:
-            dataset_id: ID del dataset
-            order_by: Campo para ordenar (default: created_at ascendente)
-
-        Returns:
-            List[Comment]: Lista de comentarios ordenados
         """
         query = self.model.query.filter_by(dataset_id=dataset_id)
 
@@ -149,37 +141,18 @@ class CommentRepository(BaseRepository):
     def get_by_user(self, user_id: int) -> List[Comment]:
         """
         Obtener todos los comentarios de un usuario.
-
-        Args:
-            user_id: ID del usuario
-
-        Returns:
-            List[Comment]: Lista de comentarios del usuario
         """
         return self.model.query.filter_by(user_id=user_id).order_by(self.model.created_at.desc()).all()
 
     def count_by_dataset(self, dataset_id: int) -> int:
         """
         Contar comentarios de un dataset.
-
-        Args:
-            dataset_id: ID del dataset
-
-        Returns:
-            int: Número de comentarios
         """
         return self.model.query.filter_by(dataset_id=dataset_id).count()
 
     def update_content(self, comment_id: int, new_content: str) -> Optional[Comment]:
         """
         Actualizar el contenido de un comentario.
-
-        Args:
-            comment_id: ID del comentario
-            new_content: Nuevo contenido
-
-        Returns:
-            Optional[Comment]: Comentario actualizado o None si no existe
         """
         comment = self.get_by_id(comment_id)
         if comment:
@@ -188,16 +161,44 @@ class CommentRepository(BaseRepository):
             return comment
         return None
 
+    # 🔧 NUEVO MÉTODO: Eliminar comentario con todas sus respuestas
+    def delete_with_replies(self, comment_id: int) -> int:
+        """
+        Eliminar un comentario y todas sus respuestas recursivamente.
+
+        Args:
+            comment_id: ID del comentario a eliminar
+
+        Returns:
+            int: Número total de comentarios eliminados (padre + hijos)
+        """
+        comment = self.get_by_id(comment_id)
+        if not comment:
+            return 0
+
+        # Contar respuestas antes de eliminar
+        replies_count = self._count_all_replies(comment)
+
+        # SQLAlchemy manejará la cascada automáticamente gracias a cascade="all, delete-orphan"
+        self.session.delete(comment)
+        self.session.commit()
+
+        # Retornar total eliminado (1 padre + N respuestas)
+        return 1 + replies_count
+
+    def _count_all_replies(self, comment: Comment) -> int:
+        """
+        Contar recursivamente todas las respuestas de un comentario.
+        """
+        count = 0
+        for reply in comment.replies:
+            count += 1
+            count += self._count_all_replies(reply)
+        return count
+
     def delete_by_dataset(self, dataset_id: int) -> int:
         """
         Eliminar todos los comentarios de un dataset.
-        Útil cuando se elimina un dataset.
-
-        Args:
-            dataset_id: ID del dataset
-
-        Returns:
-            int: Número de comentarios eliminados
         """
         count = self.model.query.filter_by(dataset_id=dataset_id).count()
         self.model.query.filter_by(dataset_id=dataset_id).delete()
@@ -207,21 +208,12 @@ class CommentRepository(BaseRepository):
     def get_latest_comments(self, limit: int = 5) -> List[Comment]:
         """
         Obtener los comentarios más recientes globalmente.
-
-        Args:
-            limit: Número máximo de comentarios a devolver
-
-        Returns:
-            List[Comment]: Lista de comentarios recientes
         """
         return self.model.query.order_by(desc(self.model.created_at)).limit(limit).all()
 
     def total_comments(self) -> int:
         """
         Contar el total de comentarios en la plataforma.
-
-        Returns:
-            int: Número total de comentarios
         """
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0

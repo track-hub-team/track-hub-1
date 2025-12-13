@@ -652,7 +652,7 @@ class Comment(db.Model):
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    parent_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=True)  # <- nueva columna
+    parent_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -661,7 +661,11 @@ class Comment(db.Model):
         "BaseDataset", backref=db.backref("comments", lazy="dynamic", cascade="all, delete-orphan")
     )
     user = db.relationship("User", backref=db.backref("comments", lazy=True))
-    replies = db.relationship("Comment", backref=db.backref("parent", remote_side=[id]), lazy="dynamic")
+
+    # CAMBIO: Añadir cascade="all, delete-orphan" para eliminar respuestas automáticamente
+    replies = db.relationship(
+        "Comment", backref=db.backref("parent", remote_side=[id]), lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     def to_dict(self):
         return {

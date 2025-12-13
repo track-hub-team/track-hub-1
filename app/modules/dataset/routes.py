@@ -37,6 +37,7 @@ from app.modules.dataset.registry import (
 )
 from app.modules.dataset.services import (
     AuthorService,
+    CommentService,
     DataSetService,
     DOIMappingService,
     DSDownloadRecordService,
@@ -1098,15 +1099,32 @@ def get_comments(dataset_id):
 @login_required
 def delete_comment(comment_id):
     """
-    Eliminar comentario.
+    Eliminar comentario y todas sus respuestas.
     Puede hacerlo el autor del comentario O el propietario del dataset.
     """
-    from app.modules.dataset.services import CommentService
 
     try:
         comment_service = CommentService()
         comment_service.delete_comment(comment_id, current_user.id)
+
+        # Obtener información adicional si existe
+        if hasattr(comment_service, "_last_delete_info"):
+            result = comment_service._last_delete_info
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": result["message"],
+                        "deleted_count": result["deleted_count"],
+                        "replies_count": result["replies_count"],
+                    }
+                ),
+                200,
+            )
+
+        # Fallback para compatibilidad
         return jsonify({"success": True, "message": "Comment deleted successfully"}), 200
+
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 404
     except PermissionError as e:
