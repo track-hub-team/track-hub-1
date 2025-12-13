@@ -470,3 +470,115 @@ def test_get_followers_users_empty(test_client):
 
     db.session.delete(user)
     db.session.commit()
+
+
+def test_follow_user_success(test_client):
+    service = CommunityService()
+
+    user1 = User(email="u1@example.com", password="1234")
+    user2 = User(email="u2@example.com", password="1234")
+    db.session.add_all([user1, user2])
+    db.session.commit()
+
+    record, error = service.follow_user(user1.id, user2.id)
+
+    assert error is None
+    assert record is not None
+    assert record.follower_id == user1.id
+    assert record.followed_id == user2.id
+
+    db.session.delete(record)
+    db.session.delete(user1)
+    db.session.delete(user2)
+    db.session.commit()
+
+
+def test_follow_user_self_not_allowed(test_client):
+    service = CommunityService()
+
+    user = User(email="self@example.com", password="1234")
+    db.session.add(user)
+    db.session.commit()
+
+    record, error = service.follow_user(user.id, user.id)
+
+    assert record is None
+    assert error == "You cannot follow yourself"
+
+    db.session.delete(user)
+    db.session.commit()
+
+
+def test_unfollow_user_success(test_client):
+    service = CommunityService()
+
+    follower = User(email="follower_u@example.com", password="1234")
+    followed = User(email="followed_u@example.com", password="1234")
+    db.session.add_all([follower, followed])
+    db.session.commit()
+
+    service.follow_user(follower.id, followed.id)
+
+    ok, error = service.unfollow_user(follower.id, followed.id)
+
+    assert ok is True
+    assert error is None
+    assert service.is_following_user(follower.id, followed.id) is False
+
+    db.session.delete(follower)
+    db.session.delete(followed)
+    db.session.commit()
+
+
+def test_unfollow_user_not_following(test_client):
+    service = CommunityService()
+
+    follower = User(email="nf1@example.com", password="1234")
+    followed = User(email="nf2@example.com", password="1234")
+    db.session.add_all([follower, followed])
+    db.session.commit()
+
+    ok, error = service.unfollow_user(follower.id, followed.id)
+
+    assert ok is None
+    assert error == "You are not following this user"
+
+    db.session.delete(follower)
+    db.session.delete(followed)
+    db.session.commit()
+
+
+def test_get_followed_communities_returns_list(test_client):
+    service = CommunityService()
+
+    user = User(email="gfc@example.com", password="1234")
+    creator = User(email="creator_gfc@example.com", password="1234")
+    db.session.add_all([user, creator])
+    db.session.commit()
+
+    community, _ = service.create_community("GFC", "desc", creator.id)
+    service.follow_community(user.id, community.id)
+
+    communities = service.get_followed_communities(user.id)
+
+    assert len(communities) == 1
+    assert communities[0].id == community.id
+
+    db.session.rollback()
+
+
+def test_is_following_user(test_client):
+    service = CommunityService()
+
+    u1 = User(email="ifu1@example.com", password="1234")
+    u2 = User(email="ifu2@example.com", password="1234")
+    db.session.add_all([u1, u2])
+    db.session.commit()
+
+    assert service.is_following_user(u1.id, u2.id) is False
+
+    service.follow_user(u1.id, u2.id)
+
+    assert service.is_following_user(u1.id, u2.id) is True
+
+    db.session.rollback()
