@@ -4,7 +4,7 @@
 
 # Track Hub
 
-A web platform for managing and sharing GPS tracks (GPX files), built on top of UVLHub. Upload, visualize, and collaborate on GPS route collections following Open Science principles.
+A web platform for managing and sharing GPS tracks (GPX files), built on top of Trackhub. Upload, visualize, and collaborate on GPS route collections following Open Science principles.
 
 ## Features
 
