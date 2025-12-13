@@ -13,6 +13,7 @@ services:
       dockerfile: docker/images/Dockerfile.dev
     volumes:
       - ../:/app
+      - uploads_data:/app/uploads
       - /var/run/docker.sock:/var/run/docker.sock
     command: [ "sh", "-c", "sh /app/docker/entrypoints/development_entrypoint.sh" ]
     networks:
@@ -25,6 +26,7 @@ services:
       dockerfile: docker/images/Dockerfile.dev
     volumes:
       - ../:/app
+      - fakenodo_files:/app/_fakenodo_files
     command: [ "sh", "-c", "cd /app && python app/modules/fakenodo/app.py" ]
     expose:
       - "5001"
@@ -64,6 +66,8 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
+  fakenodo_files:
 
 networks:
   uvlhub_network:
