@@ -34,6 +34,17 @@
         executable: /bin/bash
       environment: "{{ common_environment }}"
 
+    - name: Run Fakenodo server
+      shell: |
+        source {{ working_dir }}vagrant_venv/bin/activate
+        cd {{ working_dir }}
+        nohup python app/modules/fakenodo/app.py > fakenodo.log 2>&1 &
+      args:
+        executable: /bin/bash
+      environment: "{{ common_environment }}"
+      async: 1
+      poll: 0
+
     - name: Run Flask application
       shell: |
         source {{ working_dir }}vagrant_venv/bin/activate
