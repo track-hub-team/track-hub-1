@@ -129,8 +129,9 @@ def test_upload_dataset():
         upload_btn = driver.find_element(By.ID, "upload_dataset_btn")
         upload_btn.click()
 
-        wait_for_page_to_load(driver)
-        time.sleep(3)
+        WebDriverWait(driver, 10).until(
+            EC.url_contains("/dataset/list")
+        )
 
         # Comprobar redirección a la lista
         assert driver.current_url == f"{host}/dataset/list", f"URL tras subir: {driver.current_url}"
