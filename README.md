@@ -30,6 +30,7 @@ To set up your development environment, follow the [Developer Setup Guide](docs/
 - [Zenodo Integration](docs/zenodo.md) - Integration with Zenodo for DOI publishing and deployment on Render
 - [Comment Moderation System](docs/comment-moderation.md) - Comment management and moderation features
 - [ZIP Upload Feature](docs/zip-upload.md) - Bulk file upload functionality via ZIP archives
+- [Email Notification](docs/email-notification.md) - Usage of SendGrid for sending email notifications
 
 ### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
