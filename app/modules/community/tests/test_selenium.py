@@ -2,7 +2,8 @@ import time
 
 from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -372,18 +373,14 @@ def test_follow_user_and_unfollow_from_profile_list():
         driver.find_element(By.ID, "email").send_keys("user1@example.com")
         driver.find_element(By.ID, "password").send_keys("1234")
         driver.find_element(By.ID, "submit").click()
-        time.sleep(2)
+        time.sleep(3)
 
-        # ------------------------------------------
-        # IR A UN DATASET DE user2 (autor del dataset)
-        # ------------------------------------------
-        driver.find_element(By.LINK_TEXT, "GPS Track Collection 2").click()
-        time.sleep(2)
+        driver.get(f"{host}/doi/10.1234/gpx_dataset2/")
+        time.sleep(3)
 
-        # -------------------------
-        # FOLLOW USER
-        # -------------------------
-        follow_button = driver.find_element(By.ID, "follow-user-btn")
+        wait = WebDriverWait(driver, 10)
+        follow_button = wait.until(EC.presence_of_element_located((By.ID, "follow-user-btn")))
+
         initial_text = follow_button.text.strip().lower()
 
         # Si ya estaba siguiendo, primero unfollow para estado conocido

@@ -6,7 +6,8 @@ import click
 
 @click.command("selenium", help="Executes Selenium tests based on the environment.")
 @click.argument("module", required=False)
-def selenium(module):
+@click.option("--headless", is_flag=True, help="Run browser in headless mode (no GUI)")
+def selenium(module, headless):
     # Absolute paths
     working_dir = os.getenv("WORKING_DIR", "")
     modules_dir = os.path.join(working_dir, "app/modules")
@@ -25,6 +26,11 @@ def selenium(module):
 
     def run_selenium_tests_in_local(module):
         """Run the Selenium tests."""
+        if headless:
+            os.environ["SELENIUM_HEADLESS"] = "true"
+        else:
+            os.environ["SELENIUM_HEADLESS"] = "false"
+
         if module:
             module_name = f"app.modules.{module}.tests.test_selenium"
             test_command = ["python", "-m", module_name]
