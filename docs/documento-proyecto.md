@@ -47,6 +47,7 @@
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
 | Rodríguez Calderón, Antonio | 71 | 89 | | ZZ | II | Descripción breve | H/M/L |
+| Olivencia Moreno, Pablo | 62 | 26 | 3758 | 27 | 6 | Upload from Zip/GitHub/ Sistema de versionado | High/ High |
 | [Apellidos, Nombre] | HH | XX | YY | ZZ | II | Descripción breve | H/M/L |
 | [Apellidos, Nombre] | HH | XX | YY | ZZ | II | Descripción breve | H/M/L |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
