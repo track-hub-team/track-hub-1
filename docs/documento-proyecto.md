@@ -1289,10 +1289,239 @@ pytest  # Crea automáticamente SQLite temporal
 ### Conclusión
 
 El entorno de desarrollo de Track-Hub-1 está diseñado para ser reproducible en múltiples plataformas con pasos claros y dependencias versionadas explícitamente. El uso de entornos virtuales de Python garantiza aislamiento, mientras que Docker proporciona una alternativa de containerización completa si se prefiere evitar instalaciones nativas.
+## Change Proposal Exercise: Fix Repository Links
 
-## Ejercicio de propuesta de cambio
+This exercise demonstrates the complete end-to-end workflow for implementing a configuration change in the Track-Hub-1 project, from incident creation to deployment and closure.
 
-AQUI AÑADIR EL CAMBIO
+#### Change Description
+
+**Bug Report**: Repository links in templates point to the original fork (`https://github.com/diverso-lab/uvlhub`) instead of the team repository (`https://github.com/track-hub-team/track-hub-1`).
+
+**Impact**: Users clicking on repository links are directed to the wrong project.
+
+**Affected Files**: `app/templates/base_template.html`
+
+---
+
+### Step-by-Step Workflow
+
+#### Step 1: Incident Creation (Person 1 - Jianwu)
+
+**Action**: Create incident in Jira Support Space following the template defined in [project-management.md](project-management.md)
+
+**Jira Incident Details**:
+```markdown
+1. Pasos para reproducir
+   1. Navega al repositorio del proyecto
+   2. Desde cualquier página bajar al footer
+   3. Pinchar sobre "Repository on GitHub"
+
+2. Resultado esperado
+   * Debe dirigir al repositorio de track-hub-1: https://github.com/track-hub-team/track-hub-1
+
+3. Resultado actual
+   * Redirige al fork original: https://github.com/diverso-lab/uvlhub
+
+4. Entorno
+   * Versión: X.Y.Z
+   * Navegador: X/Y
+   * Fecha de detección: XX/12/2025
+
+5. Información adicional
+   * No aplica
+```
+
+**Actions in Jira**:
+1. Navigate to Jira Support Space
+2. Create de Issue
+4. Fill in all fields according to the template
+5. Assign to **Person 3** (Developer)
+6. Submit incident
+
+---
+
+#### Step 2: Incident Triage (Person 1 - Jianwu)
+
+**Action**: Respond to incident for SLA compliance and set an estimated priority (e.g., low).
+
+**Jira Comment**:
+```
+Procedemos con la revisión del footer.
+```
+
+**Actions in Jira**:
+1. Open created incident
+2. Add comment
+3. Set Priority field to "Low"
+4. Set SLA status to "En Curso"
+
+---
+
+#### Step 3: Task Creation (Person 2 - Pablo Castrillón)
+
+**Action**: Create task in Jira backlog under "Todo lo Demás" section (does not fit into any existing story)
+
+**Jira Task Details**:
+```
+Title: Update repository links in templates
+
+Description:
+Replace occurrence of diverso-lab/uvlhub URLs with
+track-hub-team/track-hub-1 in template files.
+```
+
+**Actions in Jira**:
+1. Navigate to Jira Board
+2. Click "Create Task" in "Todo lo demás" section with title
+3. Fill in task details
+4. Set Story Points (e.g., 2)
+5. Set Priority (e.g., Low)
+6. Assign to **Person 3** (Developer)
+
+---
+
+#### Step 4: Link Incident to Task (Person 2 - Pablo Castrillón)
+
+**Action**: Associate support incident with development task
+
+**Actions in Jira**:
+1. Open the issue
+2. Link with the task created
+7. Verify the relationship
+
+---
+
+#### Step 5: Branch Creation (Person 4 - Adrián Ramírez)
+
+**Action**: Create bugfix branch from Jira and start time tracking
+
+**Actions in Jira**:
+1. Open the task created in Step 3
+2. Click "Create branch" button (Jira Git integration)
+3. Configure branch:
+   - Repository: `track-hub-team/track-hub-1`
+   - Branch name: `bugfix/SCRUM-XX-...`
+   - Source: `trunk`
+4. Click "Create branch"
+
+**Git Commands** (executed automatically by Jira):
+```bash
+git checkout trunk
+git pull origin trunk
+git checkout -b bugfix/SCRUM-XX-...
+git push -u origin bugfix/SCRUM-XX-...
+```
+
+---
+
+#### Step 6: Implementation (Person 3 - Antonio)
+
+**Action**: Start Clockify time tracking, Fetch branch, implement fix, confirm fix, and push changes
+
+**File Changes**:
+
+Edit `app/templates/base_template.html`:
+
+```html
+
+<!-- Line 222 - BEFORE -->
+<a class="text-muted" href="https://github.com/diverso-lab/uvlhub"
+
+<!-- Line 222 - AFTER -->
+<a class="text-muted" href="https://github.com/track-hub-team/track-hub-1"
+```
+
+**Commit and Push**:
+```bash
+# Stage changes
+git add app/templates/base_template.html
+
+# Commit using conventional commits template
+git commit
+
+# Fill in commit template:
+# Remove the '#' from the lines below and replace with your actual message:
+#
+# <type>(<scope>): <subject>
+#
+# [optional body]
+
+# Complete commit message:
+fix(templates): update repository links to team repository
+
+Refs: SCRUM-XX # (automatic)
+```
+
+**Pre-commit hooks execute automatically**:
+```bash
+# Hooks run:
+# 1. Trailing whitespace check ✓
+# 2. YAML validation ✓
+# 3. Flake8 linting ✓
+# 4. Branch name validation ✓
+# All checks passed
+```
+
+**Push to remote**:
+```bash
+git push
+```
+
+---
+
+#### Step 7: Code Review and Merge (Person 5 - Pablo Olivencia)
+
+**Action**: Move task through review stages and merge to trunk
+
+**Actions in Jira**:
+1. Open task SCRUM-XX
+2. Drag task to "En Revisión" (In Review) column
+3. Verify CI pipeline passed
+4. Drag task to "Finalizado" column
+
+**Git Commands**:
+```bash
+# Switch to trunk branch
+git checkout trunk
+
+# Ensure trunk is up to date
+git pull origin trunk
+
+# Merge bugfix branch
+git merge bugfix/SCRUM-XX-update-repository-links
+
+# Push to remote trunk
+git push
+```
+
+**Stop Time Tracking (Antonio)**:
+1. Click "Stop" on active timer
+
+---
+
+#### Step 8: Incident Closure (Person 6 - Juan)
+
+**Action**: Close incident
+
+**Actions in Jira**:
+1. Open original incident from Step 1
+2. Move to "Hecho" and add resolution comment
+
+```
+Resolution: Listo
+
+El repositorio ahora tiene un href apuntando correctamente
+```
+
+---
+
+**Tools used**:
+- Jira (incident tracking, task management, time tracking integration)
+- Clockify (time tracking)
+- Git (version control)
+- GitHub (repository hosting, CI/CD)
+- Pre-Commit
+- Render (staging deployment) and own server
 
 ## Conclusiones y trabajo futuro
 
