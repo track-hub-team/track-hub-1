@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 from zipfile import BadZipFile, ZipFile
@@ -739,17 +740,23 @@ class CommentService(BaseService):
         return True
 
     def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:
-        """
-        Actualizar comentario.
-        Solo el autor del comentario puede editarlo (no el moderador del dataset).
-        """
+        EDIT_TIME_LIMIT_MINUTES = 2
         comment = self.repository.get_by_id(comment_id)
         if not comment:
             raise ValueError("Comment not found")
 
-        # Solo el autor puede editar su propio comentario
         if not self._is_comment_owner(comment, user_id):
             raise PermissionError("Only the comment author can edit it")
+
+        now = datetime.now(timezone.utc)
+        created_at = comment.created_at
+
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+
+        time_diff = now - created_at
+        if time_diff > timedelta(minutes=EDIT_TIME_LIMIT_MINUTES):
+            raise PermissionError(f"Comments can only be edited within the first {EDIT_TIME_LIMIT_MINUTES} minutes")
 
         clean_content = self._validate_content(new_content)
         updated = self.repository.update_content(comment_id, clean_content)
