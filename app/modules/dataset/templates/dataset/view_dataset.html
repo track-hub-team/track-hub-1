@@ -634,8 +634,28 @@ document.addEventListener("DOMContentLoaded", function () {
         replyBoxDiv.classList.add("reply-box", "mt-2");
 
         const textarea = document.createElement("textarea");
-        textarea.classList.add("form-control", "mb-2");
-        textarea.rows = 2;
+        textarea.classList.add("form-control", "mt-2");
+
+        const MAX_HEIGHT = 200;
+
+        textarea.style.overflowY = "hidden";
+        textarea.style.resize = "none";
+
+        const autoResize = () => {
+            textarea.style.height = "auto";
+
+            if (textarea.scrollHeight <= MAX_HEIGHT) {
+                textarea.style.height = textarea.scrollHeight + "px";
+                textarea.style.overflowY = "hidden";
+            } else {
+                textarea.style.height = MAX_HEIGHT + "px";
+                textarea.style.overflowY = "auto";
+            }
+        };
+
+        textarea.addEventListener("input", autoResize);
+        autoResize();
+
         textarea.placeholder = "Write your reply...";
 
         const submitBtn = document.createElement("button");
@@ -684,11 +704,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
-
-
-
-
-
 
     // ===============================
     // 5. Eliminar comentario
@@ -747,6 +762,26 @@ document.addEventListener("DOMContentLoaded", function () {
         const textarea = document.createElement("textarea");
         textarea.classList.add("form-control", "mt-2");
         textarea.value = originalText;
+
+        const MAX_HEIGHT = 200;
+
+        textarea.style.overflowY = "hidden";
+        textarea.style.resize = "none";
+
+        const autoResize = () => {
+            textarea.style.height = "auto";
+
+            if (textarea.scrollHeight <= MAX_HEIGHT) {
+                textarea.style.height = textarea.scrollHeight + "px";
+                textarea.style.overflowY = "hidden";
+            } else {
+                textarea.style.height = MAX_HEIGHT + "px";
+                textarea.style.overflowY = "auto";
+            }
+        };
+
+        textarea.addEventListener("input", autoResize);
+        autoResize();
 
         contentElement.style.display = "none";
         container.insertBefore(textarea, contentElement.nextSibling);
