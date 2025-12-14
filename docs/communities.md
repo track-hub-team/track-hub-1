@@ -92,8 +92,7 @@ The community module has comprehensive test coverage across multiple layers:
 - `test_get_eligible_datasets_excludes_already_added` - Validates dataset filtering logic (excludes datasets already in community or with pending requests)
 - `test_approve_request_adds_dataset_to_community` - Checks approval workflow adds dataset and updates request status
 - `test_reject_request_does_not_add_dataset` - Ensures rejection doesn't add dataset and updates status correctly
-- `test_cannot_remove_community_creator_as_curator` - Validates creator protection from curator removal
-- `test_cannot_create_community_with_duplicate_name` - Verifies duplicate community names are prevented with proper error message
+- `test_create_community_creator_becomes_curator` - Verifies duplicate community names are prevented with proper error message
 
 ### Integration Tests (`test_integration.py`)
 - `test_propose_dataset_full_workflow` - End-to-end test of proposal submission and approval flow

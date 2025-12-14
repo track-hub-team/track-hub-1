@@ -46,7 +46,7 @@
 
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
-| Rodríguez Calderón, Antonio | 71 | 89 | | ZZ | II | Descripción breve | H/M/L |
+| Rodríguez Calderón, Antonio | 71 | 95 | ≈9001 | 11 | 74 |  | L |
 | Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | Descripción breve | H/M/L |
 | Hu, Jianwu | 51:30 | 16 | 1519 | 30 | 10 | Descripción breve | H/M/L |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
@@ -64,6 +64,19 @@
 - Issues: [enlace]
 - Commits/PRs: [enlace]
 - Métricas/Gráficas: [enlace]
+
+**Nota cálculo de LoC (Antonio Rodríguez):**
+
+El valor de 9001 líneas de código es aproximado. No se sabe a ciencia cierta las líneas cubiertas ya que ha sido el autor del commit inicial y la persona que ha subido datos de ejemplo del seeder. No obstante se ha intendado estimar como sigue:
+
+```bash
+git log --author="PDJ6975" 4d8f5cec..HEAD --pretty=tformat: --numstat | grep -v '\.gpx$' | grep -v '\.svg$' | awk '{add+=$1;
+       del+=$2} END {print "Añadidas:", add; print "Eliminadas:", del}'
+```
+
+Con este comando obtenemos la siguiente salida:
+- **Añadidas**: 9001 líneas de código
+- **Eliminadas**: 3039
 
 ---
 ## Integración con otros equipos
