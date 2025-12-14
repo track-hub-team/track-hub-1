@@ -14,17 +14,44 @@
         margin-bottom: 0;
     }
 
+    /* ✅ SOLUCIÓN: DOI button responsive */
     .doi_button {
-    max-width: 100%;
-    white-space: normal;
+        width: 100%;
+        max-width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
+        text-align: left;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .button_doi_id {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .doi_text {
-    display: inline-block;
-    max-width: 100%;
-    word-break: break-all;
-    overflow-wrap: anywhere;
-    text-align: left;
+        display: block;
+        width: 100%;
+        word-break: break-all;
+        overflow-wrap: anywhere;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    /* ✅ Para pantallas pequeñas */
+    @media (max-width: 576px) {
+        .doi_button {
+            font-size: 0.8rem;
+        }
+
+        .doi_text {
+            font-size: 0.75rem;
+        }
     }
 </style>
 {% endblock %}
