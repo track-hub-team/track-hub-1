@@ -47,8 +47,8 @@
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
 | Rodríguez Calderón, Antonio | 71 | 96 | ≈9001 | 11 | 16 | 74 | L |
-| Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | Descripción breve | H/M/L |
-| Hu, Jianwu | 51:30 | 16 | 1519 | 30 | 10 | Descripción breve | H/M/L |
+| Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | 80 | M |
+| Hu, Jianwu | 51:58 | 17 | 1519 | 30 | 11 | 92 | M |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
 
 **Criterios:**
