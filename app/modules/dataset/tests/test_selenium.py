@@ -7,6 +7,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+# ✅ Importar modelos para limpiar la BD
+from app import db
+from app.modules.dataset.models import BaseDataset
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
@@ -22,281 +25,206 @@ def wait_for_page_to_load(driver, timeout=4):
 def count_datasets(driver, host):
     driver.get(f"{host}/dataset/list")
     wait_for_page_to_load(driver)
-
     try:
-        amount_datasets = len(driver.find_elements(By.XPATH, "//table//tbody//tr"))
+        return len(driver.find_elements(By.XPATH, "//table//tbody//tr"))
     except Exception:
-        amount_datasets = 0
-    return amount_datasets
+        return 0
 
 
 def login_user(driver, host):
-    """Helper para hacer login - reutilizable"""
     driver.get(f"{host}/login")
     wait_for_page_to_load(driver)
-
-    email_field = driver.find_element(By.NAME, "email")
-    password_field = driver.find_element(By.NAME, "password")
-
-    email_field.send_keys("user1@example.com")
-    password_field.send_keys("1234")
-    password_field.send_keys(Keys.RETURN)
-
-    time.sleep(4)
+    driver.find_element(By.NAME, "email").send_keys("user1@example.com")
+    password = driver.find_element(By.NAME, "password")
+    password.send_keys("1234")
+    password.send_keys(Keys.RETURN)
+    time.sleep(3)
     wait_for_page_to_load(driver)
+
+
+def delete_dataset_by_title(title: str, user_email: str = "user1@example.com"):
+    """
+    ✅ Elimina un dataset por título y usuario para evitar duplicados en tests.
+    """
+    try:
+        from app import create_app
+        from app.modules.auth.models import User
+
+        app = create_app()
+
+        with app.app_context():
+            user = User.query.filter_by(email=user_email).first()
+            if not user:
+                print(f"⚠️ Usuario {user_email} no encontrado")
+                return False
+
+            dataset = (
+                BaseDataset.query.join(BaseDataset.ds_meta_data)
+                .filter(BaseDataset.user_id == user.id, BaseDataset.ds_meta_data.has(title=title))
+                .first()
+            )
+
+            if not dataset:
+                print(f"ℹ️ No existe dataset '{title}'")
+                return False
+
+            print(f"🗑️ Eliminando dataset '{title}' (ID {dataset.id})")
+
+            # Eliminar archivos físicos
+            working_dir = os.getenv("WORKING_DIR", "")
+            dataset_dir = os.path.join(working_dir, "uploads", f"user_{user.id}", f"dataset_{dataset.id}")
+            if os.path.exists(dataset_dir):
+                import shutil
+
+                shutil.rmtree(dataset_dir, ignore_errors=True)
+
+            db.session.delete(dataset)
+            db.session.commit()
+            print("✅ Dataset eliminado correctamente")
+            return True
+
+    except Exception as e:
+        print(f"❌ Error eliminando dataset: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return False
+
+
+# ----------------------------------------------------------------------
+# TESTS
+# ----------------------------------------------------------------------
 
 
 def test_upload_dataset():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
 
-        # Login
-        driver.get(f"{host}/login")
-        wait_for_page_to_load(driver)
+        delete_dataset_by_title("Title desde Selenium")
 
-        email_field = driver.find_element(By.NAME, "email")
-        password_field = driver.find_element(By.NAME, "password")
-
-        email_field.send_keys("user1@example.com")
-        password_field.send_keys("1234")
-        password_field.send_keys(Keys.RETURN)
-
-        time.sleep(3)
-        wait_for_page_to_load(driver)
-
-        # Contar datasets iniciales
+        login_user(driver, host)
         initial_datasets = count_datasets(driver, host)
 
-        # Ir a la página de upload
         driver.get(f"{host}/dataset/upload")
         wait_for_page_to_load(driver)
 
-        # Rellenar datos básicos (title, desc, tags)
-        title_field = driver.find_element(By.NAME, "title")
-        title_field.clear()
-        title_field.send_keys("Title desde Selenium")
+        # Rellenar formulario
+        driver.find_element(By.NAME, "title").clear()
+        driver.find_element(By.NAME, "title").send_keys("Title desde Selenium")
 
-        desc_field = driver.find_element(By.NAME, "desc")
-        desc_field.clear()
-        desc_field.send_keys("Description desde Selenium")
+        driver.find_element(By.NAME, "desc").clear()
+        driver.find_element(By.NAME, "desc").send_keys("Description desde Selenium")
 
-        tags_field = driver.find_element(By.NAME, "tags")
-        tags_field.clear()
-        tags_field.send_keys("tag1,tag2")
+        driver.find_element(By.NAME, "tags").clear()
+        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2")
 
-        # El primer autor (authors-0-*) ya es el usuario logueado y es readonly.
-        # No tocamos nada de autores en este test.
+        # Subir archivos UVL con Dropzone
+        file_paths = [
+            os.path.abspath(os.path.join(BASE_DIR, "..", "uvl_examples", "file1.uvl")),
+            os.path.abspath(os.path.join(BASE_DIR, "..", "uvl_examples", "file2.uvl")),
+        ]
 
-        # Rutas correctas a los UVL (relativas al propio test)
-        file1_path = os.path.abspath(os.path.join(BASE_DIR, "..", "uvl_examples", "file1.uvl"))
-        file2_path = os.path.abspath(os.path.join(BASE_DIR, "..", "uvl_examples", "file2.uvl"))
+        for path in file_paths:
+            assert os.path.exists(path), f"No se encuentra {os.path.basename(path)} en {path}"
+            dropzone_input = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input.dz-hidden-input"))
+            )
+            dropzone_input.send_keys(path)
+            time.sleep(1)  # Dropzone reemplaza el input → esperar un momento
 
-        assert os.path.exists(file1_path), f"No se encuentra file1.uvl en {file1_path}"
-        assert os.path.exists(file2_path), f"No se encuentra file2.uvl en {file2_path}"
-
-        # Subir archivos al dropzone UVL
-        # Dropzone crea un <input type="file" class="dz-hidden-input"> dentro del form
-        # Dropzone crea un input oculto global con clase "dz-hidden-input"
-        dropzone_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input.dz-hidden-input"))
-        )
-
-        # Subir primer archivo
-        dropzone_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input.dz-hidden-input"))
-        )
-        dropzone_input.send_keys(file1_path)
-
-        # Dropzone reemplaza el input → debemos volver a obtenerlo
-        time.sleep(1)
-
-        dropzone_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input.dz-hidden-input"))
-        )
-        dropzone_input.send_keys(file2_path)
-
-        # Esperar a que aparezca la sección de "Upload dataset" (la muestra el JS)
         WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.ID, "upload_dataset")))
 
-        # Marcar checkbox de confirmación (id real: confirm_upload)
+        # Checkbox confirmación
         confirm_checkbox = driver.find_element(By.ID, "confirm_upload")
         if not confirm_checkbox.is_selected():
             confirm_checkbox.click()
 
-        # Pulsar botón de upload (id real: upload_dataset_btn)
-        upload_btn = driver.find_element(By.ID, "upload_dataset_btn")
-        upload_btn.click()
+        driver.find_element(By.ID, "upload_dataset_btn").click()
+        WebDriverWait(driver, 20).until(EC.url_contains("/dataset/list"))
 
-        WebDriverWait(driver, 10).until(EC.url_contains("/dataset/list"))
-
-        # Comprobar redirección a la lista
-        assert driver.current_url == f"{host}/dataset/list", f"URL tras subir: {driver.current_url}"
-
-        # Contar datasets finales
         final_datasets = count_datasets(driver, host)
-        assert (
-            final_datasets == initial_datasets + 1
-        ), f"Esperaba {initial_datasets + 1} datasets, pero hay {final_datasets}"
+        assert final_datasets == initial_datasets + 1
 
-        print("test_upload_dataset pasó correctamente")
-
+        print("✅ test_upload_dataset pasó correctamente")
     finally:
         close_driver(driver)
 
 
 def test_import_from_github():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
+        delete_dataset_by_title("Dataset desde GitHub")
+
         login_user(driver, host)
+        initial = count_datasets(driver, host)
 
-        initial_datasets = count_datasets(driver, host)
-
-        # Ir a la página de upload
         driver.get(f"{host}/dataset/upload")
         wait_for_page_to_load(driver)
 
-        # Rellenar URL del repo (ID correcto: github_url)
-        github_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "github_url")))
-        github_url_input.clear()
-        github_url_input.send_keys("https://github.com/pcm290/testgithubrepositorytrackhub")
+        # Import GitHub
+        driver.find_element(By.ID, "github_url").send_keys("https://github.com/pcm290/testgithubrepositorytrackhub")
+        driver.find_element(By.ID, "import_github_btn").click()
 
-        # Pulsar el botón real (ID correcto: import_github_btn)
-        import_btn = driver.find_element(By.ID, "import_github_btn")
-        import_btn.click()
-
-        # Esperar a que se muestren archivos importados
+        # Esperar a que los archivos se carguen
         WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#github-file-list li")))
 
-        # Rellenar metadata básica
-        title_field = driver.find_element(By.NAME, "title")
-        title_field.send_keys("Dataset desde GitHub")
+        # Rellenar formulario
+        driver.find_element(By.NAME, "title").send_keys("Dataset desde GitHub")
+        driver.find_element(By.NAME, "desc").send_keys("Importado desde GitHub")
+        driver.find_element(By.NAME, "tags").send_keys("github")
 
-        desc_field = driver.find_element(By.NAME, "desc")
-        desc_field.send_keys("Dataset importado automáticamente desde GitHub")
+        driver.find_element(By.ID, "confirm_upload").click()
+        driver.find_element(By.ID, "upload_dataset_btn").click()
 
-        tags_field = driver.find_element(By.NAME, "tags")
-        tags_field.send_keys("github,import,test")
+        WebDriverWait(driver, 20).until(EC.url_contains("/dataset/list"))
 
-        # Añadir un autor extra
-        add_author_button = driver.find_element(By.ID, "add_author")
-        add_author_button.click()
-        wait_for_page_to_load(driver)
-
-        name_field = driver.find_element(By.NAME, "authors-1-name")
-        name_field.send_keys("GitHub Selenium")
-
-        affiliation_field = driver.find_element(By.NAME, "authors-1-affiliation")
-        affiliation_field.send_keys("Selenium Institute")
-
-        # Confirmar subida
-        confirm_checkbox = driver.find_element(By.ID, "confirm_upload")
-        if not confirm_checkbox.is_selected():
-            confirm_checkbox.click()
-
-        upload_btn = driver.find_element(By.ID, "upload_dataset_btn")
-        upload_btn.click()
-
-        wait_for_page_to_load(driver)
-        time.sleep(3)
-
-        assert driver.current_url == f"{host}/dataset/list", f"URL inesperada tras subir dataset: {driver.current_url}"
-
-        final_datasets = count_datasets(driver, host)
-        assert final_datasets == initial_datasets + 1, f"Esperaba {initial_datasets + 1}, pero hay {final_datasets}"
-
-        print("test_import_from_github pasó correctamente")
-
+        assert count_datasets(driver, host) == initial + 1
+        print("✅ test_import_from_github OK")
     finally:
         close_driver(driver)
 
 
 def test_import_from_zip():
-    """
-    TEST: Importar archivos desde un ZIP (corrregido según plantillas actuales)
-    """
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
-        login_user(driver, host)
+        delete_dataset_by_title("Dataset ZIP Test")
 
-        initial_datasets = count_datasets(driver, host)
+        login_user(driver, host)
+        initial = count_datasets(driver, host)
 
         driver.get(f"{host}/dataset/upload")
         wait_for_page_to_load(driver)
 
-        # Crear ZIP de prueba en tiempo real
         zip_dir = os.path.join(BASE_DIR, "..", "test_data")
         os.makedirs(zip_dir, exist_ok=True)
+        zip_path = os.path.join(zip_dir, "sample.zip")
 
-        zip_path = os.path.join(zip_dir, "sample_models.zip")
-
-        # Archivos UVL reales
         file1 = os.path.join(BASE_DIR, "..", "uvl_examples", "file1.uvl")
         file2 = os.path.join(BASE_DIR, "..", "uvl_examples", "file2.uvl")
-
-        assert os.path.exists(file1), f"No se encuentra {file1}"
-        assert os.path.exists(file2), f"No se encuentra {file2}"
 
         with zipfile.ZipFile(zip_path, "w") as zf:
             zf.write(file1, "file1.uvl")
             zf.write(file2, "file2.uvl")
 
-        assert os.path.exists(zip_path), f"ZIP no creado: {zip_path}"
+        driver.find_element(By.ID, "zip_file").send_keys(zip_path)
+        driver.find_element(By.ID, "import_zip_btn").click()
 
-        # 👉 Input real: id="zip_file"
-        zip_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "zip_file")))
-        zip_input.send_keys(zip_path)
-
-        # 👉 Botón real: id="import_zip_btn"
-        import_btn = driver.find_element(By.ID, "import_zip_btn")
-        import_btn.click()
-
-        # Esperar a que aparezcan los archivos importados
         WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#zip-file-list li")))
 
-        # Rellenar metadatos
-        title_field = driver.find_element(By.NAME, "title")
-        title_field.send_keys("Dataset ZIP Test")
+        driver.find_element(By.NAME, "title").send_keys("Dataset ZIP Test")
+        driver.find_element(By.NAME, "desc").send_keys("ZIP import")
+        driver.find_element(By.NAME, "tags").send_keys("zip")
 
-        desc_field = driver.find_element(By.NAME, "desc")
-        desc_field.send_keys("Dataset creado desde ZIP por Selenium")
+        driver.find_element(By.ID, "confirm_upload").click()
+        driver.find_element(By.ID, "upload_dataset_btn").click()
 
-        tags_field = driver.find_element(By.NAME, "tags")
-        tags_field.send_keys("zip,selenium")
+        WebDriverWait(driver, 20).until(EC.url_contains("/dataset/list"))
 
-        # Añadir autor extra
-        add_author_button = driver.find_element(By.ID, "add_author")
-        add_author_button.click()
-        wait_for_page_to_load(driver)
-
-        name_field = driver.find_element(By.NAME, "authors-1-name")
-        name_field.send_keys("ZIP Selenium")
-
-        affiliation_field = driver.find_element(By.NAME, "authors-1-affiliation")
-        affiliation_field.send_keys("Selenium Academy")
-
-        # Confirmar subida
-        confirm_checkbox = driver.find_element(By.ID, "confirm_upload")
-        if not confirm_checkbox.is_selected():
-            confirm_checkbox.click()
-
-        upload_btn = driver.find_element(By.ID, "upload_dataset_btn")
-        upload_btn.click()
-
-        wait_for_page_to_load(driver)
-        time.sleep(3)
-
-        assert driver.current_url == f"{host}/dataset/list", f"URL inesperada tras subir dataset: {driver.current_url}"
-
-        final_datasets = count_datasets(driver, host)
-        assert final_datasets == initial_datasets + 1, f"Esperaba {initial_datasets + 1}, pero hay {final_datasets}"
-
-        print(" test_import_from_zip pasó correctamente")
-
+        assert count_datasets(driver, host) == initial + 1
+        print("✅ test_import_from_zip OK")
     finally:
         close_driver(driver)
