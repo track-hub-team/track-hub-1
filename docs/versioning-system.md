@@ -1,21 +1,24 @@
-# Sistema de Versionado de Datasets
 
-## Descripción General
+# Dataset Versioning System
 
-El sistema de versionado de Track Hub proporciona control de versiones completo para datasets, soportando tanto versiones locales de desarrollo como versiones sincronizadas con Zenodo con DOIs. El sistema implementa versionado semántico (MAJOR.MINOR.PATCH) con creación automática de versiones y clara diferenciación entre versiones locales y publicadas.
 
-## Motivación e Implementación
+## General Description
 
-### Problema Original
+The Track Hub versioning system provides full version control for datasets, supporting both local development versions and versions synchronized with Zenodo with DOIs. The system implements semantic versioning (MAJOR.MINOR.PATCH) with automatic version creation and clear differentiation between local and published versions.
 
-Cuando se republicaba un dataset con cambios de archivos, Fakenodo/Zenodo creaba una nueva deposición con un nuevo ID y DOI (ejemplo: `.v1` → `.v2`), pero el sistema no capturaba correctamente este nuevo ID, causando que:
-- El dataset quedara en v1 indefinidamente
-- No se pudiera republicar nuevamente
-- No hubiera registro de las versiones de Zenodo en el historial
 
-### Solución Implementada
+## Motivation and Implementation
 
-Se implementó un sistema de versionado completo que sincroniza las versiones locales con Zenodo:
+### Original Problem
+
+When a dataset was republished with file changes, Fakenodo/Zenodo created a new deposition with a new ID and DOI (e.g., `.v1` → `.v2`), but the system did not correctly capture this new ID, causing:
+- The dataset to remain at v1 indefinitely
+- Republishing was not possible again
+- There was no record of Zenodo versions in the history
+
+### Implemented Solution
+
+A complete versioning system was implemented that synchronizes local versions with Zenodo:
 
 1. **Captura del nuevo deposition_id**: Se modificó `publish_dataset` en `routes.py` para capturar el nuevo ID cuando Fakenodo crea una nueva versión
 2. **Campo version_doi**: Se añadió el campo `version_doi` al modelo `DatasetVersion` para almacenar el DOI específico de cada versión de Zenodo
@@ -23,39 +26,41 @@ Se implementó un sistema de versionado completo que sincroniza las versiones lo
 4. **Sincronización de archivos**: Antes de publicar, se suben los archivos locales a Fakenodo para que detecte cambios correctamente
 5. **Versionado de metadatos**: Se implementó la capacidad de crear versiones MINOR/PATCH para cambios solo de metadatos en datasets publicados
 
-### Requisito Cumplido
 
-> "Permitir a los usuarios explorar y comprender la evolución de un dataset a través de sus versiones, diferenciando claramente entre ediciones menores (sin nuevo DOI) y ediciones mayores (con nuevo DOI)."
+### Requirement Met
 
-El sistema ahora diferencia claramente:
-- **Versiones mayores (MAJOR)**: Cambios de archivos → Nuevo DOI de Zenodo
-- **Versiones menores (MINOR/PATCH)**: Cambios de metadatos → Sin DOI, solo seguimiento local
-- **Versiones locales**: Pre-publicación → Sin DOI, desarrollo local
+> "Allow users to explore and understand the evolution of a dataset through its versions, clearly differentiating between minor editions (without new DOI) and major editions (with new DOI)."
 
-## Tipos de Versiones
+The system now clearly differentiates:
+- **Major versions (MAJOR)**: File changes → New Zenodo DOI
+- **Minor versions (MINOR/PATCH)**: Metadata changes → No DOI, local tracking only
+- **Local versions**: Pre-publication → No DOI, local development
 
-### 1. Versiones Locales (Pre-Publicación)
 
-**Badge:** 📦 Versión local - Creada antes de publicar en Zenodo
+## Types of Versions
 
-Las versiones locales se crean antes de que un dataset sea publicado en Zenodo. Permiten a los usuarios rastrear cambios durante el desarrollo y preparación del dataset.
+### 1. Local Versions (Pre-Publication)
 
-**Características:**
-- Sin DOI asignado
-- Puede usar cualquier número de versión (ej: v0.1.0, v1.0.0, v2.0.0)
-- Los números de versión son independientes de las futuras versiones de Zenodo
-- Se crean manualmente vía botón "Create New Version" o automáticamente al editar
-- El usuario puede elegir el tipo de versión: PATCH, MINOR o MAJOR
+**Badge:** 📦 Local version - Created before publishing to Zenodo
 
-**Cuándo se crean:**
-- Manualmente haciendo clic en "Create New Version" en Version History
-- Automáticamente al editar un dataset no publicado (auto-versionado)
+Local versions are created before a dataset is published to Zenodo. They allow users to track changes during the development and preparation of the dataset.
 
-**Comportamiento del número de versión:**
-- El usuario tiene control total vía selector de tipo de versión
-- Puede incrementar PATCH (X.Y.Z+1), MINOR (X.Y+1.0) o MAJOR (X+1.0.0)
+**Features:**
+- No DOI assigned
+- Can use any version number (e.g., v0.1.0, v1.0.0, v2.0.0)
+- Version numbers are independent of future Zenodo versions
+- Created manually via the "Create New Version" button or automatically when editing
+- The user can choose the version type: PATCH, MINOR, or MAJOR
 
-**Implementación:**
+**When they are created:**
+- Manually by clicking "Create New Version" in Version History
+- Automatically when editing an unpublished dataset (auto-versioning)
+
+**Version number behavior:**
+- The user has full control via the version type selector
+- Can increment PATCH (X.Y.Z+1), MINOR (X.Y+1.0), or MAJOR (X+1.0.0)
+
+**Implementation:**
 ```python
 # En routes.py - edit_dataset()
 if not dataset.ds_meta_data.dataset_doi:
@@ -68,30 +73,31 @@ if not dataset.ds_meta_data.dataset_doi:
     )
 ```
 
-### 2. Versiones Mayores (Publicaciones en Zenodo)
 
-**Badge:** 📌 Versión mayor (X.0.0) - Publicada en Zenodo con DOI
+### 2. Major Versions (Zenodo Publications)
 
-Las versiones mayores se crean cuando un dataset se publica o republica en Zenodo con cambios de archivos. Cada versión mayor tiene su propio DOI único.
+**Badge:** 📌 Major version (X.0.0) - Published in Zenodo with DOI
 
-**Características:**
-- Tiene DOI específico de versión (ej: `10.9999/dataset.v1`, `10.9999/dataset.v2`)
-- Almacenado en el campo `DatasetVersion.version_doi`
-- Formato de número de versión: X.0.0 (ej: 1.0.0, 2.0.0, 3.0.0)
-- Creada automáticamente por el sistema
-- Requiere cambios de archivos para disparar nueva versión mayor
+Major versions are created when a dataset is published or republished in Zenodo with file changes. Each major version has its own unique DOI.
 
-**Cuándo se crean:**
-- Primera publicación en Zenodo → v1.0.0 con DOI
-- Republicación con cambios de archivos → v2.0.0, v3.0.0, etc. con nuevo DOI
-- Fakenodo/Zenodo detecta cambios de archivos y crea nueva deposición
+**Features:**
+- Has a specific version DOI (e.g., `10.9999/dataset.v1`, `10.9999/dataset.v2`)
+- Stored in the `DatasetVersion.version_doi` field
+- Version number format: X.0.0 (e.g., 1.0.0, 2.0.0, 3.0.0)
+- Automatically created by the system
+- Requires file changes to trigger a new major version
 
-**Comportamiento del número de versión:**
-- Extraído del DOI de Zenodo (ej: `.v2` → `2.0.0`)
-- Incrementado automáticamente por Zenodo cuando los archivos cambian
-- No se puede crear manualmente
+**When they are created:**
+- First publication in Zenodo → v1.0.0 with DOI
+- Republishing with file changes → v2.0.0, v3.0.0, etc. with new DOI
+- Fakenodo/Zenodo detects file changes and creates a new deposition
 
-**Implementación - Parte 1: Sincronización de Archivos**
+**Version number behavior:**
+- Extracted from the Zenodo DOI (e.g., `.v2` → `2.0.0`)
+- Automatically incremented by Zenodo when files change
+- Cannot be created manually
+
+**Implementation - Part 1: File Synchronization**
 ```python
 # En routes.py - publish_dataset()
 # Líneas 175-202
@@ -122,7 +128,7 @@ if is_republication and old_fingerprint != current_fingerprint:
         logger.info(f"[PUBLISH] Uploaded {uploaded_count} new file(s) to Fakenodo")
 ```
 
-**Implementación - Parte 2: Captura del Nuevo ID y DOI**
+**Implementation - Part 2: Capture of New ID and DOI**
 ```python
 # En routes.py - publish_dataset()
 # Líneas 204-244
@@ -153,7 +159,7 @@ if new_deposition_id != dataset.ds_meta_data.deposition_id:
 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, **update_data)
 ```
 
-**Implementación - Parte 3: Auto-creación de DatasetVersion**
+**Implementation - Part 3: Auto-creation of DatasetVersion**
 ```python
 # En routes.py - publish_dataset()
 # Líneas 245-280
@@ -206,29 +212,30 @@ if not version_exists:
     logger.info(f"[PUBLISH] Created version {version_number} with DOI {deposition_doi}")
 ```
 
-### 3. Versiones Menores (Mejoras de Metadatos)
 
-**Badge:** 📝 Versión menor (X.Y.0) - Mejoras de metadatos (sin DOI)
+### 3. Minor Versions (Metadata Improvements)
 
-Las versiones menores rastrean mejoras significativas de metadatos después de la publicación sin crear un nuevo DOI.
+**Badge:** 📝 Minor version (X.Y.0) - Metadata improvements (no DOI)
 
-**Características:**
-- Sin DOI (usa el DOI conceptual del dataset padre)
-- Formato de número de versión: X.Y.0 (ej: 1.1.0, 1.2.0, 2.1.0)
-- Solo para datasets publicados
-- Solo para cambios de metadatos
-- El usuario elige "Minor" en el selector de tipo de versión
+Minor versions track significant metadata improvements after publication without creating a new DOI.
 
-**Cuándo se crean:**
-- Al editar metadatos de dataset publicado (título, descripción, tags)
-- Usuario selecciona tipo de versión "Minor" en el formulario de edición
-- Sin archivos añadidos
+**Features:**
+- No DOI (uses the parent dataset's conceptual DOI)
+- Version number format: X.Y.0 (e.g., 1.1.0, 1.2.0, 2.1.0)
+- Only for published datasets
+- Only for metadata changes
+- The user selects "Minor" in the version type selector
 
-**Comportamiento del número de versión:**
-- Incrementa Y en X.Y.0 (ej: 1.0.0 → 1.1.0 → 1.2.0)
-- Resetea Z a 0
+**When they are created:**
+- When editing metadata of a published dataset (title, description, tags)
+- User selects "Minor" version type in the edit form
+- No files added
 
-**Implementación:**
+**Version number behavior:**
+- Increments Y in X.Y.0 (e.g., 1.0.0 → 1.1.0 → 1.2.0)
+- Resets Z to 0
+
+**Implementation:**
 ```python
 # En routes.py - edit_dataset()
 # Líneas 865-920
@@ -275,33 +282,35 @@ if dataset.ds_meta_data.dataset_doi:
         flash(f"Dataset updated successfully! {version_type_label} version: v{version.version_number} (metadata only) 📝", "success")
 ```
 
-### 4. Versiones de Parche (Correcciones de Metadatos)
 
-**Badge:** 🔧 Versión de parche (X.Y.Z) - Correcciones de metadatos (sin DOI)
+### 4. Patch Versions (Metadata Corrections)
 
-Las versiones de parche rastrean correcciones menores de metadatos después de la publicación sin crear un nuevo DOI.
+**Badge:** 🔧 Patch version (X.Y.Z) - Metadata corrections (no DOI)
 
-**Características:**
-- Sin DOI (usa el DOI conceptual del dataset padre)
-- Formato de número de versión: X.Y.Z (ej: 1.0.1, 1.0.2, 1.1.1)
-- Solo para datasets publicados
-- Solo para cambios de metadatos
-- El usuario elige "Patch" en el selector de tipo de versión (por defecto)
+Patch versions track minor metadata corrections after publication without creating a new DOI.
 
-**Cuándo se crean:**
-- Al editar metadatos de dataset publicado (corregir errores tipográficos, formato)
-- Usuario selecciona tipo de versión "Patch" en el formulario de edición (por defecto)
-- Sin archivos añadidos
+**Features:**
+- No DOI (uses the parent dataset's conceptual DOI)
+- Version number format: X.Y.Z (e.g., 1.0.1, 1.0.2, 1.1.1)
+- Only for published datasets
+- Only for metadata changes
+- The user selects "Patch" in the version type selector (default)
 
-**Comportamiento del número de versión:**
-- Incrementa Z en X.Y.Z (ej: 1.0.0 → 1.0.1 → 1.0.2)
+**When they are created:**
+- When editing metadata of a published dataset (fixing typos, formatting)
+- User selects "Patch" version type in the edit form (default)
+- No files added
 
-**Implementación:**
-Ver código de Versiones Menores arriba - usa la misma lógica con `version_bump_type = "patch"`
+**Version number behavior:**
+- Increments Z in X.Y.Z (e.g., 1.0.0 → 1.0.1 → 1.0.2)
 
-## Ejemplos de Flujo de Trabajo
+**Implementation:**
+See Minor Versions code above - uses the same logic with `version_bump_type = "patch"`
 
-### Ejemplo 1: Desarrollo de Nuevo Dataset y Publicación
+
+## Workflow Examples
+
+### Example 1: New Dataset Development and Publication
 
 ```
 1. Crear dataset → v0.0.1 (local, auto-creada)
@@ -312,15 +321,17 @@ Ver código de Versiones Menores arriba - usa la misma lógica con `version_bump
    └─ La v1.0.0 local permanece como versión local
    └─ Se crea nueva v1.0.0 con DOI
 
-Historial de Versiones muestra:
-- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Publicada en Zenodo
-- 📦 v1.0.0 - Versión local
-- 📦 v0.1.0 - Versión local
-- 📦 v0.0.2 - Versión local
-- 📦 v0.0.1 - Versión local
+
+Version History shows:
+- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Published in Zenodo
+- 📦 v1.0.0 - Local version
+- 📦 v0.1.0 - Local version
+- 📦 v0.0.2 - Local version
+- 📦 v0.0.1 - Local version
 ```
 
-### Ejemplo 2: Dataset Publicado con Cambios de Metadatos
+
+### Example 2: Published Dataset with Metadata Changes
 
 ```
 1. Dataset publicado en v1.0.0 (DOI: 10.9999/dataset.v1)
@@ -329,15 +340,17 @@ Historial de Versiones muestra:
 4. Editar metadatos, elegir MINOR → v1.1.0 (menor, sin DOI)
 5. Editar metadatos, elegir PATCH → v1.1.1 (parche, sin DOI)
 
-Historial de Versiones muestra:
-- 🔧 v1.1.1 - Versión de parche ✓ Actual
-- 📝 v1.1.0 - Versión menor
-- 🔧 v1.0.2 - Versión de parche
-- 🔧 v1.0.1 - Versión de parche
-- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Publicada en Zenodo
+
+Version History shows:
+- 🔧 v1.1.1 - Patch version ✓ Current
+- 📝 v1.1.0 - Minor version
+- 🔧 v1.0.2 - Patch version
+- 🔧 v1.0.1 - Patch version
+- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Published in Zenodo
 ```
 
-### Ejemplo 3: Dataset Publicado con Cambios de Archivos
+
+### Example 3: Published Dataset with File Changes
 
 ```
 1. Dataset publicado en v1.0.0 (DOI: 10.9999/dataset.v1)
@@ -346,16 +359,18 @@ Historial de Versiones muestra:
 4. Añadir nuevo archivo, guardar → Archivos guardados localmente, mensaje: "Requiere republicación"
 5. Republicar en Zenodo → v2.0.0 (mayor, DOI: 10.9999/dataset.v2)
 
-Historial de Versiones muestra:
-- 📌 v2.0.0 (DOI: 10.9999/dataset.v2) - Publicada en Zenodo ✓ Actual
-- 🔧 v1.1.1 - Versión de parche
-- 📝 v1.1.0 - Versión menor
-- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Publicada en Zenodo
+
+Version History shows:
+- 📌 v2.0.0 (DOI: 10.9999/dataset.v2) - Published in Zenodo ✓ Current
+- 🔧 v1.1.1 - Patch version
+- 📝 v1.1.0 - Minor version
+- 📌 v1.0.0 (DOI: 10.9999/dataset.v1) - Published in Zenodo
 ```
 
-## Implementación Técnica Completa
 
-### Esquema de Base de Datos
+## Complete Technical Implementation
+
+### Database Schema
 
 **Modelo DatasetVersion:**
 ```python
@@ -385,9 +400,10 @@ class DatasetVersion(db.Model):
         }
 ```
 
-**Campo clave: `version_doi`**
-- `NULL` = Versión Local, Menor o de Parche (sin DOI)
-- `NOT NULL` = Versión Mayor (publicada en Zenodo con DOI)
+
+**Key field: `version_doi`**
+- `NULL` = Local, Minor, or Patch Version (no DOI)
+- `NOT NULL` = Major Version (published in Zenodo with DOI)
 
 **Migración de Base de Datos:**
 ```python
@@ -400,9 +416,10 @@ def downgrade():
     op.drop_column('data_set_version', 'version_doi')
 ```
 
-### Restricciones de Creación Manual de Versiones
 
-**Bloqueo para Datasets Publicados:**
+### Manual Version Creation Restrictions
+
+**Block for Published Datasets:**
 ```python
 # En routes.py - create_version()
 # Líneas 558-590
@@ -441,9 +458,10 @@ def create_version(dataset_id: int):
     return redirect(url_for('dataset.list_versions', dataset_id=dataset.id))
 ```
 
-### Lógica de Visualización de Versiones
 
-**En list_versions.html:**
+### Version Display Logic
+
+**In list_versions.html:**
 ```jinja2
 <!-- Líneas 152-189 -->
 {% if version.version_doi %}
@@ -491,16 +509,18 @@ def create_version(dataset_id: int):
 {% endif %}
 ```
 
-**Lógica de diferenciación:**
-1. Si `version.version_doi` existe → Versión Mayor (con DOI)
-2. Si dataset tiene DOI Y versión >= 1.x.x → Versión Menor/Parche (post-publicación)
-   - Si segundo número > 0 (X.Y.0 donde Y > 0) → Versión Menor
-   - Si no → Versión de Parche
-3. Si no → Versión Local (pre-publicación)
 
-### Integración con Zenodo/Fakenodo
+**Differentiation logic:**
+1. If `version.version_doi` exists → Major Version (with DOI)
+2. If dataset has DOI AND version >= 1.x.x → Minor/Patch Version (post-publication)
+    - If second number > 0 (X.Y.0 where Y > 0) → Minor Version
+    - Else → Patch Version
+3. Else → Local Version (pre-publication)
 
-**Sincronización de Archivos Antes de Publicar:**
+
+### Integration with Zenodo/Fakenodo
+
+**File Synchronization Before Publishing:**
 ```python
 # En routes.py - publish_dataset()
 # Obtener archivos actuales en Fakenodo/Zenodo
@@ -514,7 +534,8 @@ for feature_model in dataset.feature_models:
             zenodo_service.upload_file(dataset, deposition_id, feature_model, user)
 ```
 
-**Detección de Nueva Versión:**
+
+**Detection of New Version:**
 ```python
 # Publicar en Zenodo
 publish_response = zenodo_service.publish_deposition(deposition_id)
@@ -526,11 +547,13 @@ if new_deposition_id != old_deposition_id:
     deposition_id = new_deposition_id
 ```
 
-## Interfaz de Usuario
 
-### Página de Historial de Versiones
+## User Interface
 
-**Sección de Cabecera (para datasets publicados):**
+### Version History Page
+
+
+**Header Section (for published datasets):**
 ```html
 <!-- list_versions.html líneas 52-81 -->
 <div class="card-body border-bottom bg-light">
@@ -550,17 +573,19 @@ if new_deposition_id != old_deposition_id:
 </div>
 ```
 
-**Lista de Versiones:**
-- Cada versión mostrada en tarjeta con encabezado codificado por color
-- Badge de versión (v1.0.0, v1.1.0, etc.) en fuente grande
-- Badge "Current" en la última versión
-- Badge de tipo (📌 Mayor / 📝 Menor / 🔧 Parche / 📦 Local)
-- Campo DOI con botón de copiar (solo versiones mayores)
-- Visualización de changelog
-- Botones de acción: Comparar, Ver
-- Estadísticas (features, constraints, modelos)
 
-**Estilo de Tarjetas de Versión:**
+**Version List:**
+- Each version shown in a card with color-coded header
+- Version badge (v1.0.0, v1.1.0, etc.) in large font
+- "Current" badge on the latest version
+- Type badge (📌 Major / 📝 Minor / 🔧 Patch / 📦 Local)
+- DOI field with copy button (major versions only)
+- Changelog display
+- Action buttons: Compare, View
+- Statistics (features, constraints, models)
+
+
+**Version Card Style:**
 ```html
 <!-- Versión más reciente: fondo azul -->
 <div class="card {% if loop.first %}border-primary bg-primary bg-opacity-10{% endif %}">
@@ -579,9 +604,10 @@ if new_deposition_id != old_deposition_id:
 </div>
 ```
 
-### Página de Editar Dataset
 
-**Para Datasets No Publicados:**
+### Edit Dataset Page
+
+**For Unpublished Datasets:**
 ```html
 <!-- edit_dataset.html líneas 30-34 -->
 <div class="alert alert-info">
@@ -590,7 +616,8 @@ if new_deposition_id != old_deposition_id:
 </div>
 ```
 
-**Para Datasets Publicados:**
+
+**For Published Datasets:**
 ```html
 <!-- edit_dataset.html líneas 26-29 -->
 <div class="alert alert-warning">
@@ -622,7 +649,8 @@ if new_deposition_id != old_deposition_id:
 </div>
 ```
 
-**JavaScript para Monitoreo de Archivos:**
+
+**JavaScript for File Monitoring:**
 ```javascript
 // edit_dataset.html líneas 154-169
 const filesInput = document.getElementById('files');
@@ -645,7 +673,8 @@ if (filesInput && versionTypeSelector && filesAddedWarning) {
 }
 ```
 
-### Modal Crear Nueva Versión (Solo No Publicados)
+
+### Create New Version Modal (Unpublished Only)
 
 ```html
 <!-- list_versions.html líneas 311-363 -->
@@ -694,23 +723,24 @@ if (filesInput && versionTypeSelector && filesAddedWarning) {
 </div>
 ```
 
-## Sistema de DOIs
 
-### DOI Conceptual
-- Uno por dataset, nunca cambia
-- Siempre apunta a la última versión publicada
-- Formato: `10.9999/dataset-identifier` (sin `.vX`)
-- Mostrado en cabecera del historial de versiones
-- Almacenado en `DSMetaData.dataset_doi`
+## DOI System
 
-### DOI Específico de Versión
-- Uno por versión mayor
-- Permanentemente vinculado a los archivos de esa versión
-- Formato: `10.9999/dataset-identifier.v1`, `.v2`, `.v3`, etc.
-- Almacenado en `DatasetVersion.version_doi`
-- Usado para citas para asegurar reproducibilidad
+### Conceptual DOI
+- One per dataset, never changes
+- Always points to the latest published version
+- Format: `10.9999/dataset-identifier` (without `.vX`)
+- Shown in the version history header
+- Stored in `DSMetaData.dataset_doi`
 
-**Relación entre DOIs:**
+### Specific Version DOI
+- One per major version
+- Permanently linked to the files of that version
+- Format: `10.9999/dataset-identifier.v1`, `.v2`, `.v3`, etc.
+- Stored in `DatasetVersion.version_doi`
+- Used for citations to ensure reproducibility
+
+**Relationship between DOIs:**
 ```
 DOI Conceptual:      10.9999/fakenodo.a843b04d
                               ↓
@@ -721,45 +751,46 @@ DOIs de Versión:     10.9999/fakenodo.a843b04d.v1 (Primera publicación)
                      10.9999/fakenodo.a843b04d.v3 (Otra republicación)
 ```
 
-## Mejores Prácticas
 
-### Para Usuarios
+## Best Practices
 
-**Durante Desarrollo (antes de publicación):**
-- Usa versiones locales para rastrear tu progreso
-- Elige tipos de versión (PATCH/MINOR/MAJOR) para organizar cambios
-- Los números de versión son solo para tu referencia
-- No te preocupes por "desperdiciar" números de versión
+### For Users
 
-**Después de Publicación:**
-- Usa PATCH para correcciones de errores tipográficos, correcciones menores
-- Usa MINOR para mejoras sustanciales de metadatos (mejores descripciones, nuevas etiquetas)
-- Añade archivos y republica para versiones MAJOR (nuevo DOI)
-- Siempre añade mensajes de changelog significativos
+**During Development (before publication):**
+- Use local versions to track your progress
+- Choose version types (PATCH/MINOR/MAJOR) to organize changes
+- Version numbers are for your reference only
+- Don't worry about "wasting" version numbers
 
-**Para Citas:**
-- Usa DOI específico de versión para reproducibilidad
-- Usa DOI conceptual para referenciar "el dataset" en general
+**After Publication:**
+- Use PATCH for typo fixes, minor corrections
+- Use MINOR for substantial metadata improvements (better descriptions, new tags)
+- Add files and republish for MAJOR versions (new DOI)
+- Always add meaningful changelog messages
 
-### Para Desarrolladores
+**For Citations:**
+- Use specific version DOI for reproducibility
+- Use conceptual DOI to reference "the dataset" in general
 
-**Añadir Nuevos Tipos de Versión:**
-1. Añadir lógica de badge en `list_versions.html`
-2. Actualizar creación de versión en `routes.py`
-3. Actualizar selectores de UI en `edit_dataset.html`
-4. Añadir tests en `test_versions.py`
-5. Documentar en este archivo
+### For Developers
 
-**Modificar Lógica de Versionado:**
-1. Actualizar `VersionService.create_version()`
-2. Actualizar auto-versionado en ruta `edit_dataset`
-3. Actualizar lógica de visualización en templates
-4. Ejecutar suite completa de tests
-5. Actualizar documentación
+**Adding New Version Types:**
+1. Add badge logic in `list_versions.html`
+2. Update version creation in `routes.py`
+3. Update UI selectors in `edit_dataset.html`
+4. Add tests in `test_versions.py`
+5. Document in this file
+
+**Modifying Versioning Logic:**
+1. Update `VersionService.create_version()`
+2. Update auto-versioning in `edit_dataset` route
+3. Update display logic in templates
+4. Run the full test suite
+5. Update documentation
 
 ## Testing
 
-Ejecutar tests relacionados con versionado:
+Run versioning-related tests:
 ```bash
 # Tests de versionado
 pytest app/modules/dataset/tests/test_versions.py -v
@@ -774,18 +805,20 @@ pytest app/modules/fakenodo/tests/test_fakenodo_integration.py -v
 rosemary test
 ```
 
-**Cobertura actual:** 83 tests pasando
 
-**Tests importantes:**
-- `test_publish_dataset_success` - Primera publicación
-- `test_publish_dataset_already_published` - Republicación sin cambios
-- `test_publish_after_changing_files_creates_new_version_and_doi` - Republicación con archivos
-- `test_cannot_create_version_after_publish` - Bloqueo de versiones manuales
-- `test_captures_new_deposition_id_from_response` - Captura de nuevo ID
+**Current coverage:** 83 tests passing
 
-## Mejoras Futuras
+**Important tests:**
+- `test_publish_dataset_success` - First publication
+- `test_publish_dataset_already_published` - Republishing without changes
+- `test_publish_after_changing_files_creates_new_version_and_doi` - Republishing with files
+- `test_cannot_create_version_after_publish` - Manual version block
+- `test_captures_new_deposition_id_from_response` - Capture of new ID
 
-Posibles mejoras a considerar:
+
+## Future Improvements
+
+Possible improvements to consider:
 
 1. **UI de Comparación de Versiones**: Mostrar diffs detallados entre versiones
 2. **Ramificación de Versiones**: Permitir crear versiones desde versiones no-últimas
@@ -796,63 +829,66 @@ Posibles mejoras a considerar:
 7. **Comentarios de Versión**: Permitir hilos de discusión en versiones
 8. **Exportación de Versión**: Exportar metadatos de versión y changelog como PDF
 
-## Archivos Relacionados
+
+## Related Files
 
 ### Backend
-- `app/modules/dataset/routes.py` - Lógica principal de versionado
-- `app/modules/dataset/models.py` - Modelo DatasetVersion
-- `core/services/VersionService.py` - Servicio de creación de versiones
-- `app/modules/fakenodo/services.py` - Integración con Zenodo
+- `app/modules/dataset/routes.py` - Main versioning logic
+- `app/modules/dataset/models.py` - DatasetVersion model
+- `core/services/VersionService.py` - Version creation service
+- `app/modules/fakenodo/services.py` - Zenodo integration
 
 ### Frontend
-- `app/modules/dataset/templates/dataset/list_versions.html` - UI de historial de versiones
-- `app/modules/dataset/templates/dataset/edit_dataset.html` - Formulario de edición con versionado
-- `app/modules/dataset/templates/dataset/view_dataset.html` - Vista de dataset
+- `app/modules/dataset/templates/dataset/list_versions.html` - Version history UI
+- `app/modules/dataset/templates/dataset/edit_dataset.html` - Edit form with versioning
+- `app/modules/dataset/templates/dataset/view_dataset.html` - Dataset view
 
 ### Tests
-- `app/modules/dataset/tests/test_versions.py` - Tests de funcionalidad de versiones
-- `app/modules/dataset/tests/test_republication.py` - Tests de republicación
-- `app/modules/fakenodo/tests/test_fakenodo_integration.py` - Tests de integración con Zenodo
+- `app/modules/dataset/tests/test_versions.py` - Versioning functionality tests
+- `app/modules/dataset/tests/test_republication.py` - Republishing tests
+- `app/modules/fakenodo/tests/test_fakenodo_integration.py` - Zenodo integration tests
 
-### Base de Datos
-- `migrations/versions/2ff2c8b0a045_add_version_doi_field.py` - Migración añadiendo version_doi
+### Database
+- `migrations/versions/2ff2c8b0a045_add_version_doi_field.py` - Migration adding version_doi
 
-## Soporte
 
-Para preguntas o problemas:
-- Revisar logs: archivos `app.log.*`
-- Revisar casos de test para ejemplos
-- Ver `docs/zenodo.md` para documentación específica de Zenodo
-- Ver `docs/fakenodo.md` para testing local con Fakenodo
+## Support
 
-## Resumen de Cambios Implementados
+For questions or issues:
+- Check logs: `app.log.*` files
+- Review test cases for examples
+- See `docs/zenodo.md` for Zenodo-specific documentation
+- See `docs/fakenodo.md` for local testing with Fakenodo
 
-### Cambios en Base de Datos
-1. ✅ Añadido campo `version_doi` a tabla `data_set_version`
-2. ✅ Migración aplicada: `2ff2c8b0a045_add_version_doi_field`
 
-### Cambios en Backend
-1. ✅ `routes.py::publish_dataset()` - Captura nuevo deposition_id y DOI
-2. ✅ `routes.py::publish_dataset()` - Sincroniza archivos antes de publicar
-3. ✅ `routes.py::publish_dataset()` - Auto-crea DatasetVersion con DOI
-4. ✅ `routes.py::edit_dataset()` - Diferencia cambios de metadatos vs archivos
-5. ✅ `routes.py::edit_dataset()` - Auto-crea versiones MINOR/PATCH para metadatos
-6. ✅ `routes.py::create_version()` - Bloquea versiones manuales para datasets publicados
-7. ✅ `models.py::DatasetVersion` - Añadido campo version_doi y to_dict()
+## Summary of Implemented Changes
 
-### Cambios en Frontend
-1. ✅ `list_versions.html` - Diferenciación visual de tipos de versión
-2. ✅ `list_versions.html` - Sección de DOI Conceptual vs Tipos de Versiones
-3. ✅ `list_versions.html` - Badges codificados por color con mejores textos
-4. ✅ `list_versions.html` - Modal de crear versión simplificado para pre-publicación
-5. ✅ `edit_dataset.html` - Selector de tipo de versión MINOR/PATCH
-6. ✅ `edit_dataset.html` - JavaScript para advertencia cuando se añaden archivos
-7. ✅ `edit_dataset.html` - Mensaje de auto-versionado para datasets no publicados
+### Database Changes
+1. ✅ Added `version_doi` field to `data_set_version` table
+2. ✅ Migration applied: `2ff2c8b0a045_add_version_doi_field`
+
+### Backend Changes
+1. ✅ `routes.py::publish_dataset()` - Captures new deposition_id and DOI
+2. ✅ `routes.py::publish_dataset()` - Synchronizes files before publishing
+3. ✅ `routes.py::publish_dataset()` - Auto-creates DatasetVersion with DOI
+4. ✅ `routes.py::edit_dataset()` - Differentiates metadata vs file changes
+5. ✅ `routes.py::edit_dataset()` - Auto-creates MINOR/PATCH versions for metadata
+6. ✅ `routes.py::create_version()` - Blocks manual versions for published datasets
+7. ✅ `models.py::DatasetVersion` - Added version_doi field and to_dict()
+
+### Frontend Changes
+1. ✅ `list_versions.html` - Visual differentiation of version types
+2. ✅ `list_versions.html` - Conceptual DOI vs Version Types section
+3. ✅ `list_versions.html` - Color-coded badges with better texts
+4. ✅ `list_versions.html` - Simplified create version modal for pre-publication
+5. ✅ `edit_dataset.html` - MINOR/PATCH version type selector
+6. ✅ `edit_dataset.html` - JavaScript warning when files are added
+7. ✅ `edit_dataset.html` - Auto-versioning message for unpublished datasets
 
 ### Tests
-1. ✅ `test_republication.py` - 4 tests para captura de deposition_id
-2. ✅ `test_versions.py` - Test actualizado para MockZenodoService completo
-3. ✅ 83/83 tests pasando
+1. ✅ `test_republication.py` - 4 tests for deposition_id capture
+2. ✅ `test_versions.py` - Updated test for full MockZenodoService
+3. ✅ 83/83 tests passing
 
-### Documentación
-1. ✅ `docs/versioning-system.md` - Documentación completa en español con implementación
+### Documentation
+1. ✅ `docs/versioning-system.md` - Complete documentation in Spanish with implementation

@@ -1,32 +1,28 @@
-# Notificación por Correo: Dataset Aceptado en Comunidad
 
-## Descripción General
+# Email Notification: Dataset Accepted in Community
 
-El sistema de notificaciones por correo electrónico de Track Hub envía automáticamente un email al usuario cuando uno de sus datasets ha sido aceptado en una comunidad.
-Esta funcionalidad mejora la experiencia del usuario, informando de manera inmediata sobre la aprobación y fomentando la participación activa en las comunidades.
+## General Description
+
+The Track Hub email notification system automatically sends an email to the user when one of their datasets has been accepted into a community. This feature improves the user experience by immediately informing them of the approval and encouraging active participation in communities.
 
 ---
 
-## Ubicación
+## Location
 
-- **Servicio principal:**
+- **Main service:**
   - `services.py` → `MailService.send_dataset_approved_notification`
-
-- **Lógica de aprobación:**
+- **Approval logic:**
   - `services.py` → `CommunityService.approve_request`
-
-- **Configuración de correo:**
+- **Mail configuration:**
   - `__init__.py` (Flask-Mail SendGrid)
-
-- **Tests unitarios:**
+- **Unit tests:**
   - `test_unit.py`
 
-
-## Arquitectura
+## Architecture
 
 ### MailService
 
-Clase encargada de la gestión y envío de correos electrónicos:
+Class responsible for managing and sending emails:
 
 ```python
 class MailService:
@@ -40,15 +36,17 @@ class MailService:
         # Genera y envía el correo de notificación
 ```
 
-### Flujo de aprobación
 
-1) Un curador aprueba la solicitud de inclusión de un dataset en una comunidad
-2) `CommunityService.approve_request` llama a `MailService.send_dataset_approved_notification`
-3) Se genera y envía el correo al usuario solicitante
+### Approval Flow
 
-## Funcionalidad principal
+1) A curator approves the request to include a dataset in a community
+2) `CommunityService.approve_request` calls `MailService.send_dataset_approved_notification`
+3) The email is generated and sent to the requesting user
 
-Envío de Notificación de Aprobación
+
+## Main Functionality
+
+Approval Notification Sending
 
 ```python
 def send_dataset_approved_notification(requester_email, requester_name, dataset_name, community_name):
@@ -62,13 +60,13 @@ def send_dataset_approved_notification(requester_email, requester_name, dataset_
     )
 ```
 
-- **Asunto:** `Dataset aprobado en <nombre_comunidad>`
 
-- **Destinatario:** Email del usuario solicitante
+- **Subject:** `Dataset aprobado en <nombre_comunidad>`
+- **Recipient:** Requesting user's email
+- **Content:** Personalized message with the user's name, dataset, and community
 
-- **Contenido:** Mensaje personalizado con el nombre del usuario, dataset y comunidad
 
-#### Ejemplo de email HTML:
+#### Example HTML email:
 
 ```html
 <!DOCTYPE html>
@@ -98,10 +96,11 @@ def send_dataset_approved_notification(requester_email, requester_name, dataset_
 </html>
 ```
 
-## Configuración
 
-- **Servidor SMTP:** Se utiliza SendGrid (configurado en variables de entorno)
-- **Variables relevantes:**
+## Configuration
+
+- **SMTP server:** SendGrid is used (configured via environment variables)
+- **Relevant variables:**
   - `MAIL_SERVER`
   - `MAIL_PORT`
   - `MAIL_USE_TTL`
@@ -110,11 +109,12 @@ def send_dataset_approved_notification(requester_email, requester_name, dataset_
   - `MAIL_PASSWORD`
   - `MAIL_DEFAULT_SENDER`
 
+
 ## Tests
 
-- **Cobertura:** `test_send_dataset_approved_notification_format`en `test_unit.py` verifica:
-    - Que el email se envía correctamente
-    - QUe el asunto y destinatario son correctos
+- **Coverage:** `test_send_dataset_approved_notification_format` in `test_unit.py` checks:
+  - That the email is sent correctly
+  - That the subject and recipient are correct
 
 ```python
 def test_send_dataset_approved_notification_format(self, mock_send):
@@ -130,64 +130,67 @@ def test_send_dataset_approved_notification_format(self, mock_send):
 
 ## Manejo de errores
 
-- Si ocurre un error al enviar el correo, se registra en logs y se devuelve un mensaje de error
-- El flujo de aprobación continúa aunque falle el envío del email, pero se deja constancia en los logs
 
-## Resumen del flujo
+- If an error occurs while sending the email, it is logged and an error message is returned
+- The approval flow continues even if the email fails to send, but the event is recorded in the logs
+
+
+## Flow summary
 
 ```
-Curador aprueba solicitud
-    ↓
+Curator approves request
+  ↓
 CommunityService.approve_request()
-    ↓
+  ↓
 MailService.send_dataset_approved_notification()
-    ↓
-Usuario recibe email de aprobación
+  ↓
+User receives approval email
 ```
 
-## Limitaciones
 
-- El email solo se envía al usuario solicitante, no a tros miembros de la comunidad
-- No se envía notificación en caso de rechazo (solo en caso de aprobación)
+## Limitations
 
----
-
-Esta funcionalidad garantiza que los usuarios estén informados en tiempo real sobre la aceptación de sus datasets en comunidades, reforzando la transparencia y la motivación para contribuir.
-
-## Notificación por Correo: Nuevo Dataset en Comunidades Seguidas
-
-## Descripción General
-
-TrackHub envía automáticamente una notificación por correo electrónico a los usuarios que **siguen una comunidad** cuando un nuevo dataset es añadido a dicha comunidad.
-
-Esta funcionalidad permite a los miembros estar informados en tiempo real de las nuevas contribuciones dentro de las comunidades que siguen, fomentando la participación y el descubrimiento de nuevos datasets relevantes.
+- The email is only sent to the requesting user, not to other community members
+- No notification is sent in case of rejection (only in case of approval)
 
 ---
 
-## Ubicación
 
-- **Servicio de correo:**
+This feature ensures that users are informed in real time about the acceptance of their datasets in communities, reinforcing transparency and motivation to contribute.
+
+
+## Email Notification: New Dataset in Followed Communities
+
+## General Description
+
+TrackHub automatically sends an email notification to users who **follow a community** when a new dataset is added to that community.
+
+This feature allows members to be informed in real time about new contributions within the communities they follow, encouraging participation and the discovery of new relevant datasets.
+
+---
+
+
+## Location
+
+- **Mail service:**
   - `services.py` → `MailService.send_new_dataset_in_community_notification`
-
-- **Lógica de disparo del evento:**
+- **Event trigger logic:**
   - `services.py` → `CommunityService.approve_request`
-
-- **Repositorios implicados:**
+- **Involved repositories:**
   - `repositories.py` → `CommunityFollowerRepository.get_followers_users`
-
-- **Configuración de correo:**
+- **Mail configuration:**
   - `__init__.py` (Flask-Mail + SendGrid)
-
-- **Tests unitarios**
+- **Unit tests:**
   - `test_unit.py` (MailService)
 
 ---
 
-## Arquitectura
+
+## Architecture
 
 ### MailService
 
-El envío del correo a los seguidores de una comunidad se centraliza en el servicio de correo mediante el siguiente método:
+Sending emails to community followers is centralized in the mail service using the following method:
 
 ```python
 class MailService:
@@ -203,42 +206,46 @@ class MailService:
         """
         ...
 ```
-Este método se encarga de:
-- Construir el asunto del correo
-- Generar el contenido HTML y texto plano
-- Delegar el envío a MailService.send_email
 
-### Flujo de aprobación del dataset
+This method is responsible for:
+- Building the email subject
+- Generating the HTML and plain text content
+- Delegating the sending to MailService.send_email
 
-1. Un usuario propone un dataset a una comunidad mediante una solicitud.
-2. Un curador de la comunidad revisa la solicitud y la aprueba.
-3. El sistema añade el dataset de forma oficial a la comunidad.
-4. Se obtienen los usuarios que siguen dicha comunidad.
-5. Se envía una notificación por correo electrónico a todos los seguidores.
 
-Flujo simplificado:
+### Dataset approval flow
+
+1. A user proposes a dataset to a community through a request.
+2. A community curator reviews the request and approves it.
+
+3. The system officially adds the dataset to the community.
+4. The users who follow that community are obtained.
+5. An email notification is sent to all followers.
+
+Simplified flow:
 
 ```text
-Curador aprueba solicitud
-    ↓
+Curator approves request
+  ↓
 CommunityService.approve_request()
-    ↓
-Añadir dataset a la comunidad
-    ↓
-Obtener seguidores de la comunidad
-    ↓
+  ↓
+Add dataset to community
+  ↓
+Get community followers
+  ↓
 MailService.send_new_dataset_in_community_notification()
-    ↓
-Seguidores reciben email
+  ↓
+Followers receive email
 ```
 
-## Funcionalidad principal
 
-### Envío de notificación a seguidores de la comunidad
+## Main Functionality
 
-Cuando un dataset es aprobado e incorporado a una comunidad, el sistema envía una notificación por correo electrónico a todos los usuarios que siguen dicha comunidad.
+### Sending notification to community followers
 
-La funcionalidad se implementa en el servicio de correo mediante el siguiente método:
+When a dataset is approved and incorporated into a community, the system sends an email notification to all users who follow that community.
+
+The functionality is implemented in the mail service using the following method:
 
 ```python
 def send_new_dataset_in_community_notification(
@@ -255,24 +262,24 @@ def send_new_dataset_in_community_notification(
         text_body=text_body,
     )
 ```
-#### Detalles del correo
 
-- **Asunto:**
+#### Email details
+
+- **Subject:**
   `Nuevo dataset en <nombre_comunidad>`
+- **Recipients:**
+  Users who follow the community (**To** field)
+- **Message content:**
+  - Name of the community where the dataset was published
+  - Name of the added dataset
+  - Informative and neutral message
 
-- **Destinatarios:**
-  Usuarios que siguen la comunidad (campo **To**)
-
-- **Contenido del mensaje:**
-  - Nombre de la comunidad en la que se ha publicado el dataset
-  - Nombre del dataset añadido
-  - Mensaje informativo y neutral
-
-El correo se envía en formato HTML e incluye una versión alternativa en texto plano para garantizar la compatibilidad con distintos clientes de correo.
+The email is sent in HTML format and includes an alternative plain text version to ensure compatibility with different email clients.
 
 ---
 
-#### Ejemplo de email HTML
+
+#### Example HTML email
 
 ```html
 <!DOCTYPE html>
@@ -296,38 +303,42 @@ El correo se envía en formato HTML e incluye una versión alternativa en texto 
 </body>
 </html>
 
-## Obtención de destinatarios
 
-Los destinatarios del correo se obtienen a partir de los usuarios que siguen la comunidad en la que se ha aprobado el nuevo dataset.
+## Obtaining recipients
 
-La obtención de seguidores se realiza a través del repositorio de seguimiento de comunidades:
+The recipients of the email are obtained from the users who follow the community where the new dataset has been approved.
+
+Followers are obtained through the community follower repository:
 
 ```python
 followers = self.follower_repository.get_followers_users(community_id)
 ```
 
-A partir de esta lista de usuarios se construye el listado final de direcciones de correo electrónico:
+
+From this list of users, the final list of email addresses is built:
 
 ```python
 recipients = sorted({u.email for u in followers if u.email})
 ```
 
-### Características del proceso
 
-- Solo se incluyen usuarios que disponen de una dirección de correo válida.
-- Se eliminan direcciones de correo duplicadas.
-- Si no existen seguidores, no se envía ningún correo.
-- La obtención de destinatarios no bloquea el flujo principal de aprobación del dataset.
+### Process characteristics
 
-## Manejo de errores
+- Only users with a valid email address are included.
+- Duplicate email addresses are removed.
+- If there are no followers, no email is sent.
+- Obtaining recipients does not block the main dataset approval flow.
 
-Si ocurre un error durante el envío del correo electrónico, el sistema maneja la excepción de forma controlada.
 
-- El error se registra en los logs del sistema para su posterior análisis.
-- El dataset **permanece aprobado** aunque falle el envío del correo.
-- El fallo en la notificación **no afecta a la consistencia del sistema** ni al flujo principal.
+## Error handling
 
-Ejemplo de manejo de errores:
+If an error occurs during email sending, the system handles the exception in a controlled manner.
+
+- The error is logged for later analysis.
+- The dataset **remains approved** even if the email fails to send.
+- The notification failure **does not affect system consistency** or the main flow.
+
+Example of error handling:
 
 ```python
 if not success:
@@ -336,69 +347,60 @@ if not success:
     )
 ```
 
-### Resumen del flujo
+
+### Flow summary
 
 ```text
-Dataset aprobado en comunidad
-        ↓
-Obtener seguidores de la comunidad
-        ↓
-Enviar correo de notificación
-        ↓
-Seguidores informados
+Dataset approved in community
+  ↓
+Get community followers
+  ↓
+Send notification email
+  ↓
+Followers informed
 ```
 
-## Notificación por Correo: Nuevo Dataset de Usuarios Seguidos
 
-## Descripción General
+# Email Notification: New Dataset from Followed Users
 
-TrackHub envía automáticamente una notificación por correo electrónico a los usuarios que **siguen a otro usuario** cuando este publica un nuevo dataset en la plataforma.
+## General Description
 
-Esta funcionalidad permite a los usuarios mantenerse informados de las nuevas contribuciones realizadas por los autores que siguen, favoreciendo el descubrimiento de datasets relevantes y la interacción dentro de la plataforma.
-
-La lógica de seguimiento entre usuarios ya se encuentra implementada y documentada en otro apartado, por lo que esta sección se centra exclusivamente en el envío de notificaciones por correo.
+TrackHub automatically sends an email notification to users who follow another user when that user publishes a new dataset on the platform. This feature allows users to stay informed about new contributions made by the authors they follow, promoting the discovery of relevant datasets and interaction within the platform. The user-following logic is already implemented and documented elsewhere, so this section focuses exclusively on email notification sending.
 
 ---
 
-## Ubicación
+## Location
 
-- Servicio de correo:
+- Mail service:
   - `services.py` → `MailService.send_new_dataset_by_followed_user_notification`
-
-- Lógica de disparo del evento:
+- Event trigger logic:
   - `dataset_service.py` → `DataSetService.create_from_form`
-
-- Repositorio implicado:
+- Involved repository:
   - `repositories.py` → `FollowerRepository.get_followers_users`
-
-- Configuración de correo:
+- Mail configuration:
   - `__init__.py` (Flask-Mail + SendGrid)
 
 ---
 
-## Arquitectura
+## Architecture
 
-El envío de notificaciones a seguidores de un usuario se realiza de forma automática tras la creación correcta de un dataset.
-
-El servicio DataSetService, concretamente en la función create_from_form, detecta el evento de publicación y se encarga de coordinar el proceso de notificación.
-
-La responsabilidad de construir y enviar el correo se delega al servicio MailService, mediante la función `send_new_dataset_by_followed_user_notification`, manteniendo así una separación clara entre la lógica de negocio y el envío de notificaciones.
+Notifications to followers of a user are sent automatically after a dataset is successfully created. The DataSetService, specifically in the create_from_form function, detects the publication event and coordinates the notification process. The responsibility for building and sending the email is delegated to the MailService, via the `send_new_dataset_by_followed_user_notification` function, thus maintaining a clear separation between business logic and notification sending.
 
 ---
 
-## Flujo de publicación del dataset
+## Dataset Publication Flow
 
-1. Un usuario crea un nuevo dataset mediante el formulario de creación.
-2. El sistema valida los datos y persiste el dataset y su metadata.
-3. Al finalizar la función `DataSetService.create_from_form`, se obtienen los seguidores del autor utilizando `FollowerRepository.get_followers_users`.
-4. Se construye el nombre del autor y el título del dataset recién creado.
-5. Se invoca la función `MailService.send_new_dataset_by_followed_user_notification` para enviar la notificación.
-6. Los usuarios seguidores reciben el correo informativo.
+1. A user creates a new dataset using the creation form.
+2. The system validates the data and persists the dataset and its metadata.
+3. At the end of the `DataSetService.create_from_form` function, the author's followers are obtained using `FollowerRepository.get_followers_users`.
+4. The author's name and the title of the newly created dataset are built.
+5. The `MailService.send_new_dataset_by_followed_user_notification` function is called to send the notification.
+6. The follower users receive the informational email.
 
-Flujo simplificado:
+Simplified flow:
 
 ```text
-Publicación de dataset
+Dataset publication
 ↓
 DataSetService.create_from_form
 ↓
@@ -406,84 +408,73 @@ FollowerRepository.get_followers_users
 ↓
 MailService.send_new_dataset_by_followed_user_notification
 ↓
-Seguidores reciben email
+Followers receive email
 ```
 
-## Funcionalidad principal
+## Main Functionality
 
-Una vez creado el dataset, la función `DataSetService.create_from_form` obtiene los seguidores del autor llamando a `FollowerRepository.get_followers_users(author_id)`.
+Once the dataset is created, the `DataSetService.create_from_form` function obtains the author's followers by calling `FollowerRepository.get_followers_users(author_id)`. With the information obtained, the service builds the necessary data for the notification, including:
+- The author's name (from their profile or, failing that, their email).
+- The name of the published dataset.
 
-Con la información obtenida, el servicio construye los datos necesarios para la notificación, incluyendo:
-- El nombre del autor (a partir de su perfil o, en su defecto, su email).
-- El nombre del dataset publicado.
-
-A continuación, se ejecuta la función `MailService.send_new_dataset_by_followed_user_notification`, que recibe como parámetros la lista de destinatarios, el nombre del autor y el nombre del dataset, y se encarga de generar y enviar el correo.
+Next, the `MailService.send_new_dataset_by_followed_user_notification` function is executed, which receives as parameters the list of recipients, the author's name, and the dataset name, and is responsible for generating and sending the email.
 
 ---
 
-## Detalles del correo
+## Email Details
 
-- Asunto:
-  Nuevo dataset publicado por <nombre_del_autor>
+- Subject:
+  New dataset published by <author_name>
+- Recipients:
+  Users who follow the dataset author, included via blind carbon copy (BCC).
+- Privacy:
+  The use of BCC in the MailService.send_new_dataset_by_followed_user_notification function prevents followers from seeing other users' email addresses.
+- Message content:
+  - Name of the author who published the dataset.
+  - Name of the published dataset.
+  - Informative message inviting to check the dataset on the platform.
 
-- Destinatarios:
-  Usuarios que siguen al autor del dataset, incluidos mediante copia oculta (BCC).
-
-- Privacidad:
-  El uso de BCC en la función MailService.send_new_dataset_by_followed_user_notification evita que los seguidores puedan ver las direcciones de correo de otros usuarios.
-
-- Contenido del mensaje:
-  - Nombre del autor que ha publicado el dataset.
-  - Nombre del dataset publicado.
-  - Mensaje informativo invitando a consultar el dataset en la plataforma.
-
-El correo se envía en formato HTML e incluye una versión alternativa en texto plano para garantizar la compatibilidad con distintos clientes de correo.
+The email is sent in HTML format and includes an alternative plain text version to ensure compatibility with different email clients.
 
 ---
 
-## Ejemplo de contenido del correo
+## Example Email Content
 
-El mensaje informa al usuario de que uno de los autores a los que sigue ha publicado un nuevo dataset, mostrando claramente el nombre del autor y el título del dataset, junto con un mensaje invitando a acceder a la plataforma para consultarlo.
-
----
-
-## Obtención de destinatarios
-
-Los destinatarios del correo se obtienen a partir de la función FollowerRepository.get_followers_users, que devuelve los usuarios que siguen al autor del dataset.
-
-A partir de este conjunto de usuarios, la función DataSetService.create_from_form construye la lista final de direcciones de correo electrónico que se pasará a MailService.send_new_dataset_by_followed_user_notification.
-
-Características del proceso:
-
-- Solo se incluyen usuarios que disponen de una dirección de correo válida.
-- Se eliminan direcciones de correo duplicadas.
-- El orden de los destinatarios es determinista.
-- Si el autor no tiene seguidores, no se envía ningún correo.
-- La obtención de destinatarios no bloquea el flujo principal de creación del dataset.
+The message informs the user that one of the authors they follow has published a new dataset, clearly showing the author's name and the dataset title, along with a message inviting them to access the platform to check it out.
 
 ---
 
-## Manejo de errores
+## Obtaining Recipients
 
-La llamada a MailService.send_new_dataset_by_followed_user_notification se realiza dentro de un bloque de control de excepciones.
+The recipients of the email are obtained from the `FollowerRepository.get_followers_users` function, which returns the users who follow the dataset author. From this set of users, the `DataSetService.create_from_form` function builds the final list of email addresses to be passed to `MailService.send_new_dataset_by_followed_user_notification`.
 
-Si ocurre un error durante el envío del correo electrónico:
+Process characteristics:
+- Only users with a valid email address are included.
+- Duplicate email addresses are removed.
+- The order of recipients is deterministic.
+- If the author has no followers, no email is sent.
+- Obtaining recipients does not block the main dataset creation flow.
 
-- El error se registra en los logs del sistema.
-- La función DataSetService.create_from_form continúa su ejecución normal.
-- El dataset se crea correctamente y permanece disponible en la plataforma.
-- El fallo en la notificación no afecta a la consistencia del sistema ni al proceso de publicación.
+---
 
-Este enfoque garantiza que los errores en servicios externos, como el sistema de correo, no impacten negativamente en la experiencia de los usuarios.
+## Error Handling
 
-## Resumen del flujo
+The call to `MailService.send_new_dataset_by_followed_user_notification` is made within an exception handling block. If an error occurs during email sending:
+- The error is logged in the system logs.
+- The `DataSetService.create_from_form` function continues its normal execution.
+- The dataset is created correctly and remains available on the platform.
+- The notification failure does not affect system consistency or the publication process.
+
+This approach ensures that errors in external services, such as the mail system, do not negatively impact the user experience.
+
+## Flow Summary
 
 ```text
-Dataset subido por un usuario
+Dataset uploaded by a user
         ↓
-Obtener seguidores del usuario
+Get user's followers
         ↓
-Enviar correo de notificación
+Send notification email
         ↓
-Seguidores informados
+Followers informed
 ```

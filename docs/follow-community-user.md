@@ -1,189 +1,210 @@
-# Seguimiento de Usuarios (Follow / Unfollow Users)
 
-## Descripción General
+# User Following (Follow / Unfollow Users)
 
-TrackHub permite a los usuarios **seguir a otros usuarios (autores de datasets)** para mantenerse informados sobre su actividad dentro de la plataforma.
 
-Cuando un usuario sigue a otro, el sistema registra esta relación y permite:
-- Mostrar el estado de seguimiento en la vista de datasets
-- Listar los usuarios seguidos en el perfil
-- Dejar de seguir usuarios desde distintas vistas (dataset y perfil)
+## General Description
 
-Esta funcionalidad fomenta el descubrimiento de autores relevantes y facilita el seguimiento de sus contribuciones sin necesidad de búsquedas manuales.
+TrackHub allows users to **follow other users (dataset authors)** to stay informed about their activity within the platform.
+
+When a user follows another, the system records this relationship and enables:
+- Displaying the follow status in the dataset view
+- Listing followed users in the profile
+- Unfollowing users from different views (dataset and profile)
+
+This feature encourages the discovery of relevant authors and makes it easier to keep track of their contributions without manual searches.
 
 ---
 
-## Ubicación
 
-- **Modelos de datos:**
+## Location
+
+- **Data models:**
   - `models.py` → `Follower`
 
-- **Repositorio de acceso a datos:**
+- **Data access repository:**
   - `repositories.py` → `FollowerRepository`
 
-- **Servicio principal:**
+- **Main service:**
   - `services.py` → `CommunityService`
 
-- **Rutas HTTP:**
-  - `routes.py` → Rutas `/community/user/<id>/follow` y `/community/user/<id>/unfollow`
+- **HTTP routes:**
+  - `routes.py` → Routes `/community/user/<id>/follow` and `/community/user/<id>/unfollow`
 
-- **Integración en vistas:**
+- **View integration:**
   - `dataset/view_dataset.html`
   - `profile/summary.html`
 
 ---
 
-## Arquitectura
 
-### Modelo Follower
+## Architecture
 
-Representa la relación de seguimiento entre usuarios (User → User):
+### Follower Model
+
+Represents the following relationship between users (User → User):
 
 ```python
 def __repr__(self):
     return f"Follower<follower_id={self.follower_id}, followed_id={self.followed_id}>"
 
 ```
-Cada registro indica que un usuario (`follower_id`) sigue a otro (`followed_id`).
 
-Restricciones:
-- Un usuario solo puede seguir a otro una vez
-- No se permite seguirse a uno mismo
+Each record indicates that a user (`follower_id`) follows another (`followed_id`).
+
+Restrictions:
+- A user can only follow another user once
+- Self-following is not allowed
+
 
 
 ### FollowerRepository
 
-Repositorio encargado del acceso a la base de datos para el seguimiento de usuarios.
+Repository responsible for database access for user following.
 
-Funciones principales:
+Main functions:
 
 - `follow(follower_id, followed_id)`
 - `unfollow(follower_id, followed_id)`
 - `is_following(follower_id, followed_id)`
 - `get_followed_users(user_id)`
 
-Este repositorio encapsula toda la lógica de persistencia y consulta relacionada con el seguimiento.
+
+This repository encapsulates all persistence and query logic related to following.
 
 ---
 
+
 ### CommunityService
 
-El servicio de comunidades centraliza también la lógica de seguimiento de usuarios, ya que fue diseñado conjuntamente con el seguimiento de comunidades.
+The community service also centralizes the user following logic, as it was designed together with community following.
 
-Funciones principales utilizadas:
+Main functions used:
 
 - `follow_user(follower_id, followed_id)`
 - `unfollow_user(follower_id, followed_id)`
 - `is_following_user(follower_id, followed_id)`
 - `get_followed_users(user_id)`
 
-Este servicio valida reglas de negocio como:
-- Evitar que un usuario se siga a sí mismo
-- Evitar duplicados
-- Gestionar errores de consistencia
+
+This service validates business rules such as:
+- Preventing a user from following themselves
+- Avoiding duplicates
+- Handling consistency errors
 
 ---
 
-## Funcionalidad Principal
 
-### Seguir Usuario
+## Main Functionality
 
-Permite a un usuario autenticado comenzar a seguir a otro usuario.
+### Follow User
 
-Ruta utilizada:
+Allows an authenticated user to start following another user.
+
+Route used:
 
 `def follow_user(followed_id):`
 
-Flujo:
-1. El usuario pulsa el botón “Follow” en la vista de un dataset
-2. Se envía una petición POST a la ruta correspondiente
-3. `CommunityService.follow_user` valida y crea la relación
-4. Se devuelve el nuevo estado de seguimiento
-5. La interfaz se actualiza dinámicamente mediante JavaScript
+
+Flow:
+1. The user clicks the “Follow” button in the dataset view
+2. A POST request is sent to the corresponding route
+3. `CommunityService.follow_user` validates and creates the relationship
+4. The new follow status is returned
+5. The interface is dynamically updated via JavaScript
 
 ---
 
-### Dejar de Seguir Usuario
 
-Permite eliminar una relación de seguimiento existente.
+### Unfollow User
 
-Ruta utilizada:
+Allows removing an existing follow relationship.
+
+Route used:
 
 `def unfollow_user(followed_id):`
 
-Flujo:
-1. El usuario pulsa el botón “Unfollow”
-2. Se elimina la relación en base de datos
-3. Se devuelve el estado actualizado
-4. La interfaz refleja inmediatamente el cambio
+
+Flow:
+1. The user clicks the “Unfollow” button
+2. The relationship is removed from the database
+3. The updated status is returned
+4. The interface immediately reflects the change
 
 ---
 
-### Comprobación de Seguimiento
 
-Para mostrar correctamente el estado del botón en la vista de dataset, se utiliza:
+### Follow Status Check
+
+To correctly display the button status in the dataset view, the following is used:
 
 `def is_following_user(follower_id, followed_id):`
 
-Esta función se evalúa al cargar la vista para decidir si mostrar “Follow” o “Unfollow”.
+
+This function is evaluated when loading the view to decide whether to show “Follow” or “Unfollow”.
 
 ---
 
-## Integración en Dataset
 
-En la vista de un dataset:
-- Se muestra un botón de seguimiento junto al autor
-- El botón cambia dinámicamente según el estado actual
-- La acción se realiza sin recargar la página (AJAX)
+## Integration in Dataset
 
-Esto permite seguir autores directamente desde sus publicaciones.
+In the dataset view:
+- A follow button is shown next to the author
+- The button changes dynamically according to the current status
+- The action is performed without reloading the page (AJAX)
+
+This allows following authors directly from their publications.
 
 ---
 
-## Integración en el Perfil
 
-En el perfil del usuario:
-- Se muestra un listado de usuarios seguidos
-- Cada elemento incluye información básica del usuario
-- Se permite dejar de seguir directamente desde el listado
+## Integration in Profile
 
-El listado se genera dinámicamente a partir de:
+In the user's profile:
+- A list of followed users is shown
+- Each item includes basic user information
+- Unfollowing is allowed directly from the list
+
+The list is generated dynamically from:
 
 `def get_followed_users(user_id):`
 
 ---
 
-## Manejo de Errores
 
-- No se permite seguirse a uno mismo
-- No se crean relaciones duplicadas
-- Si ocurre un error en la base de datos, se devuelve un mensaje controlado
-- Las acciones AJAX devuelven siempre un estado de éxito o error
+## Error Handling
+
+- Self-following is not allowed
+- Duplicate relationships are not created
+- If a database error occurs, a controlled message is returned
+- AJAX actions always return a success or error status
 
 ---
 
-## Resumen del Flujo
+
+## Flow Summary
 
 ```text
-Usuario pulsa “Follow” en dataset
+User clicks “Follow” on dataset
 ↓
-Ruta /community/user/<id>/follow
+Route /community/user/<id>/follow
 ↓
 CommunityService.follow_user
 ↓
 FollowerRepository.follow
 ↓
-Se crea la relación de seguimiento
+The follow relationship is created
 ↓
-La interfaz se actualiza dinámicamente
+The interface is dynamically updated
 ```
 
-## Limitaciones
 
-- Actualmente no se envían notificaciones por correo al usuario seguido
-- El seguimiento es unidireccional (no implica reciprocidad)
-- No existe aún una vista pública del perfil del usuario seguido
+## Limitations
+
+- Currently, no email notifications are sent to the followed user
+- Following is unidirectional (does not imply reciprocity)
+- There is not yet a public view of the followed user's profile
 
 ---
 
-Esta funcionalidad permite a los usuarios construir una red de autores de interés, facilitando el seguimiento de nuevas publicaciones y mejorando la experiencia de descubrimiento dentro de TrackHub.
+
+This feature allows users to build a network of interesting authors, making it easier to follow new publications and improving the discovery experience within TrackHub.

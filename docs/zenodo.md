@@ -1,24 +1,28 @@
-# Integración con Zenodo
 
-## Descripción General
+# Zenodo Integration
 
-El módulo Zenodo de Track Hub proporciona integración completa con la plataforma Zenodo para publicar datasets y obtener DOIs permanentes. Incluye soporte para desarrollo mediante Fakenodo, un servicio mock que simula la API de Zenodo.
 
-## Ubicación
+## General Description
 
-- **Servicio**: `app/modules/zenodo/services.py`
-- **Rutas**: `app/modules/zenodo/routes.py`
-- **Repositorio**: `app/modules/zenodo/repositories.py`
-- **Formularios**: `app/modules/zenodo/forms.py`
-- **Modelos**: `app/modules/zenodo/models.py`
+The Zenodo module of Track Hub provides full integration with the Zenodo platform to publish datasets and obtain permanent DOIs. It includes support for development via Fakenodo, a mock service that simulates the Zenodo API.
+
+
+## Location
+
+- **Service**: `app/modules/zenodo/services.py`
+- **Routes**: `app/modules/zenodo/routes.py`
+- **Repository**: `app/modules/zenodo/repositories.py`
+- **Forms**: `app/modules/zenodo/forms.py`
+- **Models**: `app/modules/zenodo/models.py`
 - **Templates**: `app/modules/zenodo/templates/zenodo/`
 - **Tests**: `app/modules/fakenodo/tests/test_zenodo_service_unit.py`
 
-## Arquitectura
+
+## Architecture
 
 ### ZenodoService
 
-Clase principal que gestiona la comunicación con Zenodo/Fakenodo:
+Main class that manages communication with Zenodo/Fakenodo:
 
 ```python
 class ZenodoService(BaseService):
@@ -29,9 +33,10 @@ class ZenodoService(BaseService):
         self.headers = {"Content-Type": "application/json"}
 ```
 
-## Configuración
 
-### Variables de Entorno
+## Configuration
+
+### Environment Variables
 
 ```bash
 # Desarrollo con Fakenodo
@@ -48,18 +53,20 @@ ZENODO_ACCESS_TOKEN=tu_token_produccion
 FLASK_ENV=production
 ```
 
-### Archivo `.env.example`
 
-Ubicación: `app/modules/zenodo/.env.example`
+### `.env.example` file
+
+Location: `app/modules/zenodo/.env.example`
 
 ```bash
 ZENODO_ACCESS_TOKEN=your_zenodo_access_token_here
 FAKENODO_URL=http://localhost:5001/api/deposit/depositions
 ```
 
-### Lógica de Selección de Backend
 
-El servicio selecciona automáticamente el backend correcto:
+### Backend Selection Logic
+
+The service automatically selects the correct backend:
 
 ```python
 def get_zenodo_url(self) -> str:
@@ -82,11 +89,13 @@ def get_zenodo_url(self) -> str:
     return os.getenv("ZENODO_API_URL", default).rstrip("/")
 ```
 
-## Funcionalidades Principales
 
-### 1. Test de Conexión
+## Main Features
 
-#### Test Simple
+### 1. Connection Test
+
+
+#### Simple Test
 ```python
 def test_connection(self) -> bool:
     """Verifica conectividad básica con Zenodo/Fakenodo."""
@@ -103,7 +112,8 @@ def test_connection(self) -> bool:
         return False
 ```
 
-#### Test Completo (E2E)
+
+#### Full Test (E2E)
 ```python
 def test_full_connection(self) -> Response:
     """
@@ -112,17 +122,19 @@ def test_full_connection(self) -> Response:
     """
 ```
 
-**Flujo del test completo**:
-1. Crea archivo temporal `test_file.txt`
-2. Crea nueva deposición
-3. Sube el archivo
-4. Elimina la deposición
-5. Limpia archivo temporal
-6. Retorna resultado con `success` y `messages`
+
+**Full test flow**:
+1. Creates temporary file `test_file.txt`
+2. Creates new deposition
+3. Uploads the file
+4. Deletes the deposition
+5. Cleans up temporary file
+6. Returns result with `success` and `messages`
 
 **Endpoint**: `GET /zenodo/test`
 
-### 2. Crear Deposición
+
+### 2. Create Deposition
 
 ```python
 def create_new_deposition(self, dataset: BaseDataset) -> dict:
@@ -161,7 +173,8 @@ def create_new_deposition(self, dataset: BaseDataset) -> dict:
     return response.json()
 ```
 
-### 3. Subir Archivo
+
+### 3. Upload File
 
 ```python
 def upload_file(self, dataset: BaseDataset, deposition_id: int,
@@ -196,7 +209,8 @@ def upload_file(self, dataset: BaseDataset, deposition_id: int,
     return response.json()
 ```
 
-### 4. Publicar Deposición
+
+### 4. Publish Deposition
 
 ```python
 def publish_deposition(self, deposition_id: int) -> dict:
@@ -216,7 +230,8 @@ def publish_deposition(self, deposition_id: int) -> dict:
     return response.json()
 ```
 
-### 5. Obtener DOI
+
+### 5. Get DOI
 
 ```python
 def get_doi(self, deposition_id: int) -> str:
@@ -224,7 +239,8 @@ def get_doi(self, deposition_id: int) -> str:
     return self.get_deposition(deposition_id).get("doi")
 ```
 
-### 6. Listar Deposiciones
+
+### 6. List Depositions
 
 ```python
 def get_all_depositions(self) -> dict:
@@ -242,10 +258,11 @@ def get_all_depositions(self) -> dict:
     return response.json()
 ```
 
-## Endpoints HTTP
+
+## HTTP Endpoints
 
 ### GET /zenodo
-Renderiza la página principal del módulo Zenodo.
+Renders the main page of the Zenodo module.
 
 ```python
 @zenodo_bp.route("/zenodo", methods=["GET"])
@@ -253,10 +270,11 @@ def index():
     return render_template("zenodo/index.html")
 ```
 
-### GET /zenodo/test
-Ejecuta test completo de conexión.
 
-**Respuesta exitosa**:
+### GET /zenodo/test
+Runs the full connection test.
+
+**Successful response**:
 ```json
 {
   "success": true,
@@ -264,7 +282,8 @@ Ejecuta test completo de conexión.
 }
 ```
 
-**Respuesta con error**:
+
+**Error response**:
 ```json
 {
   "success": false,
@@ -272,10 +291,11 @@ Ejecuta test completo de conexión.
 }
 ```
 
-### GET /zenodo/demo
-Demo visual del flujo completo de Zenodo.
 
-**Respuesta**:
+### GET /zenodo/demo
+Visual demo of the full Zenodo flow.
+
+**Response**:
 ```json
 {
   "success": true,
@@ -300,9 +320,10 @@ Demo visual del flujo completo de Zenodo.
 }
 ```
 
-## Despliegue en Render
 
-### Configuración del Servicio Principal
+## Deployment on Render
+
+### Main Service Configuration
 
 **render.yaml** (ejemplo):
 ```yaml
@@ -321,44 +342,53 @@ services:
         value: production
 ```
 
-### Configuración de Fakenodo en Render
+
+### Fakenodo Configuration on Render
 
 1. **Crear nuevo Web Service**:
    - Name: `track-hub-fakenodo`
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `cd app/modules/fakenodo && gunicorn -w 2 -b 0.0.0.0:$PORT app:app`
 
-2. **Variables de entorno**:
+
+2. **Environment variables**:
    ```
    FAKENODO_FILES_DIR=/data
    ```
 
-3. **Disco persistente**:
-   - Mount Path: `/data`
-   - Size: 1GB (ajustar según necesidad)
+
+3. **Persistent disk**:
+    - Mount Path: `/data`
+    - Size: 1GB (adjust as needed)
+
 
 4. **Health Check**:
-   - Path: `/health`
-   - Initial Delay: 30s
+    - Path: `/health`
+    - Initial Delay: 30s
 
-### Configuración para Producción con Zenodo Real
 
-1. Obtener token de Zenodo:
-   - Ir a https://zenodo.org/account/settings/applications/tokens/new/
-   - Scopes: `deposit:actions`, `deposit:write`
+### Production Configuration with Real Zenodo
 
-2. Configurar en Render:
+
+1. Obtain Zenodo token:
+    - Go to https://zenodo.org/account/settings/applications/tokens/new/
+    - Scopes: `deposit:actions`, `deposit:write`
+
+
+2. Configure in Render:
    ```bash
    ZENODO_API_URL=https://zenodo.org/api/deposit/depositions
    ZENODO_ACCESS_TOKEN=<tu_token_real>
    FLASK_ENV=production
    ```
 
-3. **NO configurar** `FAKENODO_URL` en producción
 
-### Testing en Sandbox
+3. **DO NOT set** `FAKENODO_URL` in production
 
-Para testing intermedio (antes de producción):
+
+### Testing in Sandbox
+
+For intermediate testing (before production):
 
 ```bash
 ZENODO_API_URL=https://sandbox.zenodo.org/api/deposit/depositions
@@ -366,19 +396,22 @@ ZENODO_ACCESS_TOKEN=<tu_token_sandbox>
 FLASK_ENV=development
 ```
 
-**Ventajas del Sandbox**:
-- DOIs reales pero en entorno de prueba
-- Sin impacto en registros de producción
-- Reseteable cuando sea necesario
-- Idéntico a producción en comportamiento
+
+**Sandbox advantages**:
+- Real DOIs but in a test environment
+- No impact on production records
+- Resettable when needed
+- Identical to production in behavior
+
 
 ## Testing
 
-### Tests Unitarios
+### Unit Tests
 
-Ubicación: `app/modules/fakenodo/tests/test_zenodo_service_unit.py`
+Location: `app/modules/fakenodo/tests/test_zenodo_service_unit.py`
 
-#### Test de Conexión Exitosa
+
+#### Successful Connection Test
 
 ```python
 def test_test_full_connection_success(env_ok):
@@ -395,7 +428,8 @@ def test_test_full_connection_success(env_ok):
         assert "messages" in payload
 ```
 
-#### Test de Fallo Graceful
+
+#### Graceful Failure Test
 
 ```python
 def test_test_full_connection_fails_gracefully(env_fail):
@@ -411,7 +445,8 @@ def test_test_full_connection_fails_gracefully(env_fail):
         assert len(payload.get("messages", [])) > 0
 ```
 
-### Fixtures de Testing
+
+### Testing Fixtures
 
 ```python
 @pytest.fixture
@@ -429,22 +464,24 @@ def env_fail(monkeypatch):
     monkeypatch.setenv("FLASK_ENV", "development")
 ```
 
-### Ejecutar Tests
+
+### Run Tests
 
 ```bash
-# Tests unitarios del servicio Zenodo
+# Zenodo service unit tests
 pytest app/modules/fakenodo/tests/test_zenodo_service_unit.py -v
 
-# Con cobertura
+# With coverage
 pytest app/modules/fakenodo/tests/test_zenodo_service_unit.py --cov=app.modules.zenodo --cov-report=html
 
-# Todos los tests de Zenodo y Fakenodo
+# All Zenodo and Fakenodo tests
 pytest app/modules/fakenodo/tests/ -v
 ```
 
+
 ## Logging
 
-El módulo incluye logging detallado:
+The module includes detailed logging:
 
 ```python
 logger.info("[ZENODO] Dataset sending to Zenodo...")
@@ -455,24 +492,28 @@ logger.info(f"[ZENODO] Response status: {response.status_code}")
 logger.info("[ZENODO] Deposition created successfully")
 ```
 
-**Niveles**:
-- `INFO`: Operaciones normales
-- `ERROR`: Errores en requests
-- `EXCEPTION`: Excepciones con traceback completo
 
-## Flujo Completo de Publicación
+**Levels**:
+- `INFO`: Normal operations
+- `ERROR`: Request errors
+- `EXCEPTION`: Exceptions with full traceback
 
-### 1. Usuario sube dataset a Track Hub
+
+## Complete Publication Flow
+
+### 1. User uploads dataset to Track Hub
 ```
 Usuario → Upload form → DatasetService → Database
 ```
 
-### 2. Usuario solicita publicación en Zenodo
+
+### 2. User requests publication to Zenodo
 ```
 Usuario → "Publish to Zenodo" → ZenodoService.create_new_deposition()
 ```
 
-### 3. Se crea deposición con metadatos
+
+### 3. Deposition is created with metadata
 ```python
 metadata = {
     "title": "GPS Track Collection - Mountain Routes",
@@ -485,27 +526,31 @@ metadata = {
 }
 ```
 
-### 4. Se suben archivos GPX
+
+### 4. GPX files are uploaded
 ```python
 for feature_model in dataset.feature_models:
     ZenodoService.upload_file(dataset, deposition_id, feature_model)
 ```
 
-### 5. Se publica y obtiene DOI
+
+### 5. It is published and DOI is obtained
 ```python
 result = ZenodoService.publish_deposition(deposition_id)
 doi = result["doi"]  # e.g., "10.5281/zenodo.1234567"
 ```
 
-### 6. DOI se guarda en el dataset
+
+### 6. DOI is saved in the dataset
 ```python
 dataset.ds_meta_data.doi = doi
 db.session.commit()
 ```
 
-## Manejo de Errores
 
-### Errores de Conexión
+## Error Handling
+
+### Connection Errors
 ```python
 try:
     response = requests.post(url, ...)
@@ -517,7 +562,8 @@ except requests.exceptions.Timeout:
     raise Exception("Request timeout")
 ```
 
-### Errores HTTP
+
+### HTTP Errors
 ```python
 if response.status_code == 400:
     raise Exception("Invalid metadata")
@@ -529,7 +575,8 @@ elif response.status_code >= 500:
     raise Exception("Zenodo server error")
 ```
 
-### Errores de Archivo
+
+### File Errors
 ```python
 try:
     with open(file_path, "rb") as fh:
@@ -540,60 +587,66 @@ except PermissionError:
     raise Exception(f"Cannot read file: {file_path}")
 ```
 
-## Mejores Prácticas
 
-### 1. Desarrollo Local
-- Usar **Fakenodo** siempre en desarrollo local
-- No gastar cuota de Zenodo innecesariamente
-- Tests rápidos sin latencia de red
+## Best Practices
 
-### 2. Testing en CI/CD
-- Usar Fakenodo en GitHub Actions
-- Alternativamente, usar Sandbox de Zenodo
-- Nunca usar producción en tests automáticos
+### 1. Local Development
+- Always use **Fakenodo** in local development
+- Do not waste Zenodo quota unnecessarily
+- Fast tests without network latency
+
+### 2. Testing in CI/CD
+- Use Fakenodo in GitHub Actions
+- Alternatively, use Zenodo Sandbox
+- Never use production in automated tests
 
 ### 3. Staging
-- Usar **Sandbox de Zenodo** en staging
-- Permite testing con DOIs reales (pero de prueba)
-- Reseteable si es necesario
+- Use **Zenodo Sandbox** in staging
+- Allows testing with real DOIs (but test only)
+- Resettable if needed
 
-### 4. Producción
-- Usar **Zenodo real** únicamente en producción
-- Proteger el token como secreto
-- Monitorizar cuota y límites de rate
+### 4. Production
+- Use **real Zenodo** only in production
+- Protect the token as a secret
+- Monitor quota and rate limits
+
 
 ## Troubleshooting
 
 ### Error: "FAKENODO_URL not set"
-**Solución**: Arrancar Fakenodo o configurar variable:
+**Solution**: Start Fakenodo or set the variable:
 ```bash
 export FAKENODO_URL=http://localhost:5001/api/deposit/depositions
 ```
 
+
 ### Error: "Invalid access token"
-**Solución**: Verificar token en variables de entorno:
+**Solution**: Check token in environment variables:
 ```bash
 echo $ZENODO_ACCESS_TOKEN
 ```
 
+
 ### Error: "Failed to create deposition"
-**Causas posibles**:
-- Token inválido o expirado
-- Metadatos incompletos o inválidos
-- Problemas de red con Zenodo
+**Possible causes**:
+- Invalid or expired token
+- Incomplete or invalid metadata
+- Network problems with Zenodo
 
 **Debugging**:
 ```python
 logger.setLevel(logging.DEBUG)
 ```
 
-### Fakenodo no arranca en tests
-**Solución**: Verificar que existe `app/modules/fakenodo/app.py`:
+
+### Fakenodo does not start in tests
+**Solution**: Check that `app/modules/fakenodo/app.py` exists:
 ```bash
 ls -la app/modules/fakenodo/app.py
 ```
 
-## Arquitectura de Despliegue Recomendada
+
+## Recommended Deployment Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -626,12 +679,13 @@ ls -la app/modules/fakenodo/app.py
 └─────────────────────────────────────────────┘
 ```
 
-## Conclusión
 
-La integración con Zenodo proporciona una solución robusta para publicación de datasets con DOIs permanentes. El uso de Fakenodo permite un desarrollo ágil y testing confiable sin dependencias externas, mientras que el soporte para Sandbox y producción de Zenodo garantiza una transición suave entre entornos.
+## Conclusion
 
-Esta arquitectura flexible asegura:
-- ✅ Desarrollo rápido sin conexión
-- ✅ Testing automatizado confiable
-- ✅ Staging realista con DOIs de prueba
-- ✅ Producción con DOIs permanentes oficiales
+The integration with Zenodo provides a robust solution for publishing datasets with permanent DOIs. The use of Fakenodo enables agile development and reliable testing without external dependencies, while support for Zenodo Sandbox and production ensures a smooth transition between environments.
+
+This flexible architecture ensures:
+- ✅ Fast offline development
+- ✅ Reliable automated testing
+- ✅ Realistic staging with test DOIs
+- ✅ Production with official permanent DOIs

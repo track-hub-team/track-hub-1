@@ -1,20 +1,22 @@
-# Sistema de Moderación de Comentarios
 
-## Descripción General
+# Comment Moderation System
 
-El sistema de comentarios de Track Hub incluye un mecanismo de moderación que permite a los propietarios de datasets gestionar los comentarios en sus publicaciones. Los propietarios actúan como **moderadores** con capacidad de eliminar (pero no editar) comentarios de otros usuarios en sus datasets.
+## General Description
 
-## Ubicación
+The Track Hub comment system includes a moderation mechanism that allows dataset owners to manage comments on their posts. Owners act as **moderators** with the ability to delete (but not edit) comments from other users on their datasets.
 
-- **Servicio**: `app/modules/dataset/services.py` → `CommentService`
-- **Repositorio**: `app/modules/dataset/repositories.py` → `CommentRepository`
-- **Rutas**: `app/modules/dataset/routes.py` → Endpoints de comentarios
-- **Modelos**: `app/modules/dataset/models.py` → `Comment`
+## Location
+
+- **Service**: `app/modules/dataset/services.py` → `CommentService`
+- **Repository**: `app/modules/dataset/repositories.py` → `CommentRepository`
+- **Routes**: `app/modules/dataset/routes.py` → Comment endpoints
+- **Models**: `app/modules/dataset/models.py` → `Comment`
 - **Tests**: `app/modules/dataset/tests/test_comment_logic.py`
 
-## Arquitectura del Sistema
 
-### Modelo Comment
+## System Architecture
+
+### Comment Model
 
 ```python
 class Comment(db.Model):
@@ -27,14 +29,15 @@ class Comment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relaciones
+    # Relationships
     dataset = db.relationship('DataSet', backref='comments')
     user = db.relationship('User', backref='comments')
 ```
 
+
 ### CommentService
 
-Servicio principal que gestiona toda la lógica de negocio de comentarios:
+Main service that manages all business logic for comments:
 
 ```python
 class CommentService(BaseService):
@@ -43,31 +46,33 @@ class CommentService(BaseService):
         self.dataset_repository = DataSetRepository()
 ```
 
-## Funcionalidades Principales
 
-### 1. Crear Comentario
+## Main Features
+
+### 1. Create Comment
 
 ```python
 def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
     """
-    Crear un nuevo comentario en un dataset.
 
-    Validaciones:
-    - Contenido no vacío
-    - Longitud máxima 1000 caracteres
-    - Sanitización HTML/XSS
-    - Dataset existente
+    Create a new comment on a dataset.
+
+    Validations:
+    - Non-empty content
+    - Maximum length 1000 characters
+    - HTML/XSS sanitization
+    - Existing dataset
     """
 
-    # Validar y sanitizar contenido
+    # Validate and sanitize content
     clean_content = self._validate_content(content)
 
-    # Verificar que existe el dataset
+    # Check that the dataset exists
     dataset = self.dataset_repository.get_by_id(dataset_id)
     if not dataset:
         raise ValueError("Dataset not found")
 
-    # Crear comentario
+    # Create comment
     comment = self.repository.create(
         dataset_id=dataset_id,
         user_id=user_id,
@@ -77,31 +82,34 @@ def create_comment(self, dataset_id: int, user_id: int, content: str) -> dict:
     return comment.to_dict()
 ```
 
-**Validaciones implementadas**:
-- ✅ Contenido no vacío (strip de espacios)
-- ✅ Longitud mínima: 1 carácter
-- ✅ Longitud máxima: 1000 caracteres
-- ✅ Sanitización HTML con `html.escape()`
-- ✅ Dataset debe existir
+**Implemented validations**:
+- ✅ Non-empty content (strip spaces)
+- ✅ Minimum length: 1 character
+- ✅ Maximum length: 1000 characters
+- ✅ HTML sanitization with `html.escape()`
+- ✅ Dataset must exist
 
-### 2. Eliminar Comentario (con Moderación)
+
+### 2. Delete Comment (with Moderation)
 
 ```python
 def delete_comment(self, comment_id: int, user_id: int) -> bool:
     """
-    Eliminar un comentario.
 
-    Permisos:
-    - El autor del comentario puede eliminarlo
-    - El propietario del dataset puede eliminarlo (moderación)
-    - Otros usuarios NO pueden eliminarlo
+    Delete a comment.
+
+    Permissions:
+    - The comment author can delete it
+    - The dataset owner can delete it (moderation)
+    - Other users CANNOT delete it
     """
 
     comment = self.repository.get_by_id(comment_id)
     if not comment:
         raise ValueError("Comment not found")
 
-    # Verificar permisos
+
+    # Check permissions
     is_owner = self._is_comment_owner(comment, user_id)
     is_moderator = self._is_dataset_owner(comment, user_id)
 
@@ -111,28 +119,31 @@ def delete_comment(self, comment_id: int, user_id: int) -> bool:
     return self.repository.delete(comment_id)
 ```
 
-**Sistema de permisos**:
-- ✅ **Autor del comentario**: Puede eliminar su propio comentario
-- ✅ **Propietario del dataset (moderador)**: Puede eliminar cualquier comentario en su dataset
-- ❌ **Otros usuarios**: No tienen permiso
+**Permission system**:
+- ✅ **Comment author**: Can delete their own comment
+- ✅ **Dataset owner (moderator)**: Can delete any comment in their dataset
+- ❌ **Other users**: No permission
 
-### 3. Editar Comentario (Solo Autor)
+
+### 3. Edit Comment (Author Only)
 
 ```python
 def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dict:
     """
-    Actualizar el contenido de un comentario.
 
-    Permisos:
-    - SOLO el autor del comentario puede editarlo
-    - El moderador NO puede editar comentarios ajenos
+    Update the content of a comment.
+
+    Permissions:
+    - ONLY the comment author can edit it
+    - The moderator CANNOT edit others' comments
     """
 
     comment = self.repository.get_by_id(comment_id)
     if not comment:
         raise ValueError("Comment not found")
 
-    # Verificar que es el autor (moderador NO puede editar)
+
+    # Check that the user is the author (moderator CANNOT edit)
     if not self._is_comment_owner(comment, user_id):
         raise PermissionError("Only the comment author can edit it")
 
@@ -147,64 +158,70 @@ def update_comment(self, comment_id: int, user_id: int, new_content: str) -> dic
     return updated.to_dict()
 ```
 
-**Regla importante**: Los moderadores pueden **eliminar** pero NO **editar** comentarios ajenos.
+**Important rule**: Moderators can **delete** but NOT **edit** others' comments.
 
-### 4. Métodos de Verificación de Permisos
 
-#### Verificar propietario del comentario
+### 4. Permission Verification Methods
+
+#### Check comment owner
 
 ```python
 def _is_comment_owner(self, comment, user_id: int) -> bool:
-    """Verificar si el usuario es el autor del comentario."""
+    """Check if the user is the author of the comment."""
     return comment.user_id == user_id
 ```
 
-#### Verificar moderador (propietario del dataset)
+
+#### Check moderator (dataset owner)
 
 ```python
 def _is_dataset_owner(self, comment, user_id: int) -> bool:
-    """Verificar si el usuario es el propietario del dataset (moderador)."""
+    """Check if the user is the owner of the dataset (moderator)."""
     dataset = self.dataset_repository.get_by_id(comment.dataset_id)
     if not dataset:
         return False
     return dataset.user_id == user_id
 ```
 
-### 5. Validación y Sanitización
+
+### 5. Validation and Sanitization
 
 ```python
 def _validate_content(self, content: str) -> str:
     """
-    Validar y sanitizar el contenido de un comentario.
 
-    Protecciones:
-    - XSS: html.escape() convierte <script> en &lt;script&gt;
-    - Inyección: Escapado de caracteres especiales
-    - Límites: Validación de longitud
+    Validate and sanitize the content of a comment.
+
+    Protections:
+    - XSS: html.escape() converts <script> to &lt;script&gt;
+    - Injection: Escaping special characters
+    - Limits: Length validation
     """
 
-    # Eliminar espacios en blanco
+    # Remove whitespace
     clean_content = content.strip() if content else ""
 
-    # Verificar que no esté vacío
+    # Check not empty
     if not clean_content:
         raise ValueError("Comment content cannot be empty")
 
-    # Verificar longitud máxima (1000 caracteres)
+    # Check max length (1000 characters)
     if len(clean_content) > 1000:
         raise ValueError("Comment content too long (max 1000 characters)")
 
-    # Sanitizar HTML (evitar XSS)
+    # Sanitize HTML (prevent XSS)
     import html
     clean_content = html.escape(clean_content)
 
     return clean_content
 ```
 
-## Endpoints HTTP
+
+## HTTP Endpoints
+
 
 ### POST /dataset/{dataset_id}/comments
-Crear nuevo comentario (requiere autenticación).
+Create new comment (requires authentication).
 
 **Request**:
 ```json
@@ -228,8 +245,9 @@ Crear nuevo comentario (requiere autenticación).
 }
 ```
 
+
 ### GET /dataset/{dataset_id}/comments
-Listar comentarios (público, no requiere autenticación).
+List comments (public, does not require authentication).
 
 **Response (200)**:
 ```json
@@ -248,8 +266,9 @@ Listar comentarios (público, no requiere autenticación).
 }
 ```
 
+
 ### DELETE /dataset/comments/{comment_id}
-Eliminar comentario (autor o moderador).
+Delete comment (author or moderator).
 
 **Response (200)**:
 ```json
@@ -259,7 +278,7 @@ Eliminar comentario (autor o moderador).
 }
 ```
 
-**Response (403)** - Sin permisos:
+**Response (403)** - No permission:
 ```json
 {
   "success": false,
@@ -267,8 +286,9 @@ Eliminar comentario (autor o moderador).
 }
 ```
 
+
 ### PUT /dataset/comments/{comment_id}
-Actualizar comentario (solo autor).
+Update comment (author only).
 
 **Request**:
 ```json
@@ -289,138 +309,148 @@ Actualizar comentario (solo autor).
 }
 ```
 
-## Sistema de Moderación
 
-### Matriz de Permisos
+## Moderation System
 
-| Acción | Autor del Comentario | Propietario del Dataset | Otros Usuarios |
-|--------|---------------------|------------------------|----------------|
-| **Ver comentarios** | ✅ Sí | ✅ Sí | ✅ Sí (público) |
-| **Crear comentario** | ✅ Sí | ✅ Sí | ✅ Sí (autenticado) |
-| **Editar comentario** | ✅ Solo el propio | ❌ No | ❌ No |
-| **Eliminar comentario** | ✅ Solo el propio | ✅ Cualquiera en su dataset | ❌ No |
 
-### Casos de Uso de Moderación
+### Permissions Matrix
 
-#### Caso 1: Usuario comenta en su propio dataset
+| Action | Comment Author | Dataset Owner | Other Users |
+|--------|---------------|--------------|-------------|
+| **View comments** | ✅ Yes | ✅ Yes | ✅ Yes (public) |
+| **Create comment** | ✅ Yes | ✅ Yes | ✅ Yes (authenticated) |
+| **Edit comment** | ✅ Only own | ❌ No | ❌ No |
+| **Delete comment** | ✅ Only own | ✅ Any in their dataset | ❌ No |
+
+
+### Moderation Use Cases
+
+#### Case 1: User comments on their own dataset
 ```python
-# User1 crea dataset
+# User1 creates dataset
 dataset = create_dataset(user_id=user1)
 
-# User1 comenta en su dataset
+# User1 comments on their own dataset
 comment = create_comment(dataset_id=dataset.id, user_id=user1)
 
-# User1 puede:
-✅ Editar el comentario (es autor)
-✅ Eliminar el comentario (es autor Y moderador)
+# User1 can:
+✅ Edit the comment (is author)
+✅ Delete the comment (is author AND moderator)
 ```
 
-#### Caso 2: Usuario comenta en dataset ajeno
+#### Case 2: User comments on someone else's dataset
 ```python
-# User1 crea dataset
+# User1 creates dataset
 dataset = create_dataset(user_id=user1)
 
-# User2 comenta en dataset de User1
+# User2 comments on User1's dataset
 comment = create_comment(dataset_id=dataset.id, user_id=user2)
 
-# User2 puede:
-✅ Editar el comentario (es autor)
-✅ Eliminar el comentario (es autor)
+# User2 can:
+✅ Edit the comment (is author)
+✅ Delete the comment (is author)
 
-# User1 puede:
-❌ Editar el comentario (NO es autor)
-✅ Eliminar el comentario (es moderador)
+# User1 can:
+❌ Edit the comment (NOT author)
+✅ Delete the comment (is moderator)
 ```
 
-#### Caso 3: Tercero intenta eliminar
+#### Case 3: Third party tries to delete
 ```python
-# User1 crea dataset
+# User1 creates dataset
 dataset = create_dataset(user_id=user1)
 
-# User2 comenta
+# User2 comments
 comment = create_comment(dataset_id=dataset.id, user_id=user2)
 
-# User3 intenta eliminar
+# User3 tries to delete
 delete_comment(comment.id, user_id=user3)
 # ❌ PermissionError: "You don't have permission to delete this comment"
 ```
 
+
 ## Testing
 
-### Ubicación de Tests
 
-`app/modules/dataset/tests/test_comment_logic.py` (389 líneas)
+### Test Location
 
-### Cobertura de Tests
+`app/modules/dataset/tests/test_comment_logic.py` (389 lines)
 
-#### Tests de Moderación
+
+### Test Coverage
+
+#### Moderation Tests
 
 ```python
 def test_delete_comment_dataset_owner(app, dataset, user, user2, comment_service):
-    """Test eliminar comentario siendo el propietario del dataset (moderador)."""
-    # user2 comenta en el dataset de user
+    """Test delete comment as dataset owner (moderator)."""
+    # user2 comments on user's dataset
     comment = comment_repository.create(
         dataset_id=dataset,
         user_id=user2,
         content="Comment by user2"
     )
 
-    # user (propietario del dataset) puede eliminarlo
+    # user (dataset owner) can delete it
     result = comment_service.delete_comment(comment.id, user)
     assert result is True
 
 def test_update_comment_dataset_owner_cannot_edit(app, dataset, user, user2):
-    """Test propietario del dataset NO puede editar comentarios ajenos."""
+    """Test dataset owner CANNOT edit others' comments."""
     comment = comment_repository.create(
         dataset_id=dataset,
         user_id=user2,
         content="Original"
     )
 
-    # user (moderador) NO puede editar el comentario
+    # user (moderator) CANNOT edit the comment
     with pytest.raises(PermissionError):
         comment_service.update_comment(comment.id, user, "Edited by moderator")
 ```
 
-### Ejecutar Tests
+
+### Running Tests
 
 ```bash
-# Todos los tests de comentarios
+# All comment tests
 pytest app/modules/dataset/tests/test_comment_logic.py -v
 
-# Solo tests de moderación
+# Only moderation tests
 pytest app/modules/dataset/tests/test_comment_logic.py -v -k "moderator or dataset_owner"
 
-# Con cobertura
+# With coverage
 pytest app/modules/dataset/tests/test_comment_logic.py --cov=app.modules.dataset
 ```
 
-## Seguridad
 
-### Protección contra XSS
+## Security
+
+### XSS Protection
 
 ```python
-# Entrada maliciosa
+# Malicious input
 malicious = '<script>alert("XSS")</script>Hello'
 
-# Después de sanitización
+# After sanitization
 safe = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;Hello'
 ```
 
-### Control de Acceso
+
+### Access Control
 
 ```python
-# Verificación ANTES de cualquier operación destructiva
+# Check BEFORE any destructive operation
 if not (is_owner or is_moderator):
     raise PermissionError("Access denied")
 ```
 
-## Conclusión
 
-El sistema de moderación implementa un modelo robusto donde:
+## Conclusion
 
-- ✅ Los **autores** tienen control total sobre sus comentarios
-- ✅ Los **moderadores** pueden eliminar comentarios inapropiados
-- ✅ Los **moderadores NO pueden editar** comentarios ajenos
-- ✅ Validación y sanitización exhaustiva contra XSS
-- ✅ Testing completo con 20+ casos de prueba
+The moderation system implements a robust model where:
+
+- ✅ **Authors** have full control over their comments
+- ✅ **Moderators** can delete inappropriate comments
+- ✅ **Moderators CANNOT edit** others' comments
+- ✅ Thorough validation and sanitization against XSS
+- ✅ Complete testing with 20+ test cases

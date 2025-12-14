@@ -1,102 +1,108 @@
-# Fakenodo - Servicio Mock de Zenodo
 
-## Descripción General
+# Fakenodo - Zenodo Mock Service
 
-Fakenodo es un microservicio Flask que simula la API de Zenodo para desarrollo y testing. Proporciona endpoints compatibles con Zenodo para crear deposiciones, subir archivos, publicar y gestionar versiones, sin necesidad de conectarse al servicio real de Zenodo.
 
-## Ubicación
+## General Description
 
-- **Código principal**: `app/modules/fakenodo/app.py`
+Fakenodo is a Flask microservice that simulates the Zenodo API for development and testing. It provides Zenodo-compatible endpoints to create depositions, upload files, publish, and manage versions, without needing to connect to the real Zenodo service.
+
+
+## Location
+
+- **Main code**: `app/modules/fakenodo/app.py`
 - **Tests**: `app/modules/fakenodo/tests/`
 - **Dockerfile**: `docker/images/Dockerfile.fakenodo`
 
-## Características Principales
 
-### 1. Gestión de Deposiciones
+## Main Features
 
-- **Crear deposiciones**: Genera IDs únicos y concept records para cada deposición
-- **Listar deposiciones**: Devuelve todas las deposiciones creadas
-- **Obtener deposición**: Recupera información de una deposición específica
-- **Actualizar metadatos**: Modifica los metadatos sin afectar versiones
-- **Eliminar deposiciones**: Borra deposiciones y sus archivos asociados
+### 1. Deposition Management
 
-### 2. Gestión de Archivos
+- **Create depositions**: Generates unique IDs and concept records for each deposition
+- **List depositions**: Returns all created depositions
+- **Get deposition**: Retrieves information about a specific deposition
+- **Update metadata**: Modifies metadata without affecting versions
+- **Delete depositions**: Deletes depositions and their associated files
 
-- **Subida de archivos**: Almacena archivos con nombres seguros
-- **Descarga de archivos**: Permite descargar archivos previamente subidos
-- **Fingerprinting**: Sistema de hashing para detectar cambios en ficheros
-- **Validación de seguridad**: Protección contra path traversal
+### 2. File Management
 
-### 3. Sistema de Versionado
+- **File upload**: Stores files with safe names
+- **File download**: Allows downloading previously uploaded files
+- **Fingerprinting**: Hashing system to detect file changes
+- **Security validation**: Protection against path traversal
 
-Fakenodo implementa un sistema inteligente de versionado que replica el comportamiento de Zenodo:
+### 3. Versioning System
 
-- **Primera publicación**: Asigna versión 1 y genera el DOI inicial
-- **Republicación sin cambios**: Mantiene la misma versión y DOI
-- **Republicación con cambios**: Crea nueva versión con nuevo DOI, compartiendo el mismo concept DOI
+Fakenodo implements an intelligent versioning system that replicates Zenodo's behavior:
 
-### 4. Persistencia de Archivos
+**First publication**: Assigns version 1 and generates the initial DOI
+**Republishing without changes**: Keeps the same version and DOI
+**Republishing with changes**: Creates a new version with a new DOI, sharing the same concept DOI
 
-Los archivos se almacenan en el directorio especificado por `FAKENODO_FILES_DIR`:
+
+### 4. File Persistence
+
+Files are stored in the directory specified by `FAKENODO_FILES_DIR`:
 
 ```bash
 export FAKENODO_FILES_DIR=/data
 ```
 
-## Endpoints de la API
+
+## API Endpoints
 
 ### Health Check
 ```http
 GET /health
 ```
-Verifica el estado del servicio.
+Checks the service status.
 
-### Deposiciones
+### Depositions
 
-#### Listar todas las deposiciones
+#### List all depositions
 ```http
 GET /api/deposit/depositions
 ```
 
-#### Crear nueva deposición
+#### Create new deposition
 ```http
 POST /api/deposit/depositions
 Content-Type: application/json
 
 {
-  "metadata": {
-    "title": "Mi Dataset",
-    "upload_type": "dataset",
-    "description": "Descripción del dataset"
-  }
+    "metadata": {
+        "title": "My Dataset",
+        "upload_type": "dataset",
+        "description": "Dataset description"
+    }
 }
 ```
 
-#### Obtener deposición específica
+#### Get specific deposition
 ```http
 GET /api/deposit/depositions/{dep_id}
 ```
 
-#### Actualizar metadatos
+#### Update metadata
 ```http
 PUT /api/deposit/depositions/{dep_id}
 Content-Type: application/json
 
 {
-  "metadata": {
-    "title": "Título actualizado"
-  }
+    "metadata": {
+        "title": "Updated title"
+    }
 }
 ```
 
-#### Eliminar deposición
+#### Delete deposition
 ```http
 DELETE /api/deposit/depositions/{dep_id}
 ```
 
-### Archivos
+### Files
 
-#### Subir archivo
+#### Upload file
 ```http
 POST /api/deposit/depositions/{dep_id}/files
 Content-Type: multipart/form-data
@@ -105,28 +111,29 @@ name: archivo.txt
 file: <binary data>
 ```
 
-#### Descargar archivo
+#### Download file
 ```http
 GET /api/deposit/depositions/{dep_id}/files/{filename}
 ```
 
-### Publicación
+### Publication
 
-#### Publicar deposición
+#### Publish deposition
 ```http
 POST /api/deposit/depositions/{dep_id}/actions/publish
 ```
 
-### Versiones
+### Versions
 
-#### Listar versiones de un concept
+#### List versions of a concept
 ```http
 GET /api/records/{conceptid}/versions
 ```
 
-## Lógica de Versionado
 
-El sistema de versionado se basa en el fingerprint de archivos:
+## Versioning Logic
+
+The versioning system is based on the fingerprint of files:
 
 ```python
 def files_fingerprint(files):
@@ -137,38 +144,40 @@ def files_fingerprint(files):
     return h.hexdigest()
 ```
 
-### Casos de Publicación
 
-1. **Primera publicación** (sin DOI previo):
-   - Asigna versión 1
-   - Genera DOI: `10.9999/fakenodo.{concept}.v1`
-   - Estado: `done`
+### Publication Cases
 
-2. **Republicación con archivos modificados**:
-   - Crea nueva deposición con nuevo ID
-   - Incrementa versión
-   - Genera nuevo DOI: `10.9999/fakenodo.{concept}.v{version+1}`
-   - Mantiene el mismo `conceptdoi`
+1. **First publication** (no previous DOI):
+    - Assigns version 1
+    - Generates DOI: `10.9999/fakenodo.{concept}.v1`
+    - Status: `done`
 
-3. **Republicación sin cambios**:
-   - Mantiene la misma versión y DOI
-   - Actualiza solo el campo `modified`
+2. **Republishing with modified files**:
+    - Creates a new deposition with a new ID
+    - Increments version
+    - Generates new DOI: `10.9999/fakenodo.{concept}.v{version+1}`
+    - Keeps the same `conceptdoi`
 
-## Configuración y Despliegue
+3. **Republishing without changes**:
+    - Keeps the same version and DOI
+    - Only updates the `modified` field
 
-### Variables de Entorno
+
+## Configuration and Deployment
+
+### Environment Variables
 
 ```bash
-# Puerto del servicio (requerido por Render)
+# Service port (required by Render)
 export PORT=5001
 
-# Directorio para almacenar archivos
+# Directory to store files
 export FAKENODO_FILES_DIR=/data
 ```
 
-### Despliegue en Render
+### Deployment on Render
 
-El servicio está configurado para desplegarse en Render usando Gunicorn:
+The service is configured to be deployed on Render using Gunicorn:
 
 ```dockerfile
 FROM python:3.11-slim
@@ -184,42 +193,45 @@ EXPOSE 8000
 CMD gunicorn -w 2 -b 0.0.0.0:$PORT app:app
 ```
 
-**Pasos en Render**:
-1. Crear nuevo Web Service
-2. Conectar repositorio
-3. Configurar:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn -w 2 -b 0.0.0.0:$PORT app:app`
-   - Environment: `FAKENODO_FILES_DIR=/data`
-4. Añadir disco persistente montado en `/data`
 
-### Ejecución Local
+**Steps on Render:**
+1. Create a new Web Service
+2. Connect the repository
+3. Configure:
+    - Build Command: `pip install -r requirements.txt`
+    - Start Command: `gunicorn -w 2 -b 0.0.0.0:$PORT app:app`
+    - Environment: `FAKENODO_FILES_DIR=/data`
+4. Add a persistent disk mounted at `/data`
+
+
+### Local Execution
 
 ```bash
-# Desarrollo directo
+# Direct development
 python app/modules/fakenodo/app.py
 
-# Con variables de entorno
+# With environment variables
 PORT=5001 FAKENODO_FILES_DIR=./_fakenodo_files python app/modules/fakenodo/app.py
 
-# Con Gunicorn (producción)
+# With Gunicorn (production)
 gunicorn -w 2 -b 0.0.0.0:5001 app:app
 ```
 
+
 ## Testing
 
-### Tests de Integración
+### Integration Tests
 
-Ubicación: `app/modules/fakenodo/tests/test_fakenodo_integration.py`
+Location: `app/modules/fakenodo/tests/test_fakenodo_integration.py`
 
-Los tests de integración arrancan el servicio en un subproceso y validan:
+The integration tests start the service in a subprocess and validate:
 
-- ✅ Ciclo completo: crear → subir → publicar → eliminar
-- ✅ Gestión de versiones con cambios en archivos
-- ✅ Republicación sin cambios mantiene versión
-- ✅ Listado de versiones por concept ID
+- ✅ Full cycle: create → upload → publish → delete
+- ✅ Version management with file changes
+- ✅ Republishing without changes keeps version
+- ✅ Listing versions by concept ID
 
-#### Ejemplo de test:
+#### Example test:
 
 ```python
 def test_roundtrip_create_upload_publish_delete(fakenodo_server, tmp_path):
@@ -258,23 +270,25 @@ def test_roundtrip_create_upload_publish_delete(fakenodo_server, tmp_path):
     assert delete.status_code == 204
 ```
 
-### Ejecutar Tests
+
+### Running Tests
 
 ```bash
-# Desde el directorio raíz del proyecto
+# From the project root directory
 pytest app/modules/fakenodo/tests/test_fakenodo_integration.py -v
 
-# Con cobertura
+# With coverage
 pytest app/modules/fakenodo/tests/test_fakenodo_integration.py --cov=app.modules.fakenodo --cov-report=html
 ```
 
-### Fixture de Fakenodo Server
 
-Los tests utilizan una fixture de sesión que:
-- Crea un directorio temporal para archivos
-- Arranca Fakenodo en un subproceso
-- Espera a que el servicio esté listo
-- Limpia recursos al finalizar
+### Fakenodo Server Fixture
+
+The tests use a session fixture that:
+- Creates a temporary directory for files
+- Starts Fakenodo in a subprocess
+- Waits for the service to be ready
+- Cleans up resources at the end
 
 ```python
 @pytest.fixture(scope="session")
@@ -298,9 +312,10 @@ def fakenodo_server():
     shutil.rmtree(tmpdir, ignore_errors=True)
 ```
 
+
 ## Logging
 
-Fakenodo incluye logging detallado de todas las operaciones:
+Fakenodo includes detailed logging of all operations:
 
 ```python
 logger.info(f"[FAKENODO] Creating deposition - ID: {dep_id}, ConceptID: {conceptrecid}")
@@ -308,31 +323,35 @@ logger.info(f"[FAKENODO] File uploaded - Deposition: {dep_id}, File: {filename}"
 logger.info(f"[FAKENODO] First publication - DOI assigned: {doi}, Version: {version}")
 ```
 
-Niveles de log:
-- **INFO**: Operaciones exitosas y flujo normal
-- **WARNING**: Recursos no encontrados
-- **ERROR**: Errores en operaciones de I/O
 
-## Ventajas de Usar Fakenodo
+Log levels:
+- **INFO**: Successful operations and normal flow
+- **WARNING**: Resources not found
+- **ERROR**: I/O operation errors
 
-1. **Desarrollo sin conexión**: No requiere acceso a internet
-2. **Tests rápidos**: Sin latencia de red
-3. **Sin límites**: No consume cuota de Zenodo
-4. **Reproducibilidad**: Comportamiento determinista
-5. **Versionado complejo**: Simula el sistema de versiones de Zenodo
-6. **Debugging sencillo**: Logs detallados y código accesible
 
-## Diferencias con Zenodo Real
+## Advantages of Using Fakenodo
 
-- DOIs ficticios con formato `10.9999/fakenodo.*`
-- Sin validación de metadatos complejos
-- Sin procesamiento de archivos (thumbnails, previews, etc.)
-- Sin sistema de comunidades o colecciones
-- Sin embargo, **suficiente para testing y desarrollo**
+1. **Offline development**: No internet access required
+2. **Fast tests**: No network latency
+3. **No limits**: Does not consume Zenodo quota
+4. **Reproducibility**: Deterministic behavior
+5. **Complex versioning**: Simulates Zenodo's versioning system
+6. **Easy debugging**: Detailed logs and accessible code
 
-## Integración con ZenodoService
 
-El servicio `ZenodoService` detecta automáticamente si debe usar Fakenodo:
+## Differences with Real Zenodo
+
+- Fake DOIs with format `10.9999/fakenodo.*`
+- No validation of complex metadata
+- No file processing (thumbnails, previews, etc.)
+- No community or collection system
+- However, **sufficient for testing and development**
+
+
+## Integration with ZenodoService
+
+The `ZenodoService` automatically detects if it should use Fakenodo:
 
 ```python
 def get_zenodo_url(self) -> str:
@@ -349,24 +368,27 @@ def get_zenodo_url(self) -> str:
     return os.getenv("ZENODO_API_URL", default).rstrip("/")
 ```
 
-Para usar Fakenodo en desarrollo:
+
+To use Fakenodo in development:
 
 ```bash
 export FAKENODO_URL=http://localhost:5001/api/deposit/depositions
 export FLASK_ENV=development
 ```
 
-## Mantenimiento y Evolución
 
-### Futuras mejoras potenciales
+## Maintenance and Evolution
 
-- Persistencia en base de datos (actualmente en memoria)
-- Webhooks para notificaciones de publicación
-- API de búsqueda y filtrado
-- Validación más estricta de metadatos
-- Soporte para más tipos de publicación
-- Sistema de usuarios y permisos
+### Potential future improvements
 
-## Conclusión
+- Database persistence (currently in-memory)
+- Webhooks for publication notifications
+- Search and filtering API
+- Stricter metadata validation
+- Support for more publication types
+- User and permission system
 
-Fakenodo es una herramienta esencial para el desarrollo y testing de Track Hub, proporcionando una simulación completa y funcional de la API de Zenodo sin las limitaciones y complejidades del servicio real. Su implementación permite un flujo de trabajo ágil y confiable durante el desarrollo.
+
+## Conclusion
+
+Fakenodo is an essential tool for the development and testing of Track Hub, providing a complete and functional simulation of the Zenodo API without the limitations and complexities of the real service. Its implementation enables an agile and reliable workflow during development.

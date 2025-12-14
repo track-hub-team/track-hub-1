@@ -1,45 +1,49 @@
 
 ---
 
-# Guía de Despliegue Self-Hosted (Proxmox)
 
-## Especificaciones del Servidor
+# Self-Hosted Deployment Guide (Proxmox)
 
-El entorno de ejecución utiliza el siguiente hardware:
+
+## Server Specifications
+
+The runtime environment uses the following hardware:
 
 - **CPU:** AMD Ryzen 5 5650G
 - **RAM:** 32 GB
-- **Almacenamiento:**
-  - Mirror de SSD de 250 GB (RAID 1) para el sistema y datos críticos
-  - NVMe de 300 GB dedicado para la aplicación y sus volúmenes
+- **Storage:**
+  - 250 GB SSD mirror (RAID 1) for system and critical data
+  - 300 GB NVMe dedicated for the application and its volumes
 
-Esto garantiza alto rendimiento, redundancia y espacio suficiente para los servicios y cargas de trabajo de TrackHub.
+This ensures high performance, redundancy, and enough space for TrackHub services and workloads.
 
 
-## Resumen
 
-Este documento describe cómo desplegar TrackHub en un servidor Proxmox autogestionado (self-hosted) con MariaDB (TLS), dos entornos (PRE/PROD), contenedores Docker, Cloudflare Tunnel y despliegue automatizado mediante GitHub Actions.
+## Summary
 
-- Los despliegues automáticos se disparan en los pushes a las ramas `trunk` (PRE) y `main` (PROD).
-- El runner self-hosted ejecuta los jobs definidos en `.github/workflows/CD_selfhosted.yml`.
-- El pipeline realiza:
-  1. Checkout del código
-  2. Build de la imagen Docker
-  3. Despliegue del contenedor (o stack Docker Compose)
-  4. (Opcional) Ejecución de tests/linting antes del despliegue
-- El estado del pipeline puede monitorizarse desde la pestaña Actions del repositorio en GitHub.
+This document describes how to deploy TrackHub on a self-managed Proxmox server with MariaDB (TLS), two environments (PRE/PROD), Docker containers, Cloudflare Tunnel, and automated deployment via GitHub Actions.
+
+- Automatic deployments are triggered on pushes to the `trunk` (PRE) and `main` (PROD) branches.
+- The self-hosted runner executes the jobs defined in `.github/workflows/CD_selfhosted.yml`.
+- The pipeline performs:
+  1. Code checkout
+  2. Docker image build
+  3. Container (or Docker Compose stack) deployment
+  4. (Optional) Test/lint execution before deployment
+- The pipeline status can be monitored from the Actions tab in the GitHub repository.
 
 ---
 
 
-## 1. Configuración TLS en MariaDB
 
-**En el host donde corre MariaDB (no en el contenedor):**
+## 1. TLS Configuration in MariaDB
 
-1. Crear el directorio SSL y la CA.
-2. Generar la clave del servidor y el CSR para `host.docker.internal`.
-3. Firmar el certificado del servidor con tu CA.
-4. Configurar MariaDB (`/etc/mysql/mariadb.conf.d/50-server.cnf`):
+**On the host running MariaDB (not in the container):**
+
+1. Create the SSL directory and the CA.
+2. Generate the server key and CSR for `host.docker.internal`.
+3. Sign the server certificate with your CA.
+4. Configure MariaDB (`/etc/mysql/mariadb.conf.d/50-server.cnf`):
 
   ```
   [mysqld]
@@ -49,7 +53,8 @@ Este documento describe cómo desplegar TrackHub en un servidor Proxmox autogest
   # require_secure_transport=ON (opcional)
   ```
 
-5. Reiniciar MariaDB y verificar con:
+
+5. Restart MariaDB and verify with:
 
   ```
   sudo mariadb -e "SHOW VARIABLES LIKE 'have_ssl';"
@@ -59,29 +64,31 @@ Este documento describe cómo desplegar TrackHub en un servidor Proxmox autogest
 
 
 
-## 2. Imagen Docker para Self-Hosted
+
+## 2. Docker Image for Self-Hosted
 
 - Dockerfile: `docker/images/Dockerfile.selfhosted`
 - Entrypoint: `docker/entrypoints/selfhosted_entrypoint.sh`
-- Características principales:
-  - Espera a que MariaDB esté disponible (con TLS si se define `MARIADB_SSL_CA`)
-  - Ejecuta migraciones Alembic
-  - **Ejecuta seeders automáticamente si detecta entorno de preproducción**
-  - Arranca Gunicorn
+- Main features:
+  - Waits for MariaDB to be available (with TLS if `MARIADB_SSL_CA` is set)
+  - Runs Alembic migrations
+  - **Automatically runs seeders if preproduction environment is detected**
+  - Starts Gunicorn
 
-**Nota sobre seeders:**
-Si la variable de entorno `FLASK_ENV` es `preproduction` o `ENV` es `pre`, el entrypoint ejecutará automáticamente los seeders con `flask seed run`. Si no hay seeders o ya se aplicaron, lo omite sin error. En otros entornos, los seeders se saltan.
+**Note on seeders:**
+If the environment variable `FLASK_ENV` is `preproduction` or `ENV` is `pre`, the entrypoint will automatically run the seeders with `flask seed run`. If there are no seeders or they have already been applied, it skips without error. In other environments, seeders are skipped.
 
 ---
 
 
-## 3. Configuración de Entornos
 
-### Entorno PRE
+## 3. Environment Configuration
 
-- Usa la base de datos: `uvlhubdb`
-- Archivo de entorno: `/home/pabolimor/trackhub-pre.env`
-- Ejemplo de ejecución:
+### PRE Environment
+
+- Uses the database: `uvlhubdb`
+- Environment file: `/home/pabolimor/trackhub-pre.env`
+- Example execution:
 
     ```sh
     docker run -d \
@@ -94,11 +101,12 @@ Si la variable de entorno `FLASK_ENV` es `preproduction` o `ENV` es `pre`, el en
       trackhub-selfhosted:latest
     ```
 
-### Entorno PROD
 
-- Base de datos: `uvlhubdb_prod`
-- Archivo de entorno: `/home/pabolimor/trackhub-prod.env`
-- Ejemplo de ejecución:
+### PROD Environment
+
+- Database: `uvlhubdb_prod`
+- Environment file: `/home/pabolimor/trackhub-prod.env`
+- Example execution:
 
     ```sh
     docker run -d \
@@ -114,9 +122,10 @@ Si la variable de entorno `FLASK_ENV` es `preproduction` o `ENV` es `pre`, el en
 ---
 
 
+
 ## 4. Cloudflare Tunnel
 
-- Configuración: `/etc/cloudflared/config.yml`
+- Configuration: `/etc/cloudflared/config.yml`
 
     ```yaml
     ingress:
@@ -127,7 +136,8 @@ Si la variable de entorno `FLASK_ENV` es `preproduction` o `ENV` es `pre`, el en
       - service: http_status:404
     ```
 
-- Reiniciar el túnel:
+
+- Restart the tunnel:
 
     ```sh
     sudo systemctl restart cloudflared
@@ -137,34 +147,36 @@ Si la variable de entorno `FLASK_ENV` es `preproduction` o `ENV` es `pre`, el en
 
 
 
+
 ## 5. GitHub Actions: CD Self-Hosted
 
 - Workflow: `.github/workflows/CD_selfhosted.yml`
-- Dos jobs: deploy-pre (en `trunk`), deploy-prod (en `main`)
-- Usa los comandos de build y run de Docker como arriba
-- Requiere un runner self-hosted en el servidor
-- Los archivos `.env` **no** están en el repositorio, solo en el servidor
+- Two jobs: deploy-pre (on `trunk`), deploy-prod (on `main`)
+- Uses the Docker build and run commands as above
+- Requires a self-hosted runner on the server
+- The `.env` files are **not** in the repository, only on the server
 
 ---
 
-## 6. Runner Self-Hosted de GitHub Actions
 
-El runner está instalado en `/home/pabolimor/actions-runner` y corre como servicio systemd bajo el usuario `pabolimor`.
+## 6. GitHub Actions Self-Hosted Runner
 
-- Servicio activo: `actions.runner.track-hub-team-track-hub-1.trackhub-server-deploy.service`
-- Se gestiona con systemctl:
+The runner is installed at `/home/pabolimor/actions-runner` and runs as a systemd service under the `pabolimor` user.
+
+- Active service: `actions.runner.track-hub-team-track-hub-1.trackhub-server-deploy.service`
+- Managed with systemctl:
   ```sh
   sudo systemctl status actions.runner.track-hub-team-track-hub-1.trackhub-server-deploy.service
   sudo systemctl restart actions.runner.track-hub-team-track-hub-1.trackhub-server-deploy.service
   ```
-- El runner se instala y configura siguiendo la documentación oficial de GitHub:
-  https://docs.github.com/es/actions/hosting-your-own-runners/adding-self-hosted-runners
-- Los logs y diagnósticos se encuentran en `/home/pabolimor/actions-runner/_diag/`.
-- El runner está preparado para ejecutar jobs que requieren Docker y acceso a los archivos de despliegue.
+- The runner is installed and configured following the official GitHub documentation:
+  https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
+- Logs and diagnostics are found in `/home/pabolimor/actions-runner/_diag/`.
+- The runner is prepared to execute jobs that require Docker and access to deployment files.
 
-**Notas:**
-- El runner se mantiene actualizado usando los scripts incluidos en la carpeta `actions-runner`.
-- Si se requiere ejecutar comandos de gestión manualmente, usar `svc.sh` con sudo:
+**Notes:**
+- The runner is kept up to date using the scripts included in the `actions-runner` folder.
+- If you need to run management commands manually, use `svc.sh` with sudo:
   ```sh
   cd ~/actions-runner
   sudo ./svc.sh status
@@ -178,38 +190,38 @@ El runner está instalado en `/home/pabolimor/actions-runner` y corre como servi
 
 
 
-## 7. Despliegue con Docker Compose
+## 7. Deployment with Docker Compose
 
-Además del despliegue manual con `docker run`, se utiliza Docker Compose para gestionar los servicios de TrackHub y Fakenodo de forma más sencilla y reproducible.
+In addition to manual deployment with `docker run`, Docker Compose is used to manage TrackHub and Fakenodo services more easily and reproducibly.
 
-Los archivos de configuración se encuentran en `~/trackhub-deploy/`:
+The configuration files are located in `~/trackhub-deploy/`:
 
-- `docker-compose.pre.yml`: despliegue del entorno PRE
-- `docker-compose.prod.yml`: despliegue del entorno PROD
-- `docker-compose.fakenodo.yml`: despliegue de Fakenodo
-- `docker-compose.yml`: despliegue combinado de PRE, PROD y Fakenodo
+- `docker-compose.pre.yml`: PRE environment deployment
+- `docker-compose.prod.yml`: PROD environment deployment
+- `docker-compose.fakenodo.yml`: Fakenodo deployment
+- `docker-compose.yml`: combined deployment of PRE, PROD, and Fakenodo
 
-### Ejemplo de uso
+### Usage example
 
-Para levantar el entorno PRE:
+To start the PRE environment:
 ```sh
 cd ~/trackhub-deploy
 docker compose -f docker-compose.pre.yml up -d
 ```
 
-Para levantar el entorno PROD:
+To start the PROD environment:
 ```sh
 cd ~/trackhub-deploy
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Para levantar todos los servicios (PRE, PROD y Fakenodo):
+To start all services (PRE, PROD, and Fakenodo):
 ```sh
 cd ~/trackhub-deploy
 docker compose up -d
 ```
 
-### Ejemplo de archivo docker-compose.pre.yml
+### Example docker-compose.pre.yml file
 ```yaml
 services:
   trackhub-pre:
@@ -227,7 +239,7 @@ services:
       - "host.docker.internal:host-gateway"
 ```
 
-### Ejemplo de archivo docker-compose.prod.yml
+### Example docker-compose.prod.yml file
 ```yaml
 services:
   trackhub-prod:
@@ -245,7 +257,7 @@ services:
       - "host.docker.internal:host-gateway"
 ```
 
-### Ejemplo de archivo docker-compose.yml (multi-servicio)
+### Example docker-compose.yml file (multi-service)
 ```yaml
 version: "3.9"
 
@@ -291,16 +303,18 @@ services:
 
 ---
 
-## 8. Resumen
 
-- MariaDB con CA propia y TLS
-- Imagen Docker y entrypoint para self-hosted
-- Entornos PRE/PROD en diferentes puertos y dominios
-- Cloudflare Tunnel para acceso público
-- GitHub Actions para despliegue automatizado
-- Runner self-hosted gestionado como servicio systemd
-- Despliegue y gestión de servicios con Docker Compose
+## 8. Summary
+
+- MariaDB with custom CA and TLS
+- Docker image and entrypoint for self-hosted
+- PRE/PROD environments on different ports and domains
+- Cloudflare Tunnel for public access
+- GitHub Actions for automated deployment
+- Self-hosted runner managed as a systemd service
+- Service deployment and management with Docker Compose
 
 ---
 
-**Nota:** El despliegue en Render no se ve afectado por esta configuración.
+
+**Note:** Deployment on Render is not affected by this configuration.
