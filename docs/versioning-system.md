@@ -138,7 +138,7 @@ if new_deposition_id != deposition_id:
 else:
     logger.info(f"[PUBLISH] No new version - Using same deposition: {deposition_id}")
 
-# Obtener DOI de la respuesta de publicación (ya está ahí!)
+# Obtener DOI de la respuesta de publicación
 deposition_doi = publish_response.get("doi")
 if not deposition_doi:
     # Fallback: obtenerlo de la API si no está en la respuesta

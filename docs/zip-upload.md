@@ -1,3 +1,51 @@
+
+# Subida e Importación de Modelos (.uvl / .gpx)
+
+Este documento explica cómo funciona la lógica para subir e importar modelos UVL y GPX en Track Hub, incluyendo:
+
+- Subida de un solo archivo de modelo a la sesión actual.
+- Importación de modelos desde un repositorio GitHub o un archivo ZIP.
+- Validación y clasificación de los modelos según su tipo (UVL / GPX).
+- Integración de esos archivos en la creación de datasets.
+
+## Visión General del Flujo
+
+El flujo de importación y subida de modelos está dividido en capas:
+
+- **Capa de rutas (routes):** recibe las peticiones HTTP, valida entradas básicas y delega en servicios.
+- **Registro de tipos (registry):** sabe qué extensiones son válidas, qué handler las valida y qué modelo usan.
+- **Fetchers (fetchers):** saben cómo traer archivos desde distintas fuentes (GitHub, ZIP).
+- **Servicio de datasets (DataSetService):** orquesta la lógica de negocio: guardar, validar, mover ficheros e integrarlos en un dataset.
+
+Los archivos se manejan inicialmente en una carpeta temporal del usuario, y solo cuando se crea el dataset se mueven a su ubicación definitiva.
+
+## Flujos de Importación Soportados
+
+1. **Subida individual:** El usuario sube un archivo .uvl o .gpx, que se valida y almacena en la carpeta temporal del usuario.
+2. **Importación desde ZIP:** El usuario sube un archivo ZIP con múltiples modelos. El sistema extrae, valida y filtra los archivos soportados (.uvl/.gpx).
+3. **Importación desde GitHub:** El usuario indica una URL de GitHub (repo o subcarpeta). El sistema clona/fetchea el repo, busca y valida los modelos soportados.
+
+Todos los modelos válidos quedan disponibles en la carpeta temporal del usuario para ser usados en la creación de un nuevo dataset.
+
+## Validación y Registro de Tipos
+
+El sistema detecta el tipo de archivo por su extensión y lo valida usando un handler específico:
+
+- **UVLHandler:** valida archivos .uvl (existencia, no vacío, contiene la palabra 'features').
+- **GPXHandler:** valida archivos .gpx (existencia, parseo XML, raíz <gpx>, contiene tracks o waypoints).
+
+El registro global `DATASET_TYPE_REGISTRY` asocia cada tipo con su handler, modelo y extensiones permitidas.
+
+## Resumen de Casos de Uso
+
+| Caso                        | Endpoint                  | Proceso principal                                                                 |
+|-----------------------------|---------------------------|-----------------------------------------------------------------------------------|
+| Subida individual           | /dataset/file/upload      | Sube, valida y deja el archivo en la carpeta temporal del usuario                 |
+| Importar desde ZIP          | /dataset/import           | Extrae, valida y filtra modelos desde un ZIP subido                               |
+| Importar desde GitHub       | /dataset/import           | Clona/fetchea repo, valida y filtra modelos desde GitHub                          |
+
+---
+
 # Subida de Archivos ZIP
 
 ## Descripción General
