@@ -1,4 +1,5 @@
 
+
 # Upload and Import of Models (.uvl / .gpx)
 
 This document explains how the logic for uploading and importing UVL and GPX models works in Track Hub, including:
@@ -8,16 +9,271 @@ This document explains how the logic for uploading and importing UVL and GPX mod
 - Validation and classification of models by type (UVL / GPX).
 - Integration of those files into dataset creation.
 
-## Overview of the Flow
+---
 
-The import and upload flow of models is divided into layers:
+## Global Flow Overview
 
-- **Routes layer:** receives HTTP requests, validates basic inputs, and delegates to services.
-- **Type registry:** knows which extensions are valid, which handler validates them, and which model they use.
-- **Fetchers:** know how to fetch files from different sources (GitHub, ZIP).
-- **DataSetService:** orchestrates business logic: saving, validating, moving files, and integrating them into a dataset.
+Track Hub follows a unified, source-agnostic flow for importing and uploading models.
+Regardless of whether files come from an individual upload, a ZIP archive, or a GitHub repository, all models follow the same lifecycle and validation pipeline.
 
-Files are initially handled in a user's temporary folder, and only when the dataset is created are they moved to their final location.
+## High-Level Flow
+
+```text
+User Action
+    ↓
+Routes (HTTP validation)
+    ↓
+DataSetService (business orchestration)
+    ↓
+Fetcher (GitHub / ZIP / Upload)
+    ↓
+User Temporary Folder
+    ↓
+Type Registry + Handlers (UVL / GPX validation)
+    ↓
+Validated models available for dataset creation
+    ↓
+Dataset creation
+    ↓
+Final dataset storage + versioning
+```
+
+
+
+## File Lifecycle and Storage Layout
+
+```text
+/tmp/
+└── user_<id>/
+    ├── uploaded_file.gpx
+    ├── imported_model.uvl
+    └── archive.zip
+
+/tmp/
+└── zip_<random>/
+    └── extracted_files...
+
+/tmp/
+└── github_<random>/
+    └── cloned_repository...
+
+uploads/
+└── user_<id>/
+    └── dataset_<dataset_id>/
+        ├── model1.gpx
+        └── model2.uvl
+```
+
+
+| Stage              | Location                          | Persistence |
+|--------------------|-----------------------------------|-------------|
+| Upload / Import    | User temporary folder             | Temporary   |
+| ZIP extraction     | Ephemeral extraction folder       | Temporary   |
+| GitHub clone       | Ephemeral repository folder       | Temporary   |
+| Dataset creation   | uploads/user_X/dataset_Y          | Permanent   |
+
+---
+
+## Import from GitHub Repository
+
+### General Description
+
+Track Hub allows users to import multiple UVL and GPX models directly from a GitHub repository or from a specific subfolder within a repository.
+The system performs a shallow clone of the repository, scans it for supported model files, validates them, and copies only valid models into the user’s temporary folder.
+
+This flow mirrors the ZIP import process in terms of validation, filtering, and integration with dataset creation.
+
+---
+
+### Location
+
+- **Fetcher**: `app/modules/dataset/fetchers/github.py` → `GithubFetcher`
+- **Service**: `app/modules/dataset/services.py` → `DataSetService`
+- **Registry**: `app/modules/dataset/registry.py` → Dataset type registry
+- **Tests**: `app/modules/dataset/tests/`
+
+---
+
+### Supported URL Formats
+
+The following GitHub URL formats are supported:
+
+
+https://github.com/<owner>/<repo>
+https://github.com/<owner>/<repo>/tree/<branch>
+https://github.com/<owner>/<repo>/tree/<branch>/<subpath>
+
+Examples:
+
+https://github.com/example/models
+https://github.com/example/models/tree/main
+https://github.com/example/models/tree/main/gpx/routes
+
+Unsupported or malformed URLs result in a `FetchError`.
+
+---
+
+### GithubFetcher Architecture
+
+```python
+class GithubFetcher(Fetcher_Interface):
+
+    def supports(self, url):
+        """Returns True if the URL belongs to github.com"""
+
+    def fetch(self, url, dest_root, current_user=None):
+        """
+        1. Parse GitHub URL
+        2. Clone repository (shallow)
+        3. Return repository root or selected subpath
+        """
+```
+
+#### URL Parsing Logic
+
+The GitHub URL is parsed to extract:
+
+- Repository owner
+- Repository name
+- Branch (optional)
+- Subpath inside the repository (optional)
+
+```python
+def _parse_github_url(url):
+    """
+    Extracts owner, repo, branch and subpath from a GitHub URL.
+    Raises FetchError if the URL is invalid or unsupported.
+    """
+```
+
+**Rules:**
+
+- If no branch is specified, the default repository branch is used.
+- If a subpath is specified, only that directory is scanned for models.
+- The repository is always cloned at the root level; subpaths only affect scanning.
+
+#### Clone Strategy
+
+The repository is cloned using a shallow clone strategy:
+
+- depth=1
+- No tags
+- No full commit history
+
+**Benefits:**
+
+- Reduced network usage
+- Faster imports
+- Lower disk usage
+
+This design choice aligns GitHub imports with ZIP imports in terms of performance and resource usage.
+
+#### Fetch and Extraction Flow
+
+GitHub URL
+    ↓
+URL parsing and validation
+    ↓
+Shallow repository clone
+    ↓
+Select repository root or subpath
+    ↓
+Scan filesystem recursively
+    ↓
+Filter supported files (.uvl, .gpx)
+    ↓
+Validate each model
+    ↓
+Copy valid models to user temp folder
+
+#### Model Collection and Validation
+
+After cloning, the DataSetService invokes the same collection logic used by ZIP imports:
+
+`_collect_models_into_temp(source_root, dest_dir)`
+
+**Process:**
+
+- Recursively traverse the repository (or subpath)
+- Infer model type from file extension
+- Validate each file using its handler (UVLHandler / GPXHandler)
+- Copy valid files to the user temporary folder
+- Resolve name collisions by adding numeric suffixes
+
+Invalid or unsupported files are skipped without aborting the process.
+
+#### Error Handling
+
+| Error Scenario                        | Exception   | Behavior         |
+|---------------------------------------|-------------|------------------|
+| Invalid GitHub URL                    | FetchError  | Request rejected |
+| Repository not found / access denied  | FetchError  | Import aborted   |
+| Branch does not exist                 | FetchError  | Import aborted   |
+| No valid models found                 | FetchError  | Import rejected  |
+| Invalid model file                    | ValueError  | File skipped     |
+
+#### Security Considerations
+
+The GitHub import flow includes the following protections:
+
+- Shallow clone only (prevents excessive disk and network usage)
+- File-type filtering (only .uvl and .gpx files are considered)
+- Content validation (each file is validated using its registered handler)
+- No symlink resolution (only regular files are processed)
+- Isolated temporary directories (each import is scoped to a user-specific temporary directory)
+
+#### Limitations
+
+- No limit on total repository size (implicit reliance on shallow clone)
+- Git submodules are not processed
+- No progress feedback during clone
+- Repository directory structure is not preserved in the dataset
+- Authentication for private repositories is not supported
+
+#### Usage Example
+
+```python
+# User provides a GitHub repository URL
+github_url = "https://github.com/example/gpx-models/tree/main/routes"
+
+# Import models
+added = dataset_service.fetch_models_from_github(
+    github_url=github_url,
+    dest_dir=current_user.temp_folder(),
+    current_user=current_user
+)
+
+# added → list of validated GPX/UVL files in user temp folder
+```
+
+#### Relation to Dataset Creation
+
+Once imported, GitHub models behave identically to:
+
+- Individually uploaded files
+- Models imported from ZIP
+
+They are:
+
+- Listed in the user session
+- Selected during dataset creation
+- Validated again during dataset persistence
+- Moved to the final dataset directory
+- Included in versioning and publication workflows
+
+#### Summary
+
+Both ZIP and GitHub imports:
+
+- Use dedicated fetchers
+- Rely on the same validation handlers
+- Share the same collection logic
+- Store files temporarily before dataset creation
+- Enforce strict type and content validation
+
+This symmetry ensures consistent behavior, security, and extensibility across all import mechanisms.
+
+
 
 ## Supported Import Flows
 
