@@ -730,7 +730,18 @@ document.addEventListener("DOMContentLoaded", function () {
     // ===============================
     // 6. Editar comentario (solo autor)
     // ===============================
+
+    let editingCommentId = null;
     function enableEditMode(comment, container, contentElement) {
+        if (editingCommentId !== null && editingCommentId !== comment.id) {
+            alert("You are already editing another comment.");
+            return;
+        }
+
+        if (editingCommentId === comment.id) return;
+
+        editingCommentId = comment.id;
+
         const originalText = comment.content;
 
         const textarea = document.createElement("textarea");
@@ -759,6 +770,7 @@ document.addEventListener("DOMContentLoaded", function () {
             textarea.remove();
             actionRow.remove();
             contentElement.style.display = "block";
+            editingCommentId = null;
         });
 
         saveBtn.addEventListener("click", () => {
@@ -773,13 +785,19 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok || !data.success) return alert(data.error || "Error updating comment");
+
                 contentElement.textContent = data.comment.content;
                 comment.content = data.comment.content;
+
                 textarea.remove();
                 actionRow.remove();
                 contentElement.style.display = "block";
+                editingCommentId = null;
             })
-            .catch(err => console.error("Error updating comment:", err));
+            .catch(err => {
+                console.error("Error updating comment:", err);
+                editingCommentId = null;
+            });
         });
     }
 
