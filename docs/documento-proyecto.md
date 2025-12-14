@@ -46,7 +46,7 @@
 
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
-| Rodríguez Calderón, Antonio | 71 | 95 | ≈9001 | 11 | 74 |  | L |
+| Rodríguez Calderón, Antonio | 71 | 94 | ≈9001 | 11 | 74 |  | L |
 | Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | Descripción breve | H/M/L |
 | Hu, Jianwu | 51:30 | 16 | 1519 | 30 | 10 | Descripción breve | H/M/L |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
@@ -61,9 +61,14 @@
 - **Dificultad:** Alta / Media / Baja.
 
 **Evidencias:**
-- Issues: [enlace]
-- Commits/PRs: [enlace]
-- Métricas/Gráficas: [enlace]
+- Commits/PRs: Ver "Integración con otros equipos."
+- Métricas/Gráficas: Ver [enlace]
+
+![Gestión de Issues en Jira](evidence/jira-issues.png)
+*Figura 1: Tablero Jira mostrando las issues gestionadas durante el proyecto*
+
+![Tareas del proyecto en Jira](evidence/jira-tasks.png)
+*Figura 2: Vista de tareas y work items en Jira durante el Sprint 1 (incluye también de Sprint 0)*
 
 **Nota cálculo de LoC (Antonio Rodríguez):**
 
@@ -81,8 +86,12 @@ Con este comando obtenemos la siguiente salida:
 ---
 ## Integración con otros equipos
 
-- **Track*hub-2:** breve descripción de la integración y motivo.
-  Evidencia: [enlace]
+- **Track-hub-2:** Se realizó integración colaborativa para compartir funcionalidades comunes y evitar duplicación de esfuerzos. Las características integradas incluyen la adaptación del formato GPX (desarrollado originalmente por Track-hub-2) y el flujo de despliegue continuo (CD) a Render.
+
+  **Evidencias:**
+  - [Documento de integración detallado](track-hub-2-integration.md)
+  - [PR #4 - GPX Format Adaptation](https://github.com/track-hub-team/track-hub-1/pull/4)
+  - [PR #3 - CD Workflow Integration](https://github.com/track-hub-team/track-hub-1/pull/3)
 
 ---
 
