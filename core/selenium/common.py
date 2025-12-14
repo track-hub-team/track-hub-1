@@ -9,7 +9,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 def initialize_driver():
     options = webdriver.FirefoxOptions()
 
-    if os.environ.get('SELENIUM_HEADLESS', 'true').lower() != 'false':
+    if os.environ.get('SELENIUM_HEADLESS', 'false').lower() != 'false':
         options.add_argument('--headless')
 
     options.add_argument('--no-sandbox')
@@ -19,7 +19,6 @@ def initialize_driver():
     os.makedirs(snap_tmp, exist_ok=True)
     os.environ["TMPDIR"] = snap_tmp
 
-    # Try to use system geckodriver first, fallback to webdriver-manager
     system_geckodriver = shutil.which('geckodriver')
     if system_geckodriver:
         service = Service(system_geckodriver)
