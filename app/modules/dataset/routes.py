@@ -22,6 +22,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 
 from app import db
@@ -76,9 +77,16 @@ def create_dataset():
             dataset = dataset_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset}")
             dataset_service.move_feature_models(dataset)
+
+        except BadRequest as e:
+            # ✅ Extraer el mensaje correctamente de BadRequest
+            error_msg = e.description if hasattr(e, "description") else str(e)
+            logger.warning(f"Validation error: {error_msg}")
+            return jsonify({"message": error_msg}), 400
+
         except Exception as exc:
-            logger.exception(f"Exception while create dataset data in local {exc}")
-            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
+            logger.exception(f"Unexpected error while creating dataset: {exc}")
+            return jsonify({"message": "Unexpected server error"}), 500
 
         # Enviar a Zenodo
         data = {}
@@ -110,8 +118,6 @@ def create_dataset():
                     zenodo_service.upload_file(dataset, deposition_id, feature_model)
                 logger.info("[UPLOAD] All files uploaded successfully")
 
-                # NOTE: La publicación ahora es manual para permitir crear versiones antes de publicar
-                # El usuario puede publicar desde el botón "Publish to Zenodo" en la vista del dataset
                 logger.info(
                     f"[UPLOAD] Dataset {dataset.id} uploaded to Zenodo (deposition {deposition_id}), ready to publish"
                 )

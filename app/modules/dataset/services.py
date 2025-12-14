@@ -1,5 +1,3 @@
-# app/modules/dataset/services/dataset_service.py
-
 import hashlib
 import logging
 import os
@@ -12,6 +10,7 @@ from typing import Optional
 from zipfile import BadZipFile, ZipFile
 
 from flask import request
+from werkzeug.exceptions import BadRequest
 
 from app import db
 from app.modules.auth.services import AuthenticationService
@@ -130,20 +129,40 @@ class DataSetService(BaseService):
         """Crea un dataset desde el formulario."""
         logger.info("Creating dataset from form...")
 
-        if not form.feature_models or len(form.feature_models) == 0:
-            raise ValueError("At least one file is required to create a dataset")
+        # =========================================================
+        # 0. Validar que el usuario no tenga otro dataset con el mismo título
+        # =========================================================
+        dataset_title = form.title.data.strip()
 
+        existing_dataset = (
+            BaseDataset.query.join(BaseDataset.ds_meta_data)
+            .filter(BaseDataset.user_id == current_user.id, BaseDataset.ds_meta_data.has(title=dataset_title))
+            .first()
+        )
+
+        if existing_dataset:
+            raise BadRequest(description=f"You already have a dataset named '{dataset_title}'")
+
+        if not form.feature_models or len(form.feature_models) == 0:
+            raise BadRequest("At least one file is required to create a dataset")
+
+        # =========================================================
         # 1. Crear DSMetaData
+        # =========================================================
         dsmetadata_dict = form.get_dsmetadata()
         dsmetadata = self.dsmetadata_repository.create(**dsmetadata_dict)
 
+        # =========================================================
         # 2. Inferir tipo de dataset según archivos subidos
+        # =========================================================
         dataset_kind = "base"
         if form.feature_models:
             first_file = form.feature_models[0].filename.data
             dataset_kind = infer_kind_from_filename(first_file)
 
+        # =========================================================
         # 3. Obtener descriptor y crear instancia del tipo correcto
+        # =========================================================
         descriptor = get_descriptor(dataset_kind)
 
         try:
@@ -151,44 +170,50 @@ class DataSetService(BaseService):
                 user_id=current_user.id, ds_meta_data_id=dsmetadata.id, dataset_kind=dataset_kind
             )
 
-            # Añadir a la sesión y hacer flush para obtener el ID
             self.repository.session.add(dataset)
             self.repository.session.flush()
 
         except Exception as exc:
             logger.error(f"Error creating dataset: {exc}")
-            self.dsmetadata_repository.session.rollback()
-            raise exc
+            self.repository.session.rollback()
+            raise
 
+        # =========================================================
         # 4. Crear autores
+        # =========================================================
         for author_data in form.get_authors():
             author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
             dsmetadata.authors.append(author)
 
-        # 5. Procesar feature models (archivos)
+        # =========================================================
+        # 5. Procesar feature models (archivos) y validar duplicados internos
+        # =========================================================
+        seen_filenames = set()
+
         for feature_model_form in form.feature_models:
             filename = feature_model_form.filename.data
 
-            # ✅ Validar que el filename no esté vacío
             if not filename:
                 logger.warning("Skipping feature model with empty filename")
                 continue
 
-            # Crear FM metadata
+            if filename in seen_filenames:
+                self.repository.session.rollback()
+                raise BadRequest(f"Duplicate file name detected: '{filename}'")
+
+            seen_filenames.add(filename)
+
             fmmetadata_dict = feature_model_form.get_fmmetadata()
             fmmetadata = self.fmmetadata_repository.create(commit=False, **fmmetadata_dict)
 
-            # Crear feature model
             fm = self.feature_model_repository.create(
                 commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
             )
 
-            # Crear autores del feature model
             for author_data in feature_model_form.get_authors():
                 author = self.author_repository.create(commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
                 fmmetadata.authors.append(author)
 
-            # Validar archivo según su tipo
             file_path = os.path.join(current_user.temp_folder(), filename)
             descriptor_for_file = get_descriptor(infer_kind_from_filename(filename))
 
@@ -197,22 +222,23 @@ class DataSetService(BaseService):
             except Exception as e:
                 logger.error(f"Validation failed for {filename}: {e}")
                 self.repository.session.rollback()
-                raise ValueError(f"File validation failed: {str(e)}")
+                raise BadRequest(f"File validation failed: {str(e)}")
 
-            # Calcular checksum y tamaño
             checksum, size = calculate_checksum_and_size(file_path)
 
-            # Crear registro de archivo
             file = self.hubfilerepository.create(
                 commit=False, name=filename, checksum=checksum, size=size, feature_model_id=fm.id
             )
             fm.files.append(file)
 
+        # =========================================================
         # Commit final
+        # =========================================================
         self.repository.session.commit()
-        # ---------------------------------------------
-        # Notificar a seguidores del autor del dataset
-        # ---------------------------------------------
+
+        # =========================================================
+        # Notificar a seguidores del autor (no bloqueante)
+        # =========================================================
         try:
             follower_repository = FollowerRepository()
 
@@ -226,7 +252,6 @@ class DataSetService(BaseService):
             dataset_name = dataset.ds_meta_data.title or f"Dataset #{dataset.id}"
 
             followers = follower_repository.get_followers_users(author.id)
-
             recipients = sorted({u.email for u in followers if u.email})
 
             if recipients:
@@ -241,6 +266,10 @@ class DataSetService(BaseService):
 
         except Exception as e:
             logger.error(f"Exception sending new-dataset-by-user notifications: {str(e)}")
+
+        # =========================================================
+        # Crear versión inicial (no bloqueante)
+        # =========================================================
         try:
             version = VersionService.create_version(
                 dataset=dataset,
@@ -251,7 +280,6 @@ class DataSetService(BaseService):
             logger.info(f"Created initial version {version.version_number} for dataset {dataset.id}")
         except Exception as e:
             logger.error(f"Could not create initial version for dataset {dataset.id}: {str(e)}")
-            # No hacer rollback, el dataset ya está creado
 
         return dataset
 
