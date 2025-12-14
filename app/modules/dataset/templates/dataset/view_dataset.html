@@ -14,44 +14,17 @@
         margin-bottom: 0;
     }
 
-    /* ✅ SOLUCIÓN: DOI button responsive */
     .doi_button {
-        width: 100%;
-        max-width: 100%;
-        white-space: normal;
-        word-wrap: break-word;
-        text-align: left;
-        padding: 0.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .button_doi_id {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+    max-width: 100%;
+    white-space: normal;
     }
 
     .doi_text {
-        display: block;
-        width: 100%;
-        word-break: break-all;
-        overflow-wrap: anywhere;
-        font-size: 0.85rem;
-        line-height: 1.4;
-    }
-
-    /* ✅ Para pantallas pequeñas */
-    @media (max-width: 576px) {
-        .doi_button {
-            font-size: 0.8rem;
-        }
-
-        .doi_text {
-            font-size: 0.75rem;
-        }
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    text-align: left;
     }
 </style>
 {% endblock %}
@@ -200,12 +173,13 @@
                         <span class="text-secondary">Publication DOI</span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="{{ dataset.ds_meta_data.publication_doi }}">
+                        <a href="https://doi.org/{{ dataset.ds_meta_data.publication_doi }}" target="_blank">
                             {{ dataset.ds_meta_data.publication_doi }}
                         </a>
                     </div>
                 </div>
                 {% endif %}
+
 
                 {% if dataset.ds_meta_data.dataset_doi %}
                 <div class="row mb-2">
@@ -896,11 +870,16 @@ function publishToZenodo(datasetId, isRepublish) {
             alert(data.message);
         }
         if (data.doi) {
-            // Redirigir a la ruta del dataset publicado
-            window.location.href = `/doi/${data.doi}`;
-        } else {
-            location.reload();
+            let doi = data.doi;
+
+            // Quitar https://doi.org/ si ya existe
+            doi = doi.replace(/^https?:\/\/doi\.org\//, "");
+
+            // Redirigir al DOI oficial
+            window.location.href = `https://doi.org/${doi}`;
         }
+
+
     })
     .catch(error => {
         console.error('Error:', error);
