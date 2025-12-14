@@ -47,7 +47,7 @@
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
 | Rodríguez Calderón, Antonio | 71 | 89 | | ZZ | II | Descripción breve | H/M/L |
-| [Apellidos, Nombre] | HH | XX | YY | ZZ | II | Descripción breve | H/M/L |
+| Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | Descripción breve | H/M/L |
 | [Apellidos, Nombre] | HH | XX | YY | ZZ | II | Descripción breve | H/M/L |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
 
