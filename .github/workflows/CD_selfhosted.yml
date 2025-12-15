@@ -42,7 +42,7 @@ jobs:
         run: |
           docker build \
             -f docker/images/Dockerfile.selfhosted \
-            -t trackhub-selfhosted:${{ github.sha }} .
+            -t trackhub-selfhosted:main .
 
       - name: Deploy using docker-compose.prod.yml
         run: |
