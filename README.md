@@ -33,3 +33,7 @@ To set up your development environment, follow the [Developer Setup Guide](docs/
 
 ### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
+
+### Scrum Graphics
+
+- [Scrum Graphics Document](docs/scrum-graphics.md)
