@@ -870,16 +870,11 @@ function publishToZenodo(datasetId, isRepublish) {
             alert(data.message);
         }
         if (data.doi) {
-            let doi = data.doi;
-
-            // Quitar https://doi.org/ si ya existe
-            doi = doi.replace(/^https?:\/\/doi\.org\//, "");
-
-            // Redirigir al DOI oficial
-            window.location.href = `https://doi.org/${doi}`;
+            // Redirigir a la ruta del dataset publicado
+            window.location.href = `/doi/${data.doi}`;
+        } else {
+            location.reload();
         }
-
-
     })
     .catch(error => {
         console.error('Error:', error);
