@@ -225,6 +225,28 @@ class BaseDataset(db.Model):
         """Contar número de versiones"""
         return self.versions.count()
 
+    def has_mixed_files(self) -> bool:
+        """
+        Detecta si el dataset contiene archivos de múltiples tipos (.uvl y .gpx).
+        Útil para mostrar mensajes específicos en la UI cuando hay archivos mixtos.
+        """
+        has_uvl = False
+        has_gpx = False
+
+        for fm in self.feature_models:
+            for file in fm.files:
+                filename = file.name.lower()
+                if filename.endswith(".uvl"):
+                    has_uvl = True
+                if filename.endswith(".gpx"):
+                    has_gpx = True
+
+                # Optimización: si ya encontramos ambos, no seguir iterando
+                if has_uvl and has_gpx:
+                    return True
+
+        return False
+
     # ---------------------------
     # HOOKS por tipo (cada subclase sobreescribe)
     # ---------------------------
