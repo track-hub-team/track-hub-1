@@ -49,6 +49,7 @@
 | Rodríguez Calderón, Antonio | 71 | 96 | ≈9001 | 11 | 16 | 74 | L |
 | Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | 80 | M |
 | Hu, Jianwu | 51:58 | 17 | 1519 | 30 | 11 | 92 | M |
+| Varo Vera, Juan | 52:04| 17 | 1631 | 18 | 13 | 14 | M |
 | **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
 
 **Criterios:**
