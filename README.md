@@ -30,10 +30,50 @@ To set up your development environment, follow the [Developer Setup Guide](docs/
 - [Zenodo Integration](docs/zenodo.md) - Integration with Zenodo for DOI publishing and deployment on Render
 - [Comment Moderation System](docs/comment-moderation.md) - Comment management and moderation features
 - [ZIP Upload Feature](docs/zip-upload.md) - Bulk file upload functionality via ZIP archives
+- [Email Notification](docs/email-notification.md) - Usage of SendGrid for sending email notifications
 
 ### Deployment
 - [Deployment on Render](docs/deployment-render.md) - Staging and production environments on Render
 
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+rosemary test
+
+# Run tests for a specific module
+rosemary test dataset
+rosemary test auth
+```
+
+### Selenium Tests
+
+Selenium tests run in **headless mode** by default (compatible with servers and CI/CD).
+
+```bash
+# Run all Selenium tests (headless)
+rosemary selenium
+
+# Run Selenium tests for a specific module
+rosemary selenium dataset
+rosemary selenium auth
+rosemary selenium community
+```
+
+**To see the browser during tests** (useful for debugging):
+
+```bash
+SELENIUM_HEADLESS=false rosemary selenium
+```
+
+**Requirements for Selenium tests:**
+- Firefox installed (`sudo apt-get install firefox`)
+- Application running (`flask run` in another terminal)
+- Database initialized with seeders (`rosemary db:reset`)
+
+
 ### Scrum Graphics
 
-- [Scrum Graphics Document](docs/scrum-graphics.md)
+- [Scrum Graphics](docs/srum-graphics.md)

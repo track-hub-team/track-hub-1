@@ -1,21 +1,325 @@
-# Subida de Archivos ZIP
 
-## Descripción General
 
-Track Hub permite a los usuarios subir colecciones de archivos GPX o UVL empaquetados en formato ZIP. El sistema descomprime automáticamente el archivo, valida cada archivo contenido y los importa al dataset, simplificando la carga de múltiples archivos.
+# Upload and Import of Models (.uvl / .gpx)
 
-## Ubicación
+This document explains how the logic for uploading and importing UVL and GPX models works in Track Hub, including:
+
+- Uploading a single model file to the current session.
+- Importing models from a GitHub repository or a ZIP file.
+- Validation and classification of models by type (UVL / GPX).
+- Integration of those files into dataset creation.
+
+---
+
+## Global Flow Overview
+
+Track Hub follows a unified, source-agnostic flow for importing and uploading models.
+Regardless of whether files come from an individual upload, a ZIP archive, or a GitHub repository, all models follow the same lifecycle and validation pipeline.
+
+## High-Level Flow
+
+```text
+User Action
+    ↓
+Routes (HTTP validation)
+    ↓
+DataSetService (business orchestration)
+    ↓
+Fetcher (GitHub / ZIP / Upload)
+    ↓
+User Temporary Folder
+    ↓
+Type Registry + Handlers (UVL / GPX validation)
+    ↓
+Validated models available for dataset creation
+    ↓
+Dataset creation
+    ↓
+Final dataset storage + versioning
+```
+
+
+
+## File Lifecycle and Storage Layout
+
+```text
+/tmp/
+└── user_<id>/
+    ├── uploaded_file.gpx
+    ├── imported_model.uvl
+    └── archive.zip
+
+/tmp/
+└── zip_<random>/
+    └── extracted_files...
+
+/tmp/
+└── github_<random>/
+    └── cloned_repository...
+
+uploads/
+└── user_<id>/
+    └── dataset_<dataset_id>/
+        ├── model1.gpx
+        └── model2.uvl
+```
+
+
+| Stage              | Location                          | Persistence |
+|--------------------|-----------------------------------|-------------|
+| Upload / Import    | User temporary folder             | Temporary   |
+| ZIP extraction     | Ephemeral extraction folder       | Temporary   |
+| GitHub clone       | Ephemeral repository folder       | Temporary   |
+| Dataset creation   | uploads/user_X/dataset_Y          | Permanent   |
+
+---
+
+## Import from GitHub Repository
+
+### General Description
+
+Track Hub allows users to import multiple UVL and GPX models directly from a GitHub repository or from a specific subfolder within a repository.
+The system performs a shallow clone of the repository, scans it for supported model files, validates them, and copies only valid models into the user’s temporary folder.
+
+This flow mirrors the ZIP import process in terms of validation, filtering, and integration with dataset creation.
+
+---
+
+### Location
+
+- **Fetcher**: `app/modules/dataset/fetchers/github.py` → `GithubFetcher`
+- **Service**: `app/modules/dataset/services.py` → `DataSetService`
+- **Registry**: `app/modules/dataset/registry.py` → Dataset type registry
+- **Tests**: `app/modules/dataset/tests/`
+
+---
+
+### Supported URL Formats
+
+The following GitHub URL formats are supported:
+
+
+https://github.com/<owner>/<repo>
+https://github.com/<owner>/<repo>/tree/<branch>
+https://github.com/<owner>/<repo>/tree/<branch>/<subpath>
+
+Examples:
+
+https://github.com/example/models
+https://github.com/example/models/tree/main
+https://github.com/example/models/tree/main/gpx/routes
+
+Unsupported or malformed URLs result in a `FetchError`.
+
+---
+
+### GithubFetcher Architecture
+
+```python
+class GithubFetcher(Fetcher_Interface):
+
+    def supports(self, url):
+        """Returns True if the URL belongs to github.com"""
+
+    def fetch(self, url, dest_root, current_user=None):
+        """
+        1. Parse GitHub URL
+        2. Clone repository (shallow)
+        3. Return repository root or selected subpath
+        """
+```
+
+#### URL Parsing Logic
+
+The GitHub URL is parsed to extract:
+
+- Repository owner
+- Repository name
+- Branch (optional)
+- Subpath inside the repository (optional)
+
+```python
+def _parse_github_url(url):
+    """
+    Extracts owner, repo, branch and subpath from a GitHub URL.
+    Raises FetchError if the URL is invalid or unsupported.
+    """
+```
+
+**Rules:**
+
+- If no branch is specified, the default repository branch is used.
+- If a subpath is specified, only that directory is scanned for models.
+- The repository is always cloned at the root level; subpaths only affect scanning.
+
+#### Clone Strategy
+
+The repository is cloned using a shallow clone strategy:
+
+- depth=1
+- No tags
+- No full commit history
+
+**Benefits:**
+
+- Reduced network usage
+- Faster imports
+- Lower disk usage
+
+This design choice aligns GitHub imports with ZIP imports in terms of performance and resource usage.
+
+#### Fetch and Extraction Flow
+
+GitHub URL
+    ↓
+URL parsing and validation
+    ↓
+Shallow repository clone
+    ↓
+Select repository root or subpath
+    ↓
+Scan filesystem recursively
+    ↓
+Filter supported files (.uvl, .gpx)
+    ↓
+Validate each model
+    ↓
+Copy valid models to user temp folder
+
+#### Model Collection and Validation
+
+After cloning, the DataSetService invokes the same collection logic used by ZIP imports:
+
+`_collect_models_into_temp(source_root, dest_dir)`
+
+**Process:**
+
+- Recursively traverse the repository (or subpath)
+- Infer model type from file extension
+- Validate each file using its handler (UVLHandler / GPXHandler)
+- Copy valid files to the user temporary folder
+- Resolve name collisions by adding numeric suffixes
+
+Invalid or unsupported files are skipped without aborting the process.
+
+#### Error Handling
+
+| Error Scenario                        | Exception   | Behavior         |
+|---------------------------------------|-------------|------------------|
+| Invalid GitHub URL                    | FetchError  | Request rejected |
+| Repository not found / access denied  | FetchError  | Import aborted   |
+| Branch does not exist                 | FetchError  | Import aborted   |
+| No valid models found                 | FetchError  | Import rejected  |
+| Invalid model file                    | ValueError  | File skipped     |
+
+#### Security Considerations
+
+The GitHub import flow includes the following protections:
+
+- Shallow clone only (prevents excessive disk and network usage)
+- File-type filtering (only .uvl and .gpx files are considered)
+- Content validation (each file is validated using its registered handler)
+- No symlink resolution (only regular files are processed)
+- Isolated temporary directories (each import is scoped to a user-specific temporary directory)
+
+#### Limitations
+
+- No limit on total repository size (implicit reliance on shallow clone)
+- Git submodules are not processed
+- No progress feedback during clone
+- Repository directory structure is not preserved in the dataset
+- Authentication for private repositories is not supported
+
+#### Usage Example
+
+```python
+# User provides a GitHub repository URL
+github_url = "https://github.com/example/gpx-models/tree/main/routes"
+
+# Import models
+added = dataset_service.fetch_models_from_github(
+    github_url=github_url,
+    dest_dir=current_user.temp_folder(),
+    current_user=current_user
+)
+
+# added → list of validated GPX/UVL files in user temp folder
+```
+
+#### Relation to Dataset Creation
+
+Once imported, GitHub models behave identically to:
+
+- Individually uploaded files
+- Models imported from ZIP
+
+They are:
+
+- Listed in the user session
+- Selected during dataset creation
+- Validated again during dataset persistence
+- Moved to the final dataset directory
+- Included in versioning and publication workflows
+
+#### Summary
+
+Both ZIP and GitHub imports:
+
+- Use dedicated fetchers
+- Rely on the same validation handlers
+- Share the same collection logic
+- Store files temporarily before dataset creation
+- Enforce strict type and content validation
+
+This symmetry ensures consistent behavior, security, and extensibility across all import mechanisms.
+
+
+
+## Supported Import Flows
+
+1. **Individual upload:** The user uploads a .uvl or .gpx file, which is validated and stored in the user's temporary folder.
+2. **Import from ZIP:** The user uploads a ZIP file with multiple models. The system extracts, validates, and filters the supported files (.uvl/.gpx).
+3. **Import from GitHub:** The user provides a GitHub URL (repo or subfolder). The system clones/fetches the repo, finds, and validates the supported models.
+
+All valid models are available in the user's temporary folder to be used in the creation of a new dataset.
+
+## Type Validation and Registry
+
+The system detects the file type by its extension and validates it using a specific handler:
+
+- **UVLHandler:** validates .uvl files (existence, not empty, contains the word 'features').
+- **GPXHandler:** validates .gpx files (existence, XML parsing, <gpx> root, contains tracks or waypoints).
+
+The global registry `DATASET_TYPE_REGISTRY` associates each type with its handler, model, and allowed extensions.
+
+## Use Case Summary
+
+| Case                        | Endpoint                  | Main process                                                                      |
+|-----------------------------|---------------------------|-----------------------------------------------------------------------------------|
+| Individual upload           | /dataset/file/upload      | Uploads, validates, and leaves the file in the user's temporary folder            |
+| Import from ZIP             | /dataset/import           | Extracts, validates, and filters models from an uploaded ZIP                      |
+| Import from GitHub          | /dataset/import           | Clones/fetches repo, validates, and filters models from GitHub                    |
+
+---
+
+# ZIP File Upload
+
+## General Description
+
+Track Hub allows users to upload collections of GPX or UVL files packaged in ZIP format. The system automatically unzips the file, validates each contained file, and imports them into the dataset, simplifying the upload of multiple files.
+
+## Location
 
 - **Fetcher**: `app/modules/dataset/fetchers/zip.py` → `ZipFetcher`
-- **Servicio**: `app/modules/dataset/services.py` → `DataSetService`
-- **Registry**: `app/modules/dataset/registry.py` → Registro de fetchers
+- **Service**: `app/modules/dataset/services.py` → `DataSetService`
+- **Registry**: `app/modules/dataset/registry.py` → Fetcher registry
 - **Tests**: `app/modules/dataset/tests/test_dataset_file_upload.py`
 
-## Arquitectura
+## Architecture
 
 ### ZipFetcher
 
-Clase principal que implementa la interfaz `Fetcher_Interface`:
+Main class implementing the `Fetcher_Interface`:
 
 ```python
 class ZipFetcher(Fetcher_Interface):
@@ -30,9 +334,9 @@ class ZipFetcher(Fetcher_Interface):
         """Extrae archivos .uvl y .gpx del ZIP al destino."""
 ```
 
-### Integración con DataSetService
+### Integration with DataSetService
 
-El servicio de datasets proporciona métodos de alto nivel:
+The dataset service provides high-level methods:
 
 ```python
 def fetch_models_from_zip_upload(self, file_storage, dest_dir, current_user):
@@ -44,19 +348,19 @@ def fetch_models_from_zip_upload(self, file_storage, dest_dir, current_user):
     """
 ```
 
-## Funcionalidades Principales
+## Main Features
 
-### 1. Validación de Archivo ZIP
+### 1. ZIP File Validation
 
 ```python
 def _save_zip_to_temp(self, file_storage, current_user) -> Path:
     """
     Valida y guarda el ZIP subido en carpeta temporal.
 
-    Validaciones:
-    - Archivo debe existir
-    - Debe tener extensión .zip
-    - Evita sobrescritura con nombres únicos
+    Validations:
+    - File must exist
+    - Must have .zip extension
+    - Prevents overwriting with unique names
     """
 
     if not file_storage or not file_storage.filename:
@@ -82,19 +386,19 @@ def _save_zip_to_temp(self, file_storage, current_user) -> Path:
     return target
 ```
 
-### 2. Extracción Segura
+### 2. Safe Extraction
 
 ```python
 def fetch(self, url, dest_root, current_user=None):
     """
     Extrae archivos del ZIP con validaciones de seguridad.
 
-    Protecciones:
+    Protections:
     - Path traversal (../, /../, etc.)
-    - Límite de entradas (MAX_ZIP_ENTRIES)
-    - Solo extrae archivos soportados (.uvl, .gpx)
-    - Validación de cada archivo extraído
-    - Manejo de nombres duplicados
+    - Entry limit (MAX_ZIP_ENTRIES)
+    - Only extracts supported files (.uvl, .gpx)
+    - Validation of each extracted file
+    - Duplicate name handling
     """
 
     zip_path = Path(str(url))
@@ -185,19 +489,19 @@ def fetch(self, url, dest_root, current_user=None):
     return extract_root
 ```
 
-### 3. Validación y Filtrado de Archivos
+### 3. File Validation and Filtering
 
 ```python
 def _collect_models_into_temp(self, source_root: Path, dest_dir: Path):
     """
     Copia archivos válidos desde source_root a dest_dir.
 
-    Proceso:
-    1. Recorre recursivamente source_root
-    2. Identifica tipo de archivo (.uvl, .gpx)
-    3. Valida cada archivo con su descriptor
-    4. Copia archivos válidos a dest_dir
-    5. Maneja nombres duplicados
+    Process:
+    1. Recursively traverses source_root
+    2. Identifies file type (.uvl, .gpx)
+    3. Validates each file with its descriptor
+    4. Copies valid files to dest_dir
+    5. Handles duplicate names
     """
 
     added = []
@@ -243,26 +547,26 @@ def _collect_models_into_temp(self, source_root: Path, dest_dir: Path):
     return added
 ```
 
-## Limitaciones y Restricciones
+## Limitations and Restrictions
 
-### Límites Configurables
+### Configurable Limits
 
 ```python
 EXTRACTABLE_EXTS = {".uvl", ".gpx"}  # Extensiones permitidas
 MAX_ZIP_ENTRIES = 500                 # Máximo número de entradas en ZIP
 ```
 
-### Validaciones de Seguridad
+### Security Validations
 
-1. **Path Traversal**: Rechaza paths como `../../../etc/passwd`
-2. **Resolución de paths**: Verifica que los archivos extraídos estén dentro del directorio esperado
-3. **Extensiones permitidas**: Solo `.uvl` y `.gpx`
-4. **Límite de archivos**: Máximo 500 entradas por ZIP
-5. **Validación de contenido**: Cada archivo es validado por su descriptor antes de aceptarse
+1. **Path Traversal**: Rejects paths like `../../../etc/passwd`
+2. **Path resolution**: Ensures extracted files are within the expected directory
+3. **Allowed extensions**: Only `.uvl` and `.gpx`
+4. **File limit**: Maximum 500 entries per ZIP
+5. **Content validation**: Each file is validated by its descriptor before being accepted
 
-## Flujo de Uso
+## Usage Flow
 
-### 1. Usuario sube ZIP desde formulario
+### 1. User uploads ZIP from form
 
 ```html
 <form method="POST" enctype="multipart/form-data">
@@ -271,7 +575,7 @@ MAX_ZIP_ENTRIES = 500                 # Máximo número de entradas en ZIP
 </form>
 ```
 
-### 2. Backend procesa el ZIP
+### 2. Backend processes the ZIP
 
 ```python
 @dataset_bp.route("/upload", methods=["POST"])
@@ -291,7 +595,7 @@ def upload_dataset():
     return redirect(url_for('dataset.view', id=dataset.id))
 ```
 
-### 3. Sistema extrae y valida
+### 3. System extracts and validates
 
 ```
 ZIP Upload
@@ -305,43 +609,43 @@ _collect_models_into_temp() → Validar y copiar
 Dataset creado con archivos validados
 ```
 
-## Ejemplo de Uso
+## Usage Example
 
-### Caso: Subir colección de rutas GPX
+### Case: Uploading a collection of GPX routes
 
 ```python
-# Usuario sube archivo: hiking_routes.zip
-# Contenido:
-# - route1.gpx
-# - route2.gpx
-# - subfolder/route3.gpx
-# - README.txt (ignorado)
-# - invalid.gpx (inválido, ignorado)
+    # User uploads file: hiking_routes.zip
+    # Contents:
+    # - route1.gpx
+    # - route2.gpx
+    # - subfolder/route3.gpx
+    # - README.txt (ignored)
+    # - invalid.gpx (invalid, ignored)
 
-# 1. Validar ZIP
-zip_path = dataset_service._save_zip_to_temp(zip_file, current_user)
-# → /tmp/user_42/hiking_routes.zip
+    # 1. Validate ZIP
+    zip_path = dataset_service._save_zip_to_temp(zip_file, current_user)
+    # → /tmp/user_42/hiking_routes.zip
 
-# 2. Extraer
-extract_root = zip_fetcher.fetch(zip_path, temp_root, current_user)
-# → /tmp/zip_random123/
-#    ├── route1.gpx ✅
-#    ├── route2.gpx ✅
-#    └── route3.gpx ✅
-# README.txt e invalid.gpx fueron ignorados
+    # 2. Extract
+    extract_root = zip_fetcher.fetch(zip_path, temp_root, current_user)
+    # → /tmp/zip_random123/
+    #    ├── route1.gpx ✅
+    #    ├── route2.gpx ✅
+    #    └── route3.gpx ✅
+    # README.txt and invalid.gpx were ignored
 
-# 3. Validar y copiar
-added = dataset_service._collect_models_into_temp(extract_root, user_temp)
-# → [route1.gpx, route2.gpx, route3.gpx]
+    # 3. Validate and copy
+    added = dataset_service._collect_models_into_temp(extract_root, user_temp)
+    # → [route1.gpx, route2.gpx, route3.gpx]
 
-# 4. Crear dataset
-dataset = dataset_service.create_from_form(form, current_user)
-# Dataset con 3 archivos GPX validados
+    # 4. Create dataset
+    dataset = dataset_service.create_from_form(form, current_user)
+    # Dataset with 3 validated GPX files
 ```
 
-## Manejo de Errores
+## Error Handling
 
-### Errores de Formato
+### Format Errors
 
 ```python
 # ZIP inválido o corrupto
@@ -353,7 +657,7 @@ if not extracted_any:
     raise FetchError("ZIP processed, but no supported files (.uvl/.gpx) were found")
 ```
 
-### Errores de Seguridad
+### Security Errors
 
 ```python
 # Path traversal detectado
@@ -365,7 +669,7 @@ if len(infos) > MAX_ZIP_ENTRIES:
     raise FetchError("ZIP has too many entries")
 ```
 
-### Errores de Validación
+### Validation Errors
 
 ```python
 # Archivo no válido según su descriptor
@@ -378,9 +682,9 @@ except Exception as e:
 
 ## Testing
 
-### Tests de Subida de ZIP
+### ZIP Upload Tests
 
-Ubicación: `app/modules/dataset/tests/test_dataset_file_upload.py`
+Location: `app/modules/dataset/tests/test_dataset_file_upload.py`
 
 ```python
 def test_upload_zip_with_multiple_gpx_files(client, user):
@@ -440,19 +744,19 @@ def test_upload_zip_path_traversal_attack(client, user):
 ### Ejecutar Tests
 
 ```bash
-# Tests de subida de archivos
+# File upload tests
 pytest app/modules/dataset/tests/test_dataset_file_upload.py -v
 
-# Solo tests de ZIP
+# Only ZIP tests
 pytest app/modules/dataset/tests/test_dataset_file_upload.py -v -k "zip"
 
-# Con cobertura
+# With coverage
 pytest app/modules/dataset/tests/test_dataset_file_upload.py --cov=app.modules.dataset.fetchers
 ```
 
 ## Logging
 
-El sistema incluye logging detallado:
+The system includes detailed logging:
 
 ```python
 logger.info(f"[ZipFetcher] Extracting {zip_path} into {extract_root}")
@@ -462,51 +766,51 @@ logger.info(f"Added {kind} file: {path.name} -> {target.name}")
 logger.info(f"Total files collected from {source_root}: {len(added)}")
 ```
 
-**Niveles**:
-- `INFO`: Operaciones exitosas
-- `DEBUG`: Archivos ignorados (extensiones no soportadas)
-- `WARNING`: Archivos con errores de validación
-- `ERROR`: Errores críticos
+**Levels**:
+- `INFO`: Successful operations
+- `DEBUG`: Ignored files (unsupported extensions)
+- `WARNING`: Files with validation errors
+- `ERROR`: Critical errors
 
-## Seguridad
+## Security
 
-### Protecciones Implementadas
+### Implemented Protections
 
 1. **Path Traversal**:
    ```python
-   # Bloquea: ../../../etc/passwd
-   if norm_path.startswith("/") or ".." in norm_path:
-       raise FetchError("Unsafe path in ZIP")
+    # Blocks: ../../../etc/passwd
+    if norm_path.startswith("/") or ".." in norm_path:
+        raise FetchError("Unsafe path in ZIP")
    ```
 
 2. **Verificación de Resolución**:
    ```python
-   resolved = target.resolve()
-   base_resolved = extract_root.resolve()
-   if base_resolved not in resolved.parents:
-       raise FetchError("Unsafe path in ZIP")
+    resolved = target.resolve()
+    base_resolved = extract_root.resolve()
+    if base_resolved not in resolved.parents:
+        raise FetchError("Unsafe path in ZIP")
    ```
 
 3. **Límite de Archivos**:
    ```python
-   if len(infos) > MAX_ZIP_ENTRIES:
-       raise FetchError("ZIP has too many entries")
+    if len(infos) > MAX_ZIP_ENTRIES:
+        raise FetchError("ZIP has too many entries")
    ```
 
 4. **Validación de Contenido**:
    ```python
-   descriptor.handler.validate(str(path))
-   # GPXHandler o UVLHandler validan el contenido
+    descriptor.handler.validate(str(path))
+    # GPXHandler or UVLHandler validate the content
    ```
 
 5. **Sanitización de Nombres**:
    ```python
-   desired_name = Path(norm_path).name  # Solo el nombre, sin paths
+    desired_name = Path(norm_path).name  # Only the name, no paths
    ```
 
-## Mejores Prácticas
+## Best Practices
 
-### 1. Limpieza de Recursos
+### 1. Resource Cleanup
 
 ```python
 finally:
@@ -518,7 +822,7 @@ finally:
         pass
 ```
 
-### 2. Manejo de Duplicados
+### 2. Duplicate Handling
 
 ```python
 # Evitar sobrescritura
@@ -527,7 +831,7 @@ while target.exists():
     i += 1
 ```
 
-### 3. Validación Temprana
+### 3. Early Validation
 
 ```python
 # Validar antes de extraer
@@ -535,7 +839,7 @@ if not filename.lower().endswith(".zip"):
     raise FetchError("Invalid file type")
 ```
 
-### 4. Logging Apropiado
+### 4. Appropriate Logging
 
 ```python
 # INFO para operaciones exitosas
@@ -545,32 +849,32 @@ logger.info(f"Extracted {count} files")
 logger.warning(f"Skipping invalid file: {filename}")
 ```
 
-## Limitaciones Conocidas
+## Known Limitations
 
-1. **Estructura plana**: Los subdirectorios del ZIP se aplanan (solo se usa el nombre del archivo)
-2. **Sin metadatos preservados**: Timestamps y permisos no se preservan
-3. **Sin compresión incremental**: ZIP completo debe cargarse en memoria
-4. **Sin progreso**: No hay barra de progreso para ZIPs grandes
+1. **Flat structure**: ZIP subdirectories are flattened (only the file name is used)
+2. **No metadata preserved**: Timestamps and permissions are not preserved
+3. **No incremental compression**: The entire ZIP must be loaded into memory
+4. **No progress**: No progress bar for large ZIPs
 
-## Posibles Mejoras Futuras
+## Possible Future Improvements
 
-- [ ] Soporte para archivos más grandes (streaming)
-- [ ] Barra de progreso para extracción
-- [ ] Preservar estructura de directorios
-- [ ] Soporte para `.7z`, `.tar.gz`
-- [ ] Preview de contenido antes de confirmar
-- [ ] Límites configurables por tipo de usuario
+- [ ] Support for larger files (streaming)
+- [ ] Progress bar for extraction
+- [ ] Preserve directory structure
+- [ ] Support for `.7z`, `.tar.gz`
+- [ ] Content preview before confirming
+- [ ] Configurable limits by user type
 
-## Conclusión
+## Conclusion
 
-La funcionalidad de subida de ZIP proporciona:
+The ZIP upload functionality provides:
 
-- ✅ Extracción automática y segura de archivos
-- ✅ Validación exhaustiva de contenido
-- ✅ Protección contra ataques de path traversal
-- ✅ Manejo robusto de errores
-- ✅ Filtrado inteligente de archivos soportados
-- ✅ Logging detallado para debugging
-- ✅ Testing completo de casos normales y edge cases
+- ✅ Automatic and safe file extraction
+- ✅ Thorough content validation
+- ✅ Protection against path traversal attacks
+- ✅ Robust error handling
+- ✅ Smart filtering of supported files
+- ✅ Detailed logging for debugging
+- ✅ Complete testing of normal and edge cases
 
-Esta implementación permite a los usuarios cargar colecciones completas de archivos GPS de forma eficiente y segura.
+This implementation allows users to efficiently and safely upload complete collections of GPS files.
