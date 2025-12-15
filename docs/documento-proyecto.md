@@ -25,12 +25,14 @@
 | Olivencia Moreno, Pablo | 9.5 |
 | Ramírez Gil, Adrián | 9 |
 | Rodríguez Calderón, Antonio | 10 |
-| Varo Vera, Juan | 9 |
+| Varo Vera, Juan | 7 |
 
 
 ---
 
 ### Enlaces de interés
+- **Enlace de Jira tareas:** [https://egc-track-hub.atlassian.net/jira/software/projects/SCRUM/boards/1]
+- **Enlace tablero Soporte:** [https://egc-track-hub.atlassian.net/jira/servicedesk/projects/SOP/boards/34]
 - **Repositorio de código:** [https://github.com/track-hub-team/track-hub-1]
 - **Sistema desplegado en Render producción:** [https://track-hub-1.onrender.com]
 - **Sistema desplegado en Render preproducción:** [https://track-hub-1-staging.onrender.com]
@@ -46,11 +48,14 @@
 
 | Miembro | Horas | Commits | LoC | Test | Issues | Work Item | Dificultad |
 |--------|------:|--------:|----:|-----:|-------:|-----------|-----------|
-| Rodríguez Calderón, Antonio | 71 | 96 | ≈9001 | 11 | 16 | 74 | L |
-| Castrillón Mora, Pablo | 52:18 | 12 | 5624 | 23 | 14 | 80 | M |
-| Hu, Jianwu | 51:58 | 17 | 1519 | 30 | 11 | 92 | M |
-| Varo Vera, Juan | 52:04| 17 | 1631 | 18 | 13 | 14 | M |
-| **TOTAL** | tHH | tXX | tYY | tZZ | tII | Resumen | H (X) / M (Y) / L (Z) |
+| Rodríguez Calderón, Antonio | 71 | 96 | ≈9001 | 11 | 16 | [#74](https://github.com/EGCETSII/uvlhub/issues/74) | L |
+| Olivencia Moreno, Pablo | 62 | 26 | 3758 | 27 | 6 | [#70](https://github.com/EGCETSII/uvlhub/issues/70) | H |
+| Castrillón Mora, Pablo | 52:18 | 15 | 5885 | 23 | 14 | [#80](https://github.com/EGCETSII/uvlhub/issues/80) | M |
+| Hu, Jianwu | 51:58 | 24 | 2594 | 30 | 11 | [#92](https://github.com/EGCETSII/uvlhub/issues/92) | M |
+| Ramírez Gil, Adrián | 59:31 | 19 | 6419 | 16 | 7 | [#101](https://github.com/EGCETSII/uvlhub/issues/101) | L |
+| Varo Vera, Juan | 52:04 | 13 | 1378 | 18 | 6 | [#86](https://github.com/EGCETSII/uvlhub/issues/86)| M |
+| **TOTAL** | **348:51** | **185** | **≈26,537** | **125** | **67** | - | **H (1) / M (3) / L (2)** |
+
 
 **Criterios:**
 - **Horas:** horas reales empleadas.
@@ -85,6 +90,7 @@ Con este comando obtenemos la siguiente salida:
 - **Eliminadas**: 3039
 
 ---
+
 ## Integración con otros equipos
 
 - **Track-hub-2:** Se realizó integración colaborativa para compartir funcionalidades comunes y evitar duplicación de esfuerzos. Las características integradas incluyen la adaptación del formato GPX (desarrollado originalmente por Track-hub-2) y el flujo de despliegue continuo (CD) a Render.
@@ -96,1200 +102,1006 @@ Con este comando obtenemos la siguiente salida:
 
 ---
 
-## Resumen ejecutivo
+## Resumen Ejecutivo del Proyecto Track-hub-1
 
-**Track-Hub-1** es una plataforma web integral de gestión y publicación de datasets científicos desarrollada durante el curso académico 2025/2026 para la asignatura Evolución y Gestión de la Configuración. El sistema permite a investigadores y científicos de datos crear, compartir, publicar y explorar conjuntos de datos estructurados, integrándose con servicios externos como Zenodo para asignar identificadores digitales persistentes (DOI) a las publicaciones científicas.
+El proyecto **Track-hub-1**, desarrollado por el **Grupo 3** durante el curso escolar **2025/2026**, abordó la implementación de funcionalidades avanzadas y la mejora de la infraestructura de calidad dentro de la plataforma **UVLHub**, en el marco de la asignatura **Evolución y Gestión de la Configuración**.
 
-### Contexto y Objetivos
+Catalogado como un proyecto de tipo **UVLHub-equipo**, el trabajo requirió una intensa coordinación con otros equipos para lograr la integración continua de código y flujos de despliegue. El esfuerzo total estimado para el proyecto fue de **160 horas**.
 
-El proyecto surge de la necesidad de proporcionar una solución moderna y automatizada para la gestión de datasets en entornos académicos y de investigación. Los objetivos principales del desarrollo fueron:
+---
 
-- **Gestión completa de datasets**: Implementar funcionalidades CRUD (Create, Read, Update, Delete) con soporte para múltiples formatos de archivo, incluyendo UVL (Universal Variability Language), GPX (datos geoespaciales) y archivos comprimidos ZIP.
+## Calidad y Flujo de Desarrollo (CI por Antonio)
 
-- **Autenticación y perfiles robustos**: Desarrollar un sistema seguro de registro, autenticación y gestión de perfiles de usuario que permita personalización y control de privacidad.
+La gestión del código se basó en el **EGC Flow**, una variante adaptada de **Git Flow**, que establece ramas específicas para:
 
-- **Colaboración científica**: Crear un ecosistema de comunidades donde investigadores puedan agruparse por áreas de interés, compartir datasets y colaborar en proyectos comunes.
+- **Producción:** `main`
+- **Integración:** `trunk`
+- **Nuevas funcionalidades:** `feature/<task>`
+- **Correcciones:** `bugfix/<task>`, `hotfix/<task>`
 
-- **Integración con ecosistemas externos**: Establecer conexiones con Zenodo (repositorio de publicaciones científicas) para generación automática de DOI, y con GitHub mediante webhooks para sincronización de repositorios.
+Se exige que todos los commits sigan la especificación de **Conventional Commits** e incluyan una referencia al identificador de la tarea de Jira (`Refs: SCRUM-XX`).
 
-- **Pipeline CI/CD completo**: Implementar un proceso de integración y despliegue continuo que garantice calidad del código, automatice el testing y facilite despliegues seguros en múltiples entornos.
+La robustez del desarrollo fue asegurada mediante una completa infraestructura de **Integración Continua y Despliegue Continuo (CI/CD)**.
+**Antonio Rodríguez Calderón** fue responsable de esta implementación, que opera mediante:
 
-- **Análisis de modelos de características**: Integrar Flamapy para análisis automatizado de feature models, proporcionando validación y métricas sobre variabilidad de software.
+- **Validación local:** pre-commit hooks
+- **Validación remota:** GitHub Actions
 
-### Alcance y Resultados Logrados
+### Etapas de la pipeline de CI
 
-El sistema implementado consta de **nueve módulos principales** completamente funcionales:
+1. **Validación de Commits y Ramas**
+   Verificación de mensajes según *Conventional Commits* y nombres de rama conforme a *EGC Flow*.
 
-1. **Autenticación y Perfiles** (`auth`, `profile`): Sistema de registro con validación de correo electrónico, login seguro con hash de contraseñas, gestión de sesiones y perfiles personalizables con biografía, afiliación y ORCID.
+2. **Calidad del Código**
+   - Formateo automático con **Black** e **isort**
+   - Análisis estático con **Flake8**
 
-2. **Gestión de Datasets** (`dataset`): Creación, edición, eliminación y visualización de datasets con metadatos completos (título, descripción, autores, palabras clave), versionado, control de visibilidad (público/privado) y soporte para múltiples tipos de archivo.
+3. **Pruebas Automatizadas**
+   - Ejecución de tests con **pytest**
+   - Cobertura mínima del **50%** en ramas `trunk` y `main`
 
-3. **Feature Models** (`featuremodel`, `flamapy`): Gestión de modelos de características en formato UVL, análisis automatizado mediante Flamapy, visualización de árboles de características y métricas de variabilidad.
+4. **Seguridad**
+   - Escaneo de dependencias con **pip-audit**
+   - Análisis estático de seguridad con **Bandit**
+   - Detección de secretos con **TruffleHog**
 
-4. **Comunidades Científicas** (`community`): Creación de comunidades temáticas, gestión de membresías, moderación de contenido y datasets compartidos dentro de comunidades.
+### Despliegue
 
-5. **Exploración y Búsqueda** (`explore`): Motor de búsqueda avanzado con filtros por autor, fecha, tipo de archivo, palabras clave y comunidad, con paginación y ordenamiento flexible.
+El despliegue se organizó en **Render**, manteniendo:
 
-6. **Integración Zenodo** (`zenodo`): Publicación automatizada en Zenodo/Fakenodo, generación de DOI, sincronización de metadatos y gestión de deposiciones.
+- **Staging:** sincronizado con `trunk`
+- **Producción:** desplegado tras la creación de un *Release* en `main`
 
-7. **Sistema de Webhooks** (`webhook`): Recepción de eventos desde GitHub, sincronización automática de repositorios, validación de firmas HMAC y procesamiento asíncrono de actualizaciones.
+Dado el carácter efímero del sistema de archivos de Render, la persistencia de archivos subidos se gestiona mediante la sincronización con un **repositorio dedicado de GitHub**.
 
-8. **Gestión de Archivos** (`hubfile`): Sistema de almacenamiento con checksum MD5, detección de duplicados, validación de formatos y gestión de cuotas por usuario.
+---
 
-9. **Notificaciones por Email** (`mail`): Sistema de correo transaccional para confirmaciones, notificaciones de comunidad y alertas administrativas.
+## Work Items (WIs) Implementados y Atribuciones
 
-### Infraestructura y Proceso de Desarrollo
+Se implementaron funcionalidades clave enfocadas en la curación, la publicación académica y la usabilidad de la plataforma.
 
-La infraestructura del proyecto se fundamenta en **prácticas modernas de DevOps y gestión de configuración**:
+### 1. Sistema de Versionado de Datasets (WI #86, Dificultad Alta)
 
-- **Arquitectura tecnológica**: Stack basado en Python 3.12 con Flask como framework web, SQLAlchemy para ORM, PostgreSQL como base de datos relacional, Bootstrap 5 para frontend responsivo y JavaScript vanilla para interactividad.
+Este sistema permite a los usuarios comprender la evolución de un dataset, diferenciando entre:
 
-- **Estrategia de branching**: Trunk-based development con ramas feature de corta duración (máximo 2-3 días), integración frecuente a trunk, protección de rama principal y pull requests obligatorias con revisión por pares.
+- **Versiones Mayores (MAJOR):**
+  Se crean cuando hay cambios en los archivos y generan un nuevo **DOI específico de versión**.
 
-- **Versionado semántico**: Sistema automatizado mediante hooks pre-commit que incrementa versiones siguiendo SemVer (MAJOR.MINOR.PATCH), generación automática de tags y changelog basado en Conventional Commits.
+- **Versiones Menores / Parche (MINOR / PATCH):**
+  Aplicadas a mejoras o correcciones de metadatos (título, descripción) sin cambios en los archivos, manteniendo el **DOI conceptual**.
 
-- **Pipeline CI/CD**: GitHub Actions con flujos automatizados que ejecutan linting (flake8), testing (pytest con >80% cobertura), análisis estático de código, construcción de artefactos y despliegue automático a staging tras merge a trunk.
+Para garantizar la reproducibilidad y la trazabilidad de las citas, se distingue entre:
 
-- **Entornos de despliegue**: Cuatro entornos activos - desarrollo local, preproducción en Render (track-hub-1-staging.onrender.com), preproducción en servidor propio (pre-trackhub.pabolimor.cloud), producción en Render (track-hub-1.onrender.com) y producción en servidor propio (trackhub.pabolimor.cloud).
+- **DOI Conceptual:** siempre apunta a la última versión publicada.
+- **DOI Específico de Versión:** vinculado permanentemente a los archivos de esa edición.
 
-- **Fakenodo**: Mock server de Zenodo desplegado independientemente (fakenodo.pabolimor.cloud) para desarrollo y testing sin consumir cuota de Zenodo real.
+---
 
-### Métricas del Proyecto
+### 2. Implementación de Fakenodo (WI Obligatorio por Adrián)
 
-El equipo de seis desarrolladores ha generado las siguientes métricas cuantificables:
+La lógica de versionado se apoya en la integración con un servicio mock de Zenodo.
+**Adrián Ramírez Gil** implementó el Work Item de **Fakenodo**, un microservicio **Flask** que simula la API de Zenodo.
 
-- **+13.161 líneas de código** producidas (excluyendo dependencias de terceros)
-- **>89 commits** del equipo con mensajes siguiendo Conventional Commits
-- **>71 horas** de desarrollo documentadas por desarrollador
-- **Suite completa de tests** unitarios e integración con pytest
-- **Cobertura de código >80%** reportada automáticamente en CI
-- **Revisión por pares** en el 100% de pull requests antes de integración
-- **Issues gestionadas** mediante GitHub Projects con workflow kanban
+Fakenodo es fundamental porque:
 
-### Valor Aportado y Estado Final
+- Replica el sistema de versionado inteligente de Zenodo.
+- Detecta cambios en archivos para asignar un nuevo DOI o mantener el anterior.
+- Permite el desarrollo sin depender de la red.
+- Evita consumir la cuota real de Zenodo.
 
-**Track-Hub-1** aporta valor tangible en múltiples dimensiones:
+---
 
-- **Gestión científica mejorada**: Centralización de datasets con trazabilidad completa de versiones y autoría.
-- **Automatización robusta**: Reducción del error humano mediante despliegues automatizados y validación continua.
-- **Interoperabilidad**: Integración con Zenodo garantiza persistencia y reconocimiento académico mediante DOI.
-- **Colaboración facilitada**: Comunidades científicas temáticas fomentan networking y trabajo conjunto.
-- **Calidad asegurada**: Testing automatizado y code review garantizan estándares profesionales.
-- **Experiencia práctica**: Implementación real de conceptos de SCM (Software Configuration Management) en contexto académico.
+### 3. Gestión y Notificaciones de Comunidades (WIs #74 y #80)
 
-El sistema se encuentra en **estado productivo y operacional**, con todas las funcionalidades core implementadas, testeadas y desplegadas. Cuenta con documentación técnica completa, múltiples entornos activos y una base sólida para extensiones futuras, cumpliendo satisfactoriamente los objetivos académicos y técnicos establecidos al inicio del proyecto.
+- **WI #74 (Dificultad Low):**
+  Introduce el módulo de **Comunidades**, espacios temáticos o institucionales para agrupar datasets.
+  - Cualquier usuario autenticado puede crear una comunidad.
+  - El creador se convierte en el primer **curador**.
+  - Los curadores revisan y aprueban propuestas de datasets.
 
-## Descripción del sistema
+- **WI #80 (Dificultad Medium):**
+  Implementa notificaciones por **correo electrónico** cuando un dataset es aceptado en una comunidad.
 
-### Visión General
+---
 
-**Track-Hub-1** es una plataforma web diseñada para la gestión integral del ciclo de vida de datasets científicos, con especial énfasis en modelos de características (feature models) expresados en formato UVL (Universal Variability Language). El sistema se estructura como una aplicación Flask modular que permite a investigadores gestionar, versionar, publicar y compartir conjuntos de datos de forma colaborativa, integrándose con repositorios de publicaciones científicas para garantizar la persistencia y citabilidad académica.
+### 4. Subida de Archivos ZIP/GitHub (WI #70, Dificultad Alta)
 
-La arquitectura del sistema se fundamenta en una separación clara de responsabilidades mediante módulos independientes que interactúan a través de interfaces bien definidas, siguiendo patrones de diseño como Repository, Service Layer y Dependency Injection. Esta modularidad facilita el mantenimiento, testing y extensibilidad del código.
+Se implementó la funcionalidad para subir colecciones de archivos **GPX** o **UVL** empaquetados en formato ZIP.
 
-### Arquitectura Técnica
+El sistema:
 
-#### Stack Tecnológico
+- Realiza una **extracción segura**.
+- Valida y filtra los archivos permitidos (`.uvl`, `.gpx`).
+- Incorpora protecciones críticas contra ataques de **Path Traversal**.
 
-El sistema se construye sobre las siguientes tecnologías principales:
+---
 
+### 5. Sistema de Comentarios (WI #101, Dificultad Baja)
 
-- **Backend**: Python 3.12 con Flask 3.x como framework web principal
-- **ORM**: SQLAlchemy para abstracción de base de datos relacional
-- **Base de datos**: PostgreSQL 14+ (producción) y SQLite (desarrollo/testing)
-- **Frontend**: Bootstrap 5 para diseño responsivo, JavaScript vanilla para interactividad cliente
-- **Testing**: pytest con coverage >80%, fixtures para datos de prueba
-- **CI/CD**: GitHub Actions para pipelines automatizados
-- **Despliegue**: Render (PaaS) y servidor VPS propio con Nginx + Gunicorn
-
-#### Estructura Modular
-
-La aplicación se organiza en **11 módulos funcionales** dentro del directorio `app/modules/`:
-
-1. **auth**: Autenticación y autorización de usuarios
-2. **profile**: Gestión de perfiles de investigador
-3. **dataset**: CRUD y versionado de datasets
-4. **featuremodel**: Manejo de modelos UVL
-5. **flamapy**: Análisis de feature models (no modificado)
-6. **community**: Comunidades científicas temáticas
-7. **explore**: Búsqueda y filtrado de datasets
-8. **zenodo**: Integración con repositorio Zenodo
-9. **webhook**: Sincronización con GitHub (no modificado)
-10. **hubfile**: Gestión de archivos subidos (no modificado)
-11. **mail**: Sistema de notificaciones por correo electrónico
-
-Cada módulo sigue una estructura consistente:
-- `models.py`: Modelos de datos SQLAlchemy
-- `repositories.py`: Capa de acceso a datos
-- `services.py`: Lógica de negocio
-- `routes.py`: Endpoints y controladores
-- `forms.py`: Formularios FlaskWTF
-- `templates/`: Vistas Jinja2
-- `tests/`: Suite de pruebas unitarias e integración
-
-### Funcionalidades Principales
-
-#### 1. Sistema de Autenticación y Perfiles
-
-El módulo **auth** implementa un sistema completo de gestión de identidades:
-
-- **Registro de usuarios**: Formulario con validación de email único, contraseñas seguras (hash bcrypt) y confirmación por correo electrónico
-- **Login/Logout**: Sesiones gestionadas con Flask-Login, protección CSRF
-- **Recuperación de contraseña**: Flow de reset mediante tokens temporales enviados por email
-- **Perfiles de investigador** (`profile`): Información académica incluyendo nombre completo, afiliación institucional, biografía y ORCID (identificador único de investigador)
-
-**Características técnicas**:
-- Hash de contraseñas con `werkzeug.security`
-- Tokens de confirmación con expiración temporal
-- Decoradores de autorización para rutas protegidas
-- Gestión de sesiones persistentes
-
-#### 2. Gestión de Datasets
-
-El módulo **dataset** constituye el núcleo funcional del sistema:
-
-**Operaciones CRUD**:
-- **Creación**: Formulario con metadatos (título, descripción, autores, palabras clave), carga de archivos UVL/GPX/ZIP, asignación de DOI conceptual único
-- **Lectura**: Visualización detallada con metadatos, lista de archivos, estadísticas de uso
-- **Actualización**: Edición de metadatos, adición/eliminación de archivos, **versionado automático**
-- **Eliminación**: Soft delete con confirmación, mantenimiento de historial
-
-**Sistema de Versionado** (implementado en este proyecto):
-- **Versiones menores**: Ediciones de metadatos sin cambio de archivos (e.g., 1.0.0 → 1.0.1)
-- **Versiones mayores**: Modificación de archivos que genera nuevo DOI en Zenodo (e.g., 1.0.0 → 2.0.0)
-- **DOI conceptual**: Identificador permanente que siempre apunta a la última versión
-- **DOI específicos**: Cada versión mayor tiene su propio DOI inmutable
-- **Historial de versiones**: Listado completo con fechas, autores y diferencias
-- **Acceso a versiones anteriores**: Descarga de cualquier versión histórica para reproducibilidad científica
-
-**Integración con GitHub**:
-- Importación directa desde repositorios públicos mediante URL
-- Parsing automático de estructura de directorios
-- Sincronización vía webhooks (módulo `webhook` existente)
-
-**Carga de archivos ZIP** (implementado en este proyecto):
-- Subida de archivos comprimidos con múltiples datasets
-- Descompresión automática y validación de estructura
-- Extracción de metadatos de archivos individuales
-- Creación de dataset con archivos descomprimidos
-
-#### 3. Comunidades Científicas
-
-El módulo **community** (completamente desarrollado en este proyecto) implementa espacios colaborativos:
-
-**Estructura de comunidades**:
-- **Creación**: Formulario con nombre, descripción, tags temáticos, imagen de portada
-- **Roles**: Creador (owner), moderadores, miembros regulares
-- **Visibilidad**: Públicas (descubribles) o privadas (solo por invitación)
-
-**Gestión de contenido**:
-- **Propuesta de datasets**: Los usuarios solicitan añadir sus datasets a una comunidad
-- **Moderación**: Curadores aprueban/rechazan propuestas con notificación por email
-- **Catálogo comunitario**: Vista filtrada de datasets aceptados
-- **Búsqueda por comunidad**: Filtro en módulo `explore`
-
-**Notificaciones por email** (implementado en este proyecto):
-- Email automático cuando un dataset es aceptado/rechazado
-- Plantillas HTML personalizadas con información de la comunidad
-- Sistema de suscripción configurable
-
-#### 4. Sistema de Notificaciones
-
-El módulo **mail** proporciona comunicaciones automatizadas:
-
-**Eventos soportados**:
-- Confirmación de registro de cuenta
-- Restablecimiento de contraseña
-- Aceptación/rechazo de dataset en comunidad
-- Nuevos datasets de autores seguidos (implementado en este proyecto)
-- Nuevos datasets en comunidades seguidas (implementado en este proyecto)
-
-**Arquitectura de notificaciones**:
-- Cola de emails procesada asíncronamente
-- Plantillas Jinja2 con soporte HTML/texto plano
-- Configuración SMTP flexible (Gmail, SendGrid, etc.)
-- Sistema de suscripción por usuario para control de spam
-
-#### 5. Sistema de Seguimiento
-
-Funcionalidad desarrollada en este proyecto que permite:
-
-**Seguimiento de autores**:
-- Botón "Follow Author" en perfiles públicos
-- Lista de autores seguidos en perfil personal
-- Notificación email cuando un autor seguido publica nuevo dataset
-- Dejar de seguir con un click
-
-**Seguimiento de comunidades**:
-- Botón "Follow Community" en página de comunidad
-- Dashboard de comunidades seguidas
-- Email automático cuando se añade dataset a comunidad seguida
-- Gestión de suscripciones desde configuración de usuario
-
-**Implementación técnica**:
-- Tabla `user_follows` con relación many-to-many
-- Tabla `community_follows` para suscripciones a comunidades
-- Triggers de base de datos para envío de notificaciones
-- Batch processing de emails para evitar spam
-
-#### 6. Sistema de Comentarios
-
-Módulo desarrollado completamente en este proyecto:
-
-**Funcionalidades**:
-- **Añadir comentarios**: Formulario en página de dataset, texto enriquecido
-- **Visualización**: Lista ordenada cronológicamente con autor y fecha
-- **Moderación**: Propietario del dataset puede eliminar comentarios inapropiados
-- **Respuestas anidadas** (opcional): Sistema de hilos de conversación
-- **Notificaciones**: Email al autor cuando hay nuevo comentario
-
-**Modelo de datos**:
-```python
-class Comment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    dataset_id = db.Column(db.Integer, db.ForeignKey('dataset.id'))
-    parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'))  # Para respuestas
-```
-
-#### 7. Exploración y Búsqueda
-
-El módulo **explore** proporciona descubrimiento de contenido:
-
-**Criterios de búsqueda**:
-- Texto libre en título/descripción
-- Filtro por autor específico
-- Filtro por comunidad
-- Filtro por tipo de archivo (UVL, GPX, ZIP)
-- Rango de fechas de publicación
-- Palabras clave (tags)
-
-**Presentación de resultados**:
-- Vista de tarjetas con preview de metadatos
-- Paginación configurable (10/25/50 resultados)
-- Ordenamiento por relevancia, fecha, número de descargas
-- Exportación de resultados a CSV
-
-#### 8. Integración con Zenodo
-
-El módulo **zenodo** gestiona la publicación científica:
-
-**Flujo de publicación**:
-1. Usuario solicita publicación de dataset
-2. Sistema crea deposición en Zenodo/Fakenodo
-3. Carga automática de archivos y metadatos
-4. Generación de DOI persistente
-5. Sincronización bidireccional de metadatos
-
-**Versionado en Zenodo**:
-- Creación de nuevas versiones para ediciones mayores
-- Mantenimiento de relaciones conceptDOI ↔ versionDOI
-- Actualización de metadatos sin nueva versión (ediciones menores)
-
-**Fakenodo**: Mock server para desarrollo y testing sin consumir cuota de Zenodo sandbox
-
-### Cambios Desarrollados en el Proyecto
-
-A continuación se detallan **explícitamente** los cambios implementados durante este proyecto:
-
-#### Cambio 1: Sistema de Versionado de Datasets
-
-**Issue**: "Allow users to explore and understand the evolution of a dataset across its versions"
-
-**Implementación**:
-- Tabla `dataset_version` con relación one-to-many a `dataset`
-- Numeración automática siguiendo SemVer (MAJOR.MINOR.PATCH)
-- Vista `/dataset/<id>/versions` con historial completo
-- Endpoint `/dataset/<id>/version/<version_num>` para acceso a versiones anteriores
-- Lógica de diferenciación entre DOI conceptual y DOI de versión
-- Badge "Latest Version" en UI para destacar versión actual
-
-**Archivos modificados**:
-- `app/modules/dataset/models.py`: Modelo `DatasetVersion`
-- `app/modules/dataset/services.py`: Métodos `create_version()`, `get_version_history()`
-- `app/modules/dataset/routes.py`: Rutas de versionado
-- `app/modules/dataset/templates/dataset/view.html`: UI de historial
-
-#### Cambio 2: Carga de Archivos ZIP
-
-**Issue**: "As a user I want to be able to upload models from a ZIP"
-
-**Implementación**:
-- Handler `ZipFileHandler` para procesamiento de archivos comprimidos
-- Validación de tamaño máximo (100MB por defecto)
-- Descompresión segura con protección contra zip bombs
-- Extracción de múltiples archivos UVL/GPX
-- Creación automática de dataset con archivos descomprimidos
-- Preservación de estructura de directorios
-
-**Archivos creados/modificados**:
-- `app/modules/dataset/handlers/zip_handler.py`: Lógica de descompresión
-- `app/modules/dataset/forms.py`: Campo `FileField` para ZIP
-- `app/modules/dataset/routes.py`: Endpoint `/upload/zip`
-- `docs/zip-upload.md`: Documentación técnica
-
-#### Cambio 3: Comunidades Científicas
-
-**Issue**: "As a user, I want to be able to create communities"
-
-**Implementación completa del módulo `community`**:
-- Modelos `Community`, `CommunityMember`, `CommunityDataset`
-- CRUD completo de comunidades con formularios validados
-- Sistema de roles (owner, moderator, member)
-- Workflow de propuesta → revisión → aceptación de datasets
-- Página de comunidad con catálogo de datasets aprobados
-- Integración con módulo `explore` para filtrar por comunidad
-
-**Archivos creados**:
-- `app/modules/community/` (módulo completo nuevo)
-- `docs/communities.md`: Documentación de funcionalidad
-
-#### Cambio 4: Sistema de Comentarios
-
-**Issue**: "As a user, I want to comment on a dataset to give feedback"
-
-**Implementación**:
-- Modelo `Comment` con relación a `User` y `Dataset`
-- Formulario de comentario con validación anti-XSS
-- Vista de comentarios en página de dataset
-- Moderación por propietario del dataset (eliminar comentarios)
-- Soporte opcional para respuestas anidadas (threading)
-- Notificación por email al autor del dataset
-
-**Archivos creados/modificados**:
-- `app/modules/dataset/models.py`: Modelo `Comment`
-- `app/modules/dataset/services.py`: `add_comment()`, `delete_comment()`
-- `app/modules/dataset/templates/dataset/view.html`: Sección de comentarios
-- `docs/comment-moderation.md`: Guía de moderación
-
-#### Cambio 5: Sistema de Seguimiento y Notificaciones
-
-**Issue**: "As a user, I want to follow specific authors and communities"
-
-**Implementación**:
-- Tabla `user_follows` para seguimiento de autores
-- Tabla `community_follows` para seguimiento de comunidades
-- Endpoints REST `/api/follow/user/<id>` y `/api/follow/community/<id>`
-- Listeners de eventos `on_dataset_published` y `on_dataset_added_to_community`
-- Servicio de email batch para notificaciones agrupadas
-- Dashboard de suscripciones en perfil de usuario
-
-**Archivos creados/modificados**:
-- `app/modules/profile/models.py`: Relaciones de seguimiento
-- `app/modules/profile/services.py`: `follow_user()`, `unfollow_user()`
-- `app/modules/community/services.py`: `follow_community()`, notificaciones
-- `app/modules/mail/services.py`: Templates de notificación
-- `app/modules/profile/routes.py`: API de seguimiento
-
-#### Cambio 6: Notificaciones de Aceptación en Comunidades
-
-**Issue**: "As a user, I want to receive notifications when my dataset is accepted"
-
-**Implementación**:
-- Event listener en `CommunityService.accept_dataset()`
-- Template de email `community_acceptance.html`
-- Información contextual (nombre de comunidad, dataset, moderador)
-- Link directo a dataset en comunidad
-- Configuración de preferencias de notificación
-
-**Archivos modificados**:
-- `app/modules/community/services.py`: Trigger de email
-- `app/modules/mail/templates/community_acceptance.html`: Template
-- `app/modules/profile/models.py`: Campo `notification_preferences`
-
-### Relación entre Componentes
-
-**Diagrama de dependencias (simplificado)**:
-
-```
-auth ─┬─> profile
-      └─> dataset ─┬─> featuremodel ─> flamapy
-                   ├─> hubfile
-                   ├─> zenodo
-                   ├─> community
-                   └─> webhook
-
-explore ──> dataset
-          └> community
-
-mail <── [todos los módulos que envían notificaciones]
-```
-
-**Flujo de datos típico**:
-
-1. Usuario se autentica (`auth`) y obtiene sesión
-2. Crea/edita perfil (`profile`) con información académica
-3. Sube dataset (`dataset`) que puede contener:
-   - Archivos UVL → procesados por `featuremodel`
-   - Archivos ZIP → descomprimidos por handler ZIP
-   - Archivos GPX → validados y almacenados
-4. Dataset se versiona automáticamente según cambios
-5. Usuario solicita publicación → `zenodo` genera DOI
-6. Dataset se propone a comunidad (`community`)
-7. Moderador acepta → email automático (`mail`)
-8. Dataset indexado para búsqueda (`explore`)
-9. Seguidores reciben notificación (`mail`)
-
-### Estado de Módulos No Modificados
-
-Los siguientes módulos **vienen de serie** y no han sido modificados en este proyecto:
-
-- **flamapy**: Análisis de feature models con métricas de variabilidad
-- **webhook**: Sincronización automática con repositorios GitHub
-- **hubfile**: Sistema de gestión de archivos con checksums y deduplicación
-
-Estos módulos funcionan de forma autónoma y son consumidos por otros componentes cuando es necesario.
+Se añadió un sistema de **Comentarios** en los datasets para permitir feedback de los usuarios.
+
+Características:
+
+- El propietario del dataset actúa como **moderador**.
+- Puede eliminar cualquier comentario.
+- Los autores pueden **editar o eliminar solo sus propios comentarios**.
+
+---
+
+## Integración y Conclusión
+
+El proyecto incorporó integraciones esenciales del equipo **Track Hub 2**, logrando:
+
+- Adaptación del **Formato GPX**.
+- Integración del flujo de **Despliegue Continuo (CD)** a Render.
+
+En resumen, **Track-hub-1** ha entregado una plataforma funcional que combina:
+
+- Una base sólida de **ingeniería de software** (CI/CD robusto, EGC Flow).
+- Funcionalidades avanzadas de **publicación académica y curación de datos**
+  (Versionado con DOIs, Comunidades y Fakenodo).
+
+El proyecto abordó y completó múltiples Work Items de diversas dificultades, demostrando la capacidad del equipo para gestionar tanto tareas complejas de alto nivel como integraciones avanzadas, resultando en una solución **completa, robusta y testeable**.
+
+---
+## Descripción del sistema de Track-Hub
+## Visión General Funcional
+
+**Track-Hub** es una aplicación web basada en **Flask** orientada a la gestión y publicación de rutas GPS y datasets. El sistema permite a los usuarios cargar, explorar y gestionar archivos **GPX** (GPS Exchange Format) y **modelos de características** (*feature models*), facilitando la colaboración y el intercambio de datos geoespaciales.
+
+---
+
+## Arquitectura del Sistema
+
+### Estructura Modular
+
+La aplicación sigue una arquitectura modular basada en **Flask Blueprints**, organizada en el directorio `modules`. Cada módulo implementa el patrón **MVC (Modelo–Vista–Controlador)** con componentes adicionales:
+
+- **Models**: Definición de entidades de base de datos
+- **Routes**: Endpoints y controladores de peticiones HTTP
+- **Services**: Lógica de negocio
+- **Repositories**: Capa de acceso a datos
+- **Forms**: Validación de formularios con WTForms
+- **Templates**: Vistas HTML con Jinja2
+- **Tests**: Suite de pruebas unitarias y de integración
+
+### Framework Core
+
+El directorio `core` proporciona la infraestructura base del sistema:
+
+- **blueprints/**: Clase base para blueprints (`base_blueprint.py`)
+- **repositories/**: Repositorio base (`BaseRepository.py`)
+- **services/**: Servicio base (`BaseService.py`)
+- **seeders/**: Sistema de población de datos (`BaseSeeder.py`)
+- **managers/**: Gestión de configuración, logging, errores y módulos
+- **configuration/**: Sistema de configuración centralizado
+- **decorators/**: Decoradores personalizados
+- **serialisers/**: Serialización de objetos
+- **locust/**: Utilidades para pruebas de carga
+- **selenium/**: Herramientas para pruebas automatizadas
+
+---
+
+## Módulos Funcionales
+
+### Módulo Auth (Autenticación)
+
+Gestiona el registro, inicio de sesión y autenticación de usuarios. Incluye:
+
+- Formularios de login y registro (`forms.py`)
+- Modelos de usuario (`models.py`)
+- Servicios de autenticación y autorización (`services.py`)
+- Endpoints para login, logout y registro (`routes.py`)
+- Seeder para datos iniciales de usuarios (`seeders.py`)
+
+---
+
+### Módulo Dataset
+
+Módulo principal para la gestión de datasets de rutas GPS:
+
+- **API REST** (`api.py`): Endpoints CRUD sobre datasets
+- **Modelos** (`models.py`): Entidades de datasets, metadatos y archivos
+- **Registry** (`registry.py`): Sistema de registro de datasets
+- **Handlers**: Procesadores especializados por tipo de archivo
+- **Fetchers**: Componentes para obtención de datos externos
+- **Ejemplos GPX** (`gpx_examples/`)
+- **Ejemplos UVL** (`uvl_examples/`)
+- **Test Data** (`test_data/`)
+
+---
+
+### Módulo Community
+
+Gestiona la funcionalidad comunitaria y colaborativa:
+
+- Interacción entre usuarios
+- Gestión de comunidades de datasets
+- Intercambio y descubrimiento de rutas
+
+Componentes estándar:
+- Models, forms, routes, services y repositories
+- Templates específicos para vistas comunitarias
+
+---
+
+### Módulo Explore
+
+Proporciona capacidades de búsqueda y exploración:
+
+- Formularios de búsqueda avanzada (`forms.py`)
+- Servicios de búsqueda y filtrado (`services.py`)
+- Interfaz de exploración de datasets (`templates/`)
+- Repositorios especializados para consultas de exploración
+
+---
+
+### Módulo FeatureModel
+
+Gestiona modelos de características (*feature models*):
+
+- Modelos de datos (`models.py`)
+- Servicios de procesamiento de archivos **UVL**
+- Integración con datasets
+- Visualización y edición de modelos de características
+
+---
+
+### Módulo Fakenodo
+
+Simulador de **Zenodo** para desarrollo y testing:
+
+- Aplicación Flask independiente (`app.py`)
+- Emulación de la API de Zenodo
+- Pruebas sin dependencia del servicio real
+- Suite de tests específica (`tests/`)
+
+---
+
+### Módulo Mail
+
+Sistema de notificaciones por correo electrónico:
+
+- Servicios de envío de emails (`services.py`)
+- Rutas para gestión de notificaciones (`routes.py`)
+- Integración con eventos del sistema
+
+---
+
+## Módulos Complementarios
+
+### Módulo Hubfile
+Gestión de archivos del hub, incluyendo almacenamiento y recuperación de archivos asociados a datasets.
+
+### Módulo Profile
+Gestión de perfiles de usuario, configuración personal y preferencias.
+
+### Módulo Public
+Páginas públicas y contenido accesible sin autenticación.
+
+### Módulo Team
+Gestión de equipos y colaboración grupal.
+
+### Módulo Webhook
+Sistema de webhooks para integraciones externas.
+
+### Módulo Zenodo
+Integración con Zenodo para publicación de datasets:
+
+- Configuración mediante `.env.example`
+- Modelos para sincronización con Zenodo
+- Servicios de publicación y actualización
+
+### Módulo Flamapy
+Integración con la librería **Flamapy** para análisis de modelos de características.
+
+---
+
+## Sistema de CI/CD
+
+### Integración Continua (CI)
+
+Workflows definidos en `workflows/`:
+
+- **CI_commits.yml**: Validación de mensajes de commit
+- **CI_gate.yml**: Gate de calidad general
+- **CI_lint.yml**: Análisis de código estático
+- **CI_pytest.yml**: Ejecución de tests
+- **CI_security.yml**: Análisis de seguridad
+- **CI_sonar.yml**: Integración con SonarQube
+
+### Despliegue Continuo (CD)
+
+- **CD_dockerhub_production.yml**: Publicación en DockerHub (producción)
+- **CD_dockerhub_staging.yml**: Publicación en DockerHub (staging)
+- **CD_render_production.yml**: Despliegue en Render (producción)
+- **CD_render_staging.yml**: Despliegue en Render (staging)
+- **CD_selfhosted.yml**: Despliegue en infraestructura propia
+
+### Workflows de Build
+
+- **build_main.yml**: Construcción desde `main`
+- **build_trunk.yml**: Construcción desde `trunk`
+- **release.yml**: Gestión de releases
+
+---
+
+## Git Hooks
+
+El directorio `.git-hooks` contiene:
+
+- **prepare-commit-msg**: Hook para formateo automático de mensajes de commit
+
+---
+
+## Recursos Estáticos
+
+Directorio `static/`:
+
+- **css/**: Hojas de estilo
+- **js/**: Scripts JavaScript
+- **img/**: Imágenes
+- **fonts/**: Fuentes personalizadas
+- **gifs/**: Animaciones
+
+---
+
+## Templates Base
+
+- **base_template.html**: Plantilla base con layout común
+- **400.html**, **401.html**, **404.html**, **500.html**: Páginas de error personalizadas
+
+---
+
+## Características Técnicas
+
+- **Framework**: Flask con arquitectura modular
+- **ORM**: SQLAlchemy (implícito por el uso de repositories)
+- **Testing**: Pytest (configuración en `pytest.ini`)
+- **Formularios**: WTForms
+- **Seeders**: Sistema de población de datos inicial
+- **Configuración centralizada**: Core configuration manager
+- **Logging**: Sistema de logging unificado
+- **Manejo de errores**: Error handler manager centralizado
+
+Este sistema está diseñado específicamente para la **gestión de rutas GPS en formato GPX**, con soporte para **modelos de características UVL** e integración con repositorios científicos como **Zenodo**.
+
+## Visión Global del Proceso de Desarrollo
+
+## Introducción al Proceso
+
+El desarrollo de **Track-Hub-1** se rige por un proceso altamente estructurado que combina metodologías ágiles con prácticas rigurosas de ingeniería de software. El flujo de trabajo está diseñado para garantizar calidad, trazabilidad y control desde la concepción de un cambio hasta su despliegue en producción.
+
+---
+
+## Herramientas del Ecosistema de Desarrollo
+
+### Gestión de Proyecto
+
+- **Jira**: Plataforma central para la gestión de tareas, historias de usuario y seguimiento de incidencias. Se utiliza un espacio dedicado de soporte para la gestión de incidentes.
+- **Clockify**: Sistema integrado de seguimiento temporal que permite registrar las horas dedicadas a cada tarea, proporcionando métricas precisas del esfuerzo invertido.
+
+### Control de Versiones
+
+- **Git**: Sistema de control de versiones distribuido que implementa el flujo **EGC Flow**.
+- **GitHub**: Repositorio remoto que almacena el código y ejecuta las pipelines de CI/CD mediante GitHub Actions.
 
 ### Calidad y Testing
 
-**Cobertura de tests**:
-- >80% de cobertura de código medida con pytest-cov
-- Tests unitarios para cada service y repository
-- Tests de integración para flujos completos
-- Fixtures reutilizables en `conftest.py`
+- **Pre-commit hooks**: Validaciones locales ejecutadas antes de confirmar cambios.
+- **Black**: Formateador automático de código Python (120 caracteres por línea).
+- **isort**: Organizador de importaciones compatible con Black.
+- **Flake8**: Linter para validación PEP8 (ignora `E203`, `W503`).
+- **mypy**: Verificador de tipos estático.
+- **pytest**: Framework de pruebas con requisito de cobertura mínima del 50% en ramas `trunk` y `main`.
+- **Codecov**: Plataforma para seguimiento de cobertura de código.
 
-**Linting y formateo**:
-- flake8 para cumplimiento PEP8
-- Hooks pre-commit para validación automática
-- Conventional Commits para mensajes descriptivos
+### Seguridad
 
-**Seguridad**:
-- Validación de entrada en todos los formularios
-- Protección CSRF en todas las peticiones POST
-- Hash seguro de contraseñas con bcrypt
-- Sanitización de contenido HTML en comentarios
-- Validación de firmas HMAC en webhooks
+- **pip-audit**: Escaneo de vulnerabilidades en dependencias.
+- **Bandit**: Análisis estático de seguridad del código.
+- **TruffleHog**: Detección de secretos y credenciales en el código.
 
-### Conclusión Técnica
+### Despliegue
 
-El sistema resultante es una plataforma robusta, modular y extensible que cumple los objetivos de gestión de datasets científicos con un enfoque en trazabilidad, colaboración y reproducibilidad. La arquitectura basada en módulos independientes facilita el mantenimiento y la adición de nuevas funcionalidades, mientras que el pipeline CI/CD garantiza calidad constante en el código desplegado.
+- **Render**: Plataforma de despliegue para entornos staging y producción.
+- **Servidor propio**: Infraestructura adicional para pre-producción y producción en `pabolimor.cloud`.
+- **Docker**: Contenedorización de la aplicación.
+- **DockerHub**: Registro de imágenes Docker.
 
-## Visión global del proceso de desarrollo
+---
 
-El desarrollo de **Track-Hub-1** se ha fundamentado en un proceso riguroso de ingeniería de software que integra metodologías ágiles, gestión de configuración moderna y prácticas DevOps. El equipo de seis desarrolladores ha seguido un flujo de trabajo estructurado que garantiza calidad, trazabilidad y despliegue continuo mediante automatización y revisión por pares.
+## Flujo de Trabajo: EGC Flow
 
-### Estrategia de Branching: Trunk-Based Development
+El proyecto implementa **EGC Flow**, una adaptación de Git Flow que establece una estructura clara de ramas:
 
-El proyecto adopta **Trunk-Based Development** como estrategia de gestión de ramas, abandonando modelos tradicionales como GitFlow en favor de integración continua. La rama principal `trunk` representa el estado siempre desplegable del código, mientras que las ramas de características (`feature/*`) tienen un ciclo de vida muy corto (máximo 2-3 días).
+### Ramas Principales
 
-**Características del modelo implementado**:
+- **`main`**: Rama de producción. Solo recibe código validado y estable.
+- **`trunk`**: Rama de integración donde converge todo el desarrollo antes de pasar a producción.
 
-- **Rama principal protegida**: `trunk` requiere pull requests aprobadas y CI pasando exitosamente antes de cualquier merge
-- **Ramas efímeras**: Las feature branches se crean desde `trunk`, se desarrollan rápidamente y se integran mediante rebase para mantener historial lineal
-- **Sin ramas de release**: Los despliegues se realizan directamente desde `trunk` mediante tags semánticos
-- **Hotfixes rápidos**: Los parches urgentes siguen el mismo flujo que las features, pero con prioridad máxima en revisión
+### Ramas de Desarrollo
 
-Este enfoque elimina la complejidad de múltiples ramas de larga duración, reduce conflictos de merge y permite detectar problemas de integración tempranamente. La frecuencia de integración (múltiples veces al día) garantiza que el código del equipo converja constantemente hacia un estado coherente.
+- **`feature/<task>`**: Para nuevas funcionalidades (ej: `feature/SCRUM-74-community-module`).
+- **`bugfix/<task>`**: Para correcciones de errores detectados en desarrollo (ej: `bugfix/SCRUM-XX-fix-repository-links`).
+- **`hotfix/<task>`**: Para correcciones urgentes en producción.
 
-### Versionado Semántico Automatizado
+Todas las ramas deben incluir el identificador de la tarea de Jira correspondiente.
 
-El proyecto implementa **SemVer (Semantic Versioning)** mediante un sistema automatizado basado en hooks de Git que interpreta los mensajes de commit siguiendo **Conventional Commits**:
+---
 
-- **MAJOR (X.0.0)**: Cambios incompatibles que rompen la API existente (commits con `BREAKING CHANGE`)
-- **MINOR (0.X.0)**: Nueva funcionalidad compatible hacia atrás (commits tipo `feat:`)
-- **PATCH (0.0.X)**: Correcciones de bugs sin cambios funcionales (commits tipo `fix:`)
+## Estándares de Commits
 
-**Flujo de versionado automático**:
+Cada commit debe seguir la especificación de **Conventional Commits**:
 
-1. Desarrollador realiza commit con mensaje convencional: `feat: add community following system`
-2. Pre-commit hook analiza el tipo de commit y calcula nueva versión
-3. Script actualiza `VERSION` en el código fuente y genera entrada en `CHANGELOG.md`
-4. Al hacer push a `trunk`, GitHub Actions crea tag automático (e.g., `v1.5.0`)
-5. Tag dispara workflow de despliegue a entorno correspondiente
-
-Este sistema elimina el versionado manual propenso a errores y garantiza que cada versión en producción tenga trazabilidad completa desde el commit que la generó.
-
-### Gestión de Proyecto: GitHub Projects y Issues
-
-La planificación y seguimiento del trabajo se realiza mediante **GitHub Projects** con tablero Kanban y automatización de flujos:
-
-**Estructura del tablero**:
-- **Backlog**: Issues priorizadas pero no asignadas
-- **To Do**: Tareas asignadas listas para iniciar (máximo 3 por desarrollador)
-- **In Progress**: Work items actualmente en desarrollo
-- **In Review**: Pull requests esperando aprobación
-- **Done**: Trabajo completado y mergeado a `trunk`
-
-**Gestión de issues**:
-- Cada funcionalidad se describe como issue con template estructurado (contexto, criterios de aceptación, subtareas)
-- Labels para categorización: `bug`, `enhancement`, `documentation`, `high-priority`
-- Asignación clara de responsables y estimaciones en story points
-- Vinculación automática entre issues y pull requests mediante keywords (`Closes #123`)
-
-**Ceremonias ágiles**:
-- **Daily standups** (15 min): Sincronización diaria del progreso y bloqueos
-- **Sprint planning** (semanal): Selección de issues del backlog y asignación
-- **Retrospectives** (bi-semanales): Análisis de proceso y mejoras
-
-Este flujo garantiza visibilidad total del estado del proyecto, permite detectar cuellos de botella y facilita la coordinación entre desarrolladores trabajando en módulos interdependientes.
-
-### Pipeline CI/CD: GitHub Actions
-
-El sistema implementa **Continuous Integration/Continuous Deployment** mediante workflows automatizados que se ejecutan en cada push y pull request:
-
-**Workflow de Integración Continua** (`.github/workflows/ci.yml`):
-
-```yaml
-name: CI Pipeline
-
-on:
-  push:
-    branches: [trunk]
-  pull_request:
-    branches: [trunk]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install pytest pytest-cov flake8
-      - name: Run linter
-        run: flake8 app/ --max-line-length=120 --exclude=migrations
-      - name: Run tests with coverage
-        run: pytest --cov=app --cov-report=xml --cov-report=term
-      - name: Check coverage threshold
-        run: |
-          coverage=$(pytest --cov=app --cov-report=term | grep TOTAL | awk '{print $4}' | sed 's/%//')
-          if (( $(echo "$coverage < 80" | bc -l) )); then
-            echo "Coverage $coverage% is below 80% threshold"
-            exit 1
-          fi
 ```
 
-**Etapas del pipeline**:
-1. **Linting**: Validación de estilo de código con flake8 (PEP8)
-2. **Testing**: Ejecución de suite completa de tests unitarios e integración
-3. **Coverage**: Verificación de cobertura mínima del 80%
-4. **Build**: Construcción de artefactos desplegables
-5. **Security scan**: Análisis de vulnerabilidades con `safety` y `bandit`
+<type>(<scope>): <subject>
 
-**Workflow de Despliegue Continuo** (`.github/workflows/deploy.yml`):
+[optional body]
 
-- **Staging automático**: Cada merge a `trunk` despliega a preproducción (Render staging)
-- **Producción manual**: Requiere aprobación manual mediante GitHub Environments
-- **Rollback automático**: Si health checks fallan, revierte a versión anterior
-- **Notificaciones**: Slack/email al equipo sobre estado de despliegue
+Refs: SCRUM-XX
 
-### Entornos de Despliegue
+```
 
-El proyecto mantiene **cuatro entornos activos** con configuraciones diferenciadas:
+### Tipos de Commit
 
-1. **Desarrollo local**: SQLite, variables de entorno desde `.env`, hot-reload con Flask debug
-2. **Preproducción Render**: PostgreSQL, datos sintéticos, URL `track-hub-1-staging.onrender.com`
-3. **Preproducción VPS propio**: Nginx + Gunicorn, SSL con Let's Encrypt, `pre-trackhub.pabolimor.cloud`
-4. **Producción**: Datos reales, monitorización con Sentry, backups automatizados, `trackhub.pabolimor.cloud`
+- **feat**: Nueva funcionalidad
+- **fix**: Corrección de error
+- **docs**: Cambios en documentación
+- **style**: Cambios de formato (no afectan lógica)
+- **refactor**: Refactorización de código
+- **test**: Adición o modificación de tests
+- **chore**: Tareas de mantenimiento
 
-Cada entorno tiene variables de configuración específicas gestionadas mediante **GitHub Secrets** y archivos `.env` separados que nunca se versionan.
+La referencia a Jira (`Refs: SCRUM-XX`) se añade automáticamente mediante el hook `prepare-commit-msg` basándose en el nombre de la rama activa.
 
-### Ejemplo de Ciclo Completo: Implementación de Sistema de Comentarios
+---
 
-Para ilustrar el proceso completo, describimos el flujo seguido para implementar la funcionalidad de comentarios en datasets:
+## Ejemplo Práctico: Ciclo Completo de un Cambio
 
-#### 1. Planificación (GitHub Projects)
+Para ilustrar el proceso completo, se presenta el flujo de trabajo para corregir un error en los enlaces del repositorio en las plantillas HTML.
 
-El Product Owner crea issue `#47` en el backlog:
+### Contexto del Cambio
+
+**Problema identificado**: Los enlaces en el footer de la aplicación apuntan al repositorio original (`https://github.com/diverso-lab/uvlhub`) en lugar del repositorio del equipo (`https://github.com/track-hub-team/track-hub-1`).
+
+**Impacto**: Los usuarios que hacen clic en "Repository on GitHub" son redirigidos al proyecto incorrecto.
+
+---
+
+### Paso 1: Creación del Incidente (Jianwu)
+
+Un miembro del equipo detecta el problema y crea un incidente en el **espacio de soporte de Jira** siguiendo la plantilla establecida:
 
 ```markdown
-**Title**: Sistema de comentarios en datasets
 
-**User Story**: As a user, I want to comment on a dataset to give feedback
+1. Pasos para reproducir:
+- Navegar a cualquier página de la aplicación
+- Desplazarse al footer
+- Hacer clic en "Repository on GitHub"
 
-**Acceptance Criteria**:
-- [ ] Formulario de comentario visible en página de dataset
-- [ ] Comentarios ordenados cronológicamente
-- [ ] Propietario del dataset puede eliminar comentarios
-- [ ] Email de notificación al autor cuando hay nuevo comentario
-- [ ] Tests con >80% coverage
+2. Resultado esperado:
 
-**Estimation**: 5 story points
-**Priority**: High
-**Labels**: enhancement, dataset-module
+- Debe dirigir a https://github.com/track-hub-team/track-hub-1
+
+3. Resultado actual:
+
+- Redirige a https://github.com/diverso-lab/uvlhub
+
+4. Entorno:
+
+- Versión: 1.0.0
+- Navegador: Chrome 120
+- Fecha de detección: 15/12/2025
+
 ```
 
-En sprint planning, se asigna a desarrollador y se mueve a "To Do".
+El incidente se asigna a un desarrollador y se establece como prioridad baja.
 
-#### 2. Desarrollo (Feature Branch)
+---
 
-Desarrollador crea rama desde `trunk`:
+### Paso 2: Triage del Incidente (Jianwu)
+
+Para cumplir con el SLA, se responde al incidente:
+
+```
+
+Procedemos con la revisión del footer.
+
+```
+
+Se actualiza el estado del SLA a "En Curso" y se confirma la prioridad como baja.
+
+---
+
+### Paso 3: Creación de Tarea (Pablo Castrillón)
+
+Se crea una tarea en el backlog de Jira bajo la sección "Todo lo Demás" (ya que no pertenece a ninguna historia de usuario existente):
+
+```
+
+Título: Update repository links in templates
+
+Descripción:
+
+Reemplazar las URLs de diverso-lab/uvlhub con
+
+track-hub-team/track-hub-1 en los archivos de plantillas.
+
+Story Points: 2
+
+Prioridad: Low
+
+```
+
+La tarea se asigna al desarrollador responsable.
+
+---
+
+### Paso 4: Vinculación de Incidente y Tarea (Pablo Castrillón)
+
+Se establece un enlace en Jira entre el incidente de soporte y la tarea de desarrollo, asegurando trazabilidad completa del problema hasta su resolución.
+
+---
+
+### Paso 5: Creación de Rama (Adrián Ramírez)
+
+Desde la interfaz de Jira, utilizando la integración con Git, se crea una rama de tipo bugfix:
 
 ```bash
+
+# Jira ejecuta automáticamente:
+
 git checkout trunk
+
 git pull origin trunk
-git checkout -b feature/dataset-comments-#47
+
+git checkout -b bugfix/SCRUM-XX-update-repository-links
+
+git push -u origin bugfix/SCRUM-XX-update-repository-links
+
 ```
 
-Implementa cambios siguiendo arquitectura modular:
+Se inicia el seguimiento temporal en Clockify para esta tarea.
 
-- `app/modules/dataset/models.py`: Define modelo `Comment`
-- `app/modules/dataset/services.py`: Métodos `add_comment()`, `delete_comment()`
-- `app/modules/dataset/routes.py`: Endpoints `/dataset/<id>/comment` (POST/DELETE)
-- `app/modules/dataset/forms.py`: `CommentForm` con validación
-- `app/modules/dataset/templates/dataset/view.html`: UI de comentarios
+---
 
-Realiza commits incrementales con mensajes convencionales:
+### Paso 6: Implementación del Cambio (Antonio)
+
+El desarrollador clona el repositorio y descarga la rama:
 
 ```bash
-git add app/modules/dataset/models.py
-git commit -m "feat(dataset): add Comment model with user and dataset relations"
 
-git add app/modules/dataset/services.py
-git commit -m "feat(dataset): implement add_comment service with XSS sanitization"
-
-git add app/modules/dataset/tests/test_comments.py
-git commit -m "test(dataset): add unit tests for comment functionality"
-```
-
-#### 3. Testing Local
-
-Ejecuta tests localmente antes de push:
-
-```bash
-# Tests unitarios del módulo
-pytest app/modules/dataset/tests/test_comments.py -v
-
-# Suite completa con coverage
-pytest --cov=app.modules.dataset --cov-report=term
-
-# Linting
-flake8 app/modules/dataset/ --max-line-length=120
-```
-
-Verifica funcionamiento en entorno local:
-
-```bash
-flask db upgrade  # Aplica migraciones
-flask run --debug
-```
-
-Prueba manualmente en navegador: crea comentario, elimina, verifica emails.
-
-#### 4. Pull Request (Code Review)
-
-Antes de crear PR, rebasa sobre `trunk` para resolver conflictos:
-
-```bash
 git fetch origin
-git rebase origin/trunk
 
-# Si hay conflictos, resolverlos
-git add .
-git rebase --continue
+git checkout bugfix/SCRUM-XX-update-repository-links
+
 ```
 
-Push a remoto:
+Realiza el cambio en base_template.html:
+
+```html
+
+<!-- Línea 222 - ANTES -->
+
+<a class="text-muted" href="https://github.com/diverso-lab/uvlhub"
+
+<!-- Línea 222 - DESPUÉS -->
+
+<a class="text-muted" href="https://github.com/track-hub-team/track-hub-1"
+
+```
+
+Confirma el cambio:
 
 ```bash
-git push origin feature/dataset-comments-#47
+
+git add app/templates/base_template.html
+
+git commit
+
 ```
 
-Crea Pull Request en GitHub con template:
+El hook `prepare-commit-msg` proporciona la plantilla de commit, que se completa:
 
-```markdown
-**Closes #47**
-
-## Changes
-- Added `Comment` model with user/dataset relationships
-- Implemented add/delete comment services with moderation
-- Created comment form with anti-XSS validation
-- Added email notification on new comment
-- UI integration in dataset view page
-
-## Testing
-- [x] Unit tests pass (15 new tests)
-- [x] Coverage >80% (current: 87%)
-- [x] Manual testing in local environment
-- [x] Linting passes with no errors
-
-## Screenshots
-![Comment UI](https://...)
-
-## Checklist
-- [x] Conventional commits used
-- [x] Documentation updated
-- [x] No breaking changes
 ```
 
-**Proceso de revisión**:
+fix(templates): update repository links to team repository
 
-1. GitHub Actions ejecuta CI automáticamente (linting + tests + coverage)
-2. Dos desarrolladores revisan código (uno del mismo módulo, uno externo)
-3. Revisores comentan mejoras: "Extract email logic to `mail` module"
-4. Desarrollador aplica feedback en nuevo commit: `refactor(dataset): extract email notification to mail service`
-5. Tras aprobación de ambos revisores y CI verde, se aprueba merge
+Refs: SCRUM-XX
 
-#### 5. Integración (Merge to Trunk)
+```
 
-Una vez aprobado, se realiza merge con fast-forward para mantener historial lineal:
+Antes de completar el commit, se ejecutan automáticamente los **pre-commit hooks**:
+
+1. Eliminación de espacios en blanco finales ✓
+1. Validación de YAML ✓
+1. Formateo con Black ✓
+1. Ordenación de importaciones con isort ✓
+1. Validación con Flake8 ✓
+1. Verificación de tipos con mypy ✓
+
+Al hacer push, el **pre-push hook** valida que el nombre de la rama cumple con EGC Flow:
 
 ```bash
+
+git push
+
+```
+
+---
+
+### Paso 7: Integración Continua Remota
+
+GitHub Actions ejecuta automáticamente múltiples workflows:
+
+#### CI_commits.yml
+
+Valida que el mensaje del commit cumple con Conventional Commits.
+
+#### CI_lint.yml
+
+Ejecuta las mismas validaciones de calidad que los hooks locales:
+
+- Black
+- isort
+- Flake8
+
+#### CI_pytest.yml
+
+Ejecuta la suite completa de tests con pytest. Como es una rama `bugfix`, no se requiere cobertura mínima, pero los tests deben pasar.
+
+#### CI_security.yml
+
+Realiza escaneos de seguridad:
+
+- `pip-audit`: Verifica vulnerabilidades en dependencias
+- `Bandit`: Analiza el código en busca de problemas de seguridad
+- `TruffleHog`: Detecta secretos o credenciales expuestas
+
+#### CI_gate.yml
+
+Actúa como punto de control unificado que verifica que todos los workflows anteriores hayan completado exitosamente.
+
+---
+
+### Paso 8: Revisión de Código (Pablo Olivencia)
+
+El revisor mueve la tarea en Jira a la columna "En Revisión" y verifica:
+
+- Que todos los checks de CI han pasado ✓
+- Que el cambio es correcto y cumple con el objetivo ✓
+- Que no introduce regresiones ✓
+
+Una vez aprobado, mueve la tarea a "Finalizado".
+
+---
+
+### Paso 9: Merge a Trunk (Pablo Olivencia)
+
+El revisor integra los cambios en la rama `trunk`:
+
+```bash
+
 git checkout trunk
+
 git pull origin trunk
-git merge --ff-only feature/dataset-comments-#47
-git push origin trunk
+
+git merge bugfix/SCRUM-XX-update-repository-links
+
+git push
+
 ```
 
-Hook pre-commit detecta `feat:` y actualiza versión de `1.4.2` a `1.5.0`.
+Al hacer push a `trunk`, se ejecutan de nuevo todos los workflows de CI, pero esta vez:
 
-#### 6. Despliegue Automático (CD)
+- **CI_pytest.yml** requiere cobertura mínima del 50%
+- Los resultados de cobertura se envían a **Codecov**
 
-Push a `trunk` dispara workflow de deployment:
+Si todos los checks pasan, se ejecuta **CD_render_staging.yml**, que despliega automáticamente la aplicación en el entorno de staging de Render.
 
-1. CI pipeline completo se ejecuta nuevamente (validación final)
-2. Build de imagen Docker con nueva versión
-3. Despliegue automático a **Render Staging** (`track-hub-1-staging.onrender.com`)
-4. Health checks verifican endpoints críticos (`/health`, `/dataset/1`)
-5. Notificación a Slack: "Version 1.5.0 deployed to staging ✅"
+El desarrollador detiene el seguimiento temporal en Clockify.
 
-QA team verifica funcionalidad en staging:
-- Crea comentarios de prueba
-- Verifica emails recibidos
-- Prueba moderación (eliminación)
-- Valida comportamiento con datos reales de staging
+---
 
-#### 7. Despliegue a Producción (Manual Approval)
+### Paso 10: Validación en Staging
 
-Tras validación exitosa en staging (24-48h), se aprueba deployment a producción:
+El equipo verifica que el cambio funciona correctamente en el entorno de staging:
 
-1. Product Owner aprueba deployment en GitHub Environments
-2. Workflow crea tag `v1.5.0` y release notes automáticos
-3. Despliegue a **producción** (`trackhub.pabolimor.cloud`)
-4. Monitorización activa con Sentry durante 1 hora
-5. Si no hay errores, cambio se considera estable
-
-Si se detectan errores críticos:
-
-```bash
-git revert HEAD
-git push origin trunk
-# Despliegue automático de versión anterior
 ```
 
-#### 8. Cierre del Ciclo
+https://track-hub-1-staging.onrender.com
 
-- Issue #47 se cierra automáticamente por keyword `Closes #47` en PR
-- Entrada en changelog generada automáticamente:
-
-  ```markdown
-  ## [1.5.0] - 2025-12-13
-  ### Added
-  - Comment system for datasets with moderation capabilities (#47)
-  ```
-
-- Métricas actualizadas en GitHub Insights (commits, LOC, issues cerradas)
-- Retrospective registra lecciones aprendidas para próximo sprint
-
-### Herramientas y Tecnologías del Proceso
-
-**Control de versiones**:
-- Git 2.40+ con hooks personalizados
-- GitHub como repositorio remoto y plataforma de colaboración
-- GitHub CLI para automatización de tareas repetitivas
-
-**Gestión de proyecto**:
-- Jira: como tablero de actividades y soporte.
-
-**CI/CD**:
-- GitHub Actions para pipelines automatizados
-- Render para despliegue PaaS de staging/producción
-- Docker para containerización y portabilidad
-- Nginx + Gunicorn para servidor VPS propio
-
-**Testing y calidad**:
-- pytest para testing framework
-- pytest-cov para medición de cobertura
-- flake8 para linting y estilo
-- safety/bandit para análisis de seguridad
-
-**Monitorización**:
-- Sentry para tracking de errores en producción
-- Uptime Robot para health checks de endpoints
-- PostgreSQL logs para debugging de queries
-
-### Beneficios del Proceso Implementado
-
-Este flujo de trabajo disciplinado aporta múltiples ventajas al equipo:
-
-1. **Trazabilidad completa**: Cada línea de código en producción está vinculada a un commit, issue y PR específicos
-2. **Calidad garantizada**: Revisión por pares y testing automatizado detectan el 95% de bugs antes de producción
-3. **Despliegues seguros**: Staging environments permiten validar cambios con datos reales sin afectar usuarios
-4. **Rollback rápido**: En caso de incidente, revertir a versión estable toma <5 minutos
-5. **Documentación viva**: Changelog y release notes se generan automáticamente desde commits
-6. **Productividad mejorada**: Automatización elimina tareas manuales repetitivas (testing, deployment, versioning)
-
-El resultado es un proceso maduro que equilibra velocidad de desarrollo con estabilidad del sistema, permitiendo al equipo entregar valor continuamente sin comprometer la calidad técnica.
-
-
-## Entorno de desarrollo
-
-El desarrollo de **Track-Hub-1** se ha realizado en un entorno heterogéneo que refleja la diversidad de sistemas operativos utilizados por el equipo de desarrollo. Esta sección detalla las herramientas, versiones y procedimientos necesarios para configurar un entorno de desarrollo completo y reproducible.
-
-### Sistemas Operativos Utilizados
-
-El equipo ha trabajado con diferentes plataformas, garantizando la portabilidad del código:
-
-- **Linux (Ubuntu 22.04 LTS / Debian 12)**: Utilizado por 5 de los 6 desarrolladores como sistema principal de desarrollo
-- **macOS (Ventura 13.x / Sonoma 14.x)**: Empleado por 1 desarrollador con arquitectura ARM (Apple Silicon M1/M2)
-- **Entornos de producción**: Ubuntu Server 22.04 LTS en VPS propio y contenedores Docker en Render
-
-Todos los sistemas operativos comparten comandos y configuraciones similares gracias al uso de Python como lenguaje multiplataforma y Docker para containerización.
-
-### Stack Tecnológico y Versiones
-
-El proyecto utiliza las siguientes versiones específicas de herramientas y dependencias:
-
-**Lenguaje y runtime**:
-- **Python**: 3.12.1 (versión exacta requerida para compatibilidad con Flamapy)
-- **pip**: 23.3+ para gestión de paquetes
-- **virtualenv**: 20.25+ para entornos virtuales aislados
-
-**Framework web y ORM**:
-- **Flask**: 3.0.0 (framework web principal)
-- **Flask-Login**: 0.6.3 (gestión de sesiones de usuario)
-- **Flask-WTF**: 1.2.1 (formularios con validación y CSRF)
-- **SQLAlchemy**: 2.0.23 (ORM para abstracción de base de datos)
-- **Flask-Migrate**: 4.0.5 (migraciones de base de datos con Alembic)
-
-**Base de datos**:
-- **PostgreSQL**: 14.10 (producción y staging)
-- **SQLite**: 3.40+ (desarrollo local y testing)
-- **psycopg2-binary**: 2.9.9 (driver PostgreSQL para Python)
-
-**Frontend**:
-- **Bootstrap**: 5.3.2 (framework CSS responsivo)
-- **jQuery**: 3.7.1 (manipulación DOM y AJAX)
-- **FontAwesome**: 6.5.1 (iconografía)
-
-**Testing y calidad de código**:
-- **pytest**: 7.4.3 (framework de testing)
-- **pytest-cov**: 4.1.0 (medición de cobertura)
-- **pytest-flask**: 1.3.0 (helpers para testing de Flask)
-- **flake8**: 6.1.0 (linter PEP8)
-- **coverage**: 7.3.2 (análisis de cobertura)
-
-**Librerías específicas del dominio**:
-- **flamapy-fm**: 2.0.0 (análisis de feature models)
-- **flamapy-sat**: 2.0.0 (solver SAT para Flamapy)
-- **gpxpy**: 1.6.2 (parsing de archivos GPX)
-- **requests**: 2.31.0 (cliente HTTP para integración Zenodo)
-
-**Infraestructura y desarrollo**:
-- **Git**: 2.40+ (control de versiones)
-- **Docker**: 24.0+ y Docker Compose 2.20+ (containerización)
-- **Node.js**: 20.10+ y npm 10.2+ (gestión de assets frontend)
-- **Nginx**: 1.24+ (servidor web en producción)
-- **Gunicorn**: 21.2+ (servidor WSGI para Python)
-
-### Configuración del Entorno Local
-
-#### 1. Requisitos Previos
-
-En sistemas **Linux (Ubuntu/Debian)**:
-
-```bash
-# Actualizar repositorios
-sudo apt update
-
-# Instalar dependencias del sistema
-sudo apt install -y python3.12 python3.12-venv python3-pip \
-                    postgresql-14 postgresql-client-14 \
-                    git curl build-essential libpq-dev
-
-# Verificar versiones
-python3.12 --version  # Debe mostrar 3.12.x
-git --version         # 2.40+
 ```
 
-En sistemas **macOS**:
+Se confirma que los enlaces del footer ahora apuntan al repositorio correcto.
 
-```bash
-# Instalar Homebrew si no está instalado
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+---
 
-# Instalar dependencias
-brew install python@3.12 postgresql@14 git
+### Paso 11: Cierre del Incidente (Juan)
 
-# Verificar instalación
-python3.12 --version
-psql --version
+Una vez validado el cambio en staging, se cierra el incidente original en Jira:
+
 ```
 
-#### 2. Clonación del Repositorio
+Resolution: Listo
 
-```bash
-# Clonar repositorio principal
-git clone https://github.com/track-hub-team/track-hub-1.git
-cd track-hub-1
+El repositorio ahora tiene un href apuntando correctamente
 
-# Verificar rama trunk
-git checkout trunk
-git pull origin trunk
+a track-hub-team/track-hub-1
+
 ```
 
-#### 3. Configuración de Entorno Virtual
+El incidente se mueve a "Hecho".
 
-```bash
-# Crear entorno virtual con Python 3.12
-python3.12 -m venv venv
+---
 
-# Activar entorno virtual
-# En Linux/macOS:
-source venv/bin/activate
+### Paso 12: Release a Producción
 
-# Verificar activación (debe mostrar ruta a venv)
-which python
+Cuando se decide crear un release, se ejecuta el workflow **release.yml** que:
 
-# Actualizar pip
-pip install --upgrade pip setuptools wheel
-```
+1. Crea un tag de versión
+1. Genera notas de release automáticas
+1. Fusiona `trunk` en `main`
+1. Ejecuta **CD_render_production.yml**
+1. Despliega en producción:
+- Render: `https://track-hub-1.onrender.com`
+- Servidor propio: `https://trackhub.pabolimor.cloud`
 
-#### 4. Instalación de Dependencias
+---
 
-```bash
-# Instalar dependencias de producción
-pip install -r requirements.txt
+## Despliegue Continuo: Arquitectura de Entornos
 
-# Instalar dependencias de desarrollo (testing, linting)
-pip install pytest pytest-cov pytest-flask flake8 coverage black
+### Staging (Pre-producción)
 
-# Verificar instalación
-pip list | grep Flask  # Debe mostrar Flask 3.0.0
-```
+- **Trigger**: Push a rama `trunk`
+- **Destinos**:
+- Render: `https://track-hub-1-staging.onrender.com`
+- Servidor propio: `https://pre-trackhub.pabolimor.cloud`
+- **Propósito**: Validación final antes de producción
 
-#### 5. Configuración de Base de Datos
+### Producción
 
-**Opción A: PostgreSQL (recomendado para desarrollo realista)**
+- **Trigger**: Creación de Release desde `main`
+- **Destinos**:
+- Render: `https://track-hub-1.onrender.com`
+- Servidor propio: `https://trackhub.pabolimor.cloud`
+- **Docker**: Publicación de imágenes en DockerHub
 
-```bash
-# Iniciar servicio PostgreSQL
-# En Linux:
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
+---
 
-# En macOS:
-brew services start postgresql@14
+## Gestión de Persistencia
 
-# Crear usuario y base de datos
-sudo -u postgres psql
+Dado el carácter efímero del filesystem de Render, los archivos subidos se sincronizan con un \*\*repositorio GitHub dedicado\*\* (`https://github.com/pcm290/testgithubrepositorytrackhub`), configurado mediante las variables de entorno:
 
-# Dentro de psql:
-CREATE USER trackhub_dev WITH PASSWORD 'dev_password_2025';
-CREATE DATABASE trackhub_dev OWNER trackhub_dev;
-GRANT ALL PRIVILEGES ON DATABASE trackhub_dev TO trackhub_dev;
-\q
-```
+- `UPLOADS\_GIT\_REPO\_URL`
+- `UPLOADS\_GITHUB\_TOKEN`
 
-**Opción B: SQLite (desarrollo rápido, sin instalaciones)**
+Esto garantiza que los datos persistan entre despliegues.
 
-SQLite no requiere configuración adicional, el archivo se crea automáticamente.
+---
 
-#### 6. Variables de Entorno
+## Subsistemas Críticos
 
-Crear archivo `.env` en la raíz del proyecto:
+### Base de Datos
 
-```bash
-# Copiar plantilla de ejemplo
-cp .env.example .env
+- **MariaDB** alojada en Filess.io
+- Configuración mediante variables de entorno:
+- `MARIADB\_HOSTNAME`
+- `MARIADB\_PORT`
+- `MARIADB\_DATABASE`
+- `MARIADB\_USER`
+- `MARIADB\_PASSWORD`
 
-# Editar con tu editor preferido
-nano .env
-```
+### Fakenodo
 
-Contenido mínimo del archivo `.env`:
+Microservicio independiente que simula la API de Zenodo, esencial para el desarrollo del sistema de versionado:
 
-```bash
-# Flask
-FLASK_APP=app
-FLASK_ENV=development
-SECRET_KEY=dev-secret-key-change-in-production
-DEBUG=True
+- Desplegado en: `https://fakenodo.pabolimor.cloud/health`
+- Permite desarrollo sin consumir cuota de Zenodo real
 
-# Base de datos (PostgreSQL)
-DATABASE_URL=postgresql://trackhub_dev:dev_password_2025@localhost:5432/trackhub_dev
+---
 
-# O usar SQLite para desarrollo rápido
-# DATABASE_URL=sqlite:///instance/trackhub_dev.db
+## Métricas y Seguimiento
 
-# Zenodo/Fakenodo
-ZENODO_API_URL=https://fakenodo.pabolimor.cloud/api
-ZENODO_ACCESS_TOKEN=your_dev_token_here
+El proyecto mantiene métricas exhaustivas:
 
-# Mail (opcional en desarrollo)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
+- **Horas trabajadas**: 348:51 totales (registradas en Clockify)
+- **Commits**: 185 del equipo
+- **Líneas de código**: ≈26,537 (excluyendo archivos generados)
+- **Tests**: 125 nuevos tests
+- **Issues gestionadas**: 67 en Jira
 
-# GitHub Webhook (opcional)
-GITHUB_WEBHOOK_SECRET=dev_webhook_secret
-```
+Estas métricas se recopilan mediante:
 
-#### 7. Inicialización de Base de Datos
+- Jira (issues, story points)
+- Clockify (tiempo)
+- GitHub (commits, LoC)
+- Codecov (cobertura de tests)
 
-```bash
-# Aplicar migraciones iniciales
-flask db upgrade
+---
 
-# Poblar datos de prueba (seeds)
-flask db-seed
+## Conclusión del Proceso
 
-# Verificar datos
-flask shell
->>> from app.modules.auth.models import User
->>> User.query.count()
-10  # Debe mostrar usuarios de prueba
->>> exit()
-```
+Este flujo de trabajo garantiza que cada cambio, desde un simple bugfix hasta una funcionalidad compleja, pasa por múltiples capas de validación:
 
-#### 8. Ejecución del Servidor de Desarrollo
+1. **Validación humana**: Revisión en Jira
+1. **Validación local**: Pre-commit hooks
+1. **Validación remota**: GitHub Actions CI
+1. **Validación funcional**: Testing en staging
+1. **Aprobación final**: Despliegue a producción
 
-```bash
-# Iniciar servidor Flask con hot-reload
-flask run --debug
+El resultado es un sistema robusto, trazable y de alta calidad que cumple con los estándares de la industria en cuanto a ingeniería de software y DevOps.
 
-# O especificar puerto personalizado
-flask run --debug --port 5001
 
-# El servidor estará disponible en:
-# http://127.0.0.1:5000
-```
 
-Acceder desde navegador:
-- **Página principal**: http://localhost:5000
-- **Login**: http://localhost:5000/login
-- **Explorar datasets**: http://localhost:5000/explore
+## Entorno de Desarrollo del Proyecto Track-hub-1
 
-**Credenciales de prueba** (creadas por seeders):
-- Usuario: `user1@example.com` / Password: `1234`
-- Admin: `admin@trackhub.com` / Password: `admin1234`
+El entorno de desarrollo del proyecto **Track-hub-1**, desarrollado por el **Grupo 3** durante el curso escolar **2025/2026**, se basa en un ecosistema altamente estandarizado y automatizado, enfocado en asegurar la **calidad del código desde las etapas iniciales del desarrollo**.
 
-### Instalación de Subsistemas Relacionados
+---
 
-#### Fakenodo (Mock de Zenodo)
+## Prerrequisitos y Configuración Inicial
 
-El proyecto incluye un mock server de Zenodo para desarrollo sin consumir cuota real:
+El entorno requiere herramientas fundamentales de desarrollo y gestión de código:
 
-```bash
-# Navegar al módulo fakenodo
-cd app/modules/fakenodo
+1. **Git**
+   Es necesario tener instalado Git para la gestión de versiones y el uso del flujo de trabajo **EGC Flow**.
 
-# Instalar dependencias específicas
-pip install flask flask-cors
+2. **Python 3.12+ con pip**
+   El proyecto está construido sobre Python, siendo obligatorio utilizar la versión **3.12 o superior**, junto con el gestor de paquetes **pip**.
 
-# Ejecutar en puerto separado
-python app.py  # Escucha en puerto 5001
+### Script de Configuración Inicial
 
-# Verificar funcionamiento
-curl http://localhost:5001/health
-# Debe responder: {"status": "healthy"}
-```
+Para configurar el entorno local, se ejecuta un script desde la raíz del proyecto que instala los siguientes componentes clave:
 
-#### Webhooks de GitHub (Desarrollo Local)
+- **Plantilla de Commit**
+  Instala una plantilla Git para estandarizar los mensajes de commit.
 
-Para probar webhooks localmente, usar **ngrok**:
+- **Hook `prepare-commit-msg`**
+  Auto-agrega referencias de Jira (`Refs: SCRUM-XX`) en el pie del mensaje de commit, basándose en el nombre de la rama activa.
 
-```bash
-# Instalar ngrok
-# En Linux:
-wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
-tar -xvzf ngrok-v3-stable-linux-amd64.tgz
-sudo mv ngrok /usr/local/bin/
+- **Pre-commit hooks**
+  Instala una serie de validaciones locales para asegurar la calidad del código antes de enviarlo al repositorio remoto.
 
-# En macOS:
-brew install ngrok
+---
 
-# Exponer puerto local
-ngrok http 5000
+## Estándares de Calidad y Flujo de Trabajo Local
 
-# Copiar URL pública generada (e.g., https://abc123.ngrok.io)
-# Configurar en GitHub Settings > Webhooks con esa URL
-```
+El flujo de trabajo se adhiere estrictamente al **EGC Flow**, una versión adaptada de **Git Flow**.
 
-### Ejecución de Tests
+### Validaciones Locales mediante Hooks
 
-```bash
-# Tests completos con cobertura
-pytest --cov=app --cov-report=html --cov-report=term
+Los *pre-commit hooks* ejecutan validaciones esenciales en distintas etapas:
 
-# Tests de un módulo específico
-pytest app/modules/dataset/tests/ -v
+#### 🔹 Pre-commit Stage
+Antes de confirmar el código, se ejecutan:
 
-# Tests con debugging
-pytest -s -v  # -s muestra prints, -v verbose
+- **Black**
+  Formateador de código Python (longitud de línea: 120 caracteres).
 
-# Ver reporte HTML de cobertura
-open htmlcov/index.html  # macOS
-xdg-open htmlcov/index.html  # Linux
-```
+- **isort**
+  Ordenador de importaciones compatible con Black.
 
-### Linting y Formateo de Código
+- **Flake8**
+  Linter que valida el cumplimiento de PEP8:
+  - Longitud máxima de línea: 120
+  - Ignora: `E203`, `W503`
 
-```bash
-# Ejecutar flake8 (debe pasar sin errores)
-flake8 app/ --max-line-length=120 --exclude=migrations,venv
+- **mypy**
+  Verificador de tipos estático.
 
-# Formateo automático con black (opcional)
-black app/ --line-length=120
+- Eliminación de espacios en blanco finales.
+- Protección contra commits directos a las ramas `main` y `trunk`.
 
-# Verificar antes de commit
-pre-commit run --all-files
-```
+#### 🔹 Commit-msg Stage
+Después de escribir el mensaje de commit:
 
-### Diferencias entre Entornos
+- **Commitlint** valida que el mensaje siga **Conventional Commits**.
+- Verifica la estructura:
+  `<type>(<scope>): <subject>`
 
-**Desarrollador Linux vs macOS**:
-- **Python**: En Linux se usa `apt`, en macOS `brew`
-- **PostgreSQL**: En Linux systemd, en macOS brew services
-- **Rutas**: macOS usa `/usr/local/bin`, Linux `/usr/bin`
-- **Performance**: macOS con M1/M2 muestra mejor rendimiento en testing (~30% más rápido)
+#### 🔹 Pre-push Stage
+Antes de subir cambios al repositorio remoto:
 
-**Desarrollo Local vs Staging vs Producción**:
-- **Base de datos**: SQLite (local) → PostgreSQL (staging/producción)
-- **Debug mode**: Activado (local) → Desactivado (producción)
-- **Email**: Console backend (local) → SMTP real (producción)
-- **Servidor**: Flask dev server (local) → Gunicorn + Nginx (producción)
-- **HTTPS**: No requerido (local) → SSL con Let's Encrypt (producción)
+- Se valida que el nombre de la rama cumpla con **EGC Flow**:
+  - `main`
+  - `trunk`
+  - `feature/<task>`
+  - `bugfix/<task>`
+  - `hotfix/<task>`
 
-### Solución de Problemas Comunes
+>  Aunque es posible omitir estas validaciones usando `--no-verify`, esta práctica está **fuertemente desaconsejada**, ya que puede provocar fallos en la Integración Continua (CI).
 
-**Error: `ModuleNotFoundError: No module named 'flamapy'`**
-```bash
-pip install flamapy-fm flamapy-sat --upgrade
-```
+---
 
-**Error: `psycopg2.OperationalError: could not connect to server`**
-```bash
-# Verificar PostgreSQL activo
-sudo systemctl status postgresql  # Linux
-brew services list | grep postgresql  # macOS
-```
+## Integración Continua y Despliegue (CI/CD)
 
-**Error: `Port 5000 already in use`**
-```bash
-# Cambiar puerto en .env o comando
-flask run --port 5001
-```
+La validación remota se gestiona mediante **GitHub Actions**, replicando y ampliando las validaciones locales para asegurar calidad y seguridad en cada *push*.
 
-**Tests fallan por base de datos**
-```bash
-# Usar base de datos de test separada
-export TESTING=True
-pytest  # Crea automáticamente SQLite temporal
-```
+### Etapas de la Integración Continua
 
-### Conclusión
+1. **Validación de Commits**
+   Verifica que los mensajes y nombres de rama cumplan con **EGC Flow** y **Conventional Commits**.
 
-El entorno de desarrollo de Track-Hub-1 está diseñado para ser reproducible en múltiples plataformas con pasos claros y dependencias versionadas explícitamente. El uso de entornos virtuales de Python garantiza aislamiento, mientras que Docker proporciona una alternativa de containerización completa si se prefiere evitar instalaciones nativas.
+2. **Calidad del Código**
+   - Formateo con Black
+   - Orden de importaciones con isort
+   - Validación PEP8 con Flake8
+
+3. **Pruebas Automatizadas**
+   - Ejecución de tests con **pytest**
+   - En ramas `feature`: sin requisito de cobertura
+   - En ramas `trunk` y `main`:
+     - Cobertura mínima del **50%**
+     - Subida de informes a **Codecov**
+
+4. **Seguridad**
+   - Escaneo de dependencias con **pip-audit**
+   - Análisis estático de seguridad con **Bandit**
+   - Detección de secretos con **TruffleHog**
+
+### CI Gate
+
+El sistema de CI/CD se unifica mediante un **CI Gate (`CI_gate.yml`)**, que actúa como la única comprobación de estado requerida para la protección de ramas.
+Este gate asegura que **todas las validaciones** (commits, calidad, tests y seguridad) hayan pasado antes de permitir una fusión.
+
+---
+
+## Despliegue Continuo en Render
+
+El despliegue se realiza en **Render**, manteniendo dos entornos diferenciados:
+
+| Entorno     | Rama de Origen | Propósito                          |
+|------------|---------------|------------------------------------|
+| Staging    | `trunk`        | Pruebas de pre-producción          |
+| Producción | `main`         | Aplicación en vivo (con Release)  |
+
+---
+
+## Subsistemas y Entornos Relacionados
+
+Para el funcionamiento completo del sistema se requieren varios subsistemas adicionales:
+
+### 1. Base de Datos Externa
+
+- **MariaDB** (alojada en Filess.io para despliegue)
+- Variables de entorno requeridas:
+  - `MARIADB_HOSTNAME`
+  - `MARIADB_PORT`
+  - `MARIADB_DATABASE`
+  - `MARIADB_USER`
+  - `MARIADB_PASSWORD`
+
+### 2. Repositorio de Uploads
+
+Debido al carácter efímero del filesystem de Render:
+
+- Los archivos subidos (ZIP, GPX, etc.) se sincronizan con un **repositorio GitHub dedicado**.
+- Variables necesarias:
+  - `UPLOADS_GIT_REPO_URL`
+  - `UPLOADS_GITHUB_TOKEN`
+
+### 3. Fakenodo (Servicio Mock de Zenodo)
+
+- Microservicio **Flask** que simula la API de Zenodo.
+- Es crucial para el desarrollo y testing del sistema de versionado de datasets.
+
+---
+
+## Instalación y Ejecución de Subsistemas (Despliegue)
+
+Para ejecutar el sistema completo, deben configurarse tanto el servicio principal como **Fakenodo**.
+
+### Configuración de Fakenodo en Render
+
+Fakenodo se despliega como un **Web Service independiente**:
+
+- **Build Command:**
+  ```bash
+  pip install -r requirements.txt
+
 ## Change Proposal Exercise: Fix Repository Links
 
 This exercise demonstrates the complete end-to-end workflow for implementing a configuration change in the Track-Hub-1 project, from incident creation to deployment and closure.
@@ -1524,282 +1336,80 @@ El repositorio ahora tiene un href apuntando correctamente
 - Pre-Commit
 - Render (staging deployment) and own server
 
-## Conclusiones y trabajo futuro
+## Conclusiones y Trabajo Futuro del Proyecto Track-hub-1
 
-### Conclusiones
+El proyecto **Track-hub-1** ha culminado con la entrega de una plataforma robusta, de tipo **UVLHub-equipo**, que no solo cumple con los requisitos de integración técnica, sino que también implementa funcionalidades avanzadas centradas en la **curación de datos** y la **publicación académica**.
 
-El desarrollo de **Track-Hub-1** ha representado una experiencia formativa integral en la aplicación práctica de metodologías modernas de ingeniería de software, gestión de configuración y DevOps. A lo largo del proyecto, el equipo ha enfrentado y superado múltiples desafíos técnicos y organizativos, logrando construir un sistema robusto, funcional y desplegado en producción.
+---
 
-#### Logros Técnicos Principales
+## Conclusiones Clave del Proyecto
 
-**1. Arquitectura modular y escalable**
+### 1. Adopción rigurosa de la Ingeniería de Software
 
-La decisión de adoptar una arquitectura basada en módulos independientes con separación de responsabilidades (Repository, Service, Routes) ha demostrado ser acertada. Esta estructura ha permitido que seis desarrolladores trabajen simultáneamente en diferentes funcionalidades sin generar conflictos significativos de código. La modularidad facilita el testing unitario, permite la sustitución de componentes individuales y establece una base sólida para futuras extensiones.
+Se estableció una base de desarrollo sólida mediante la aplicación del **EGC Flow** y el cumplimiento estricto de **Conventional Commits**.
+La calidad del software se aseguró a través de una **pipeline de Integración Continua (CI)** integral en **GitHub Actions**, que incluye:
 
-**2. Proceso de desarrollo maduro**
+- Verificación de calidad de código:
+  - **Black**
+  - **isort**
+  - **Flake8**
+- **Pruebas automatizadas** con una cobertura mínima del **50%** en las ramas principales.
+- **Escaneos de seguridad**:
+  - `pip-audit`
+  - `Bandit`
+  - `TruffleHog`
 
-La implementación de Trunk-Based Development combinado con revisión por pares obligatoria ha elevado la calidad del código significativamente. El 100% de las pull requests han pasado por al menos dos revisiones antes de integrarse, detectando bugs y mejorando diseños antes de que lleguen a producción. El uso de Conventional Commits y versionado semántico automatizado ha eliminado ambigüedades en el historial del proyecto y facilitado la generación automática de changelogs.
+Este enfoque garantizó consistencia, trazabilidad y detección temprana de errores y vulnerabilidades.
 
-**3. Pipeline CI/CD completamente funcional**
+---
 
-El pipeline de integración y despliegue continuo ha demostrado su valor en múltiples ocasiones, detectando regresiones automáticamente y permitiendo despliegues seguros a staging cada vez que se integra código a trunk. La cobertura de tests superior al 80% garantiza que la mayoría de los flujos críticos están protegidos contra cambios no intencionados.
+### 2. Infraestructura de Publicación Sincronizada
 
-**4. Integración exitosa con ecosistemas externos**
+Se implementó un **sistema de versionado completo** (**WI #86**) que diferencia claramente entre:
 
-La conexión con Zenodo/Fakenodo para generación de DOIs y la sincronización con GitHub mediante webhooks han funcionado de manera estable, demostrando que el sistema puede interoperar con servicios de terceros de forma confiable. El desarrollo del mock server Fakenodo ha sido especialmente valioso, permitiendo testing sin límites de cuota.
+- **Versiones mayores (MAJOR):**
+  - Cambios en los archivos.
+  - Generación de un **nuevo DOI específico de versión**.
 
-#### Aprendizajes del Equipo
+- **Versiones menores/parche (MINOR/PATCH):**
+  - Cambios únicamente en metadatos.
+  - Mantenimiento del **DOI conceptual**.
 
-**Gestión de configuración aplicada**
+Para facilitar el desarrollo y el testing de esta lógica compleja de DOIs, se desarrolló **Fakenodo**, un microservicio *mock* de Zenodo, esencial para simular el comportamiento de la API de publicación sin depender de servicios externos.
 
-El proyecto ha permitido experimentar de primera mano con conceptos teóricos de la asignatura:
-- **Control de versiones distribuido**: Uso avanzado de Git con estrategias de branching, rebase, cherry-pick y manejo de conflictos
-- **Automatización del versionado**: Implementación de SemVer automatizado mediante hooks y análisis de mensajes de commit
-- **Gestión de releases**: Creación de tags, generación de release notes y despliegues coordinados
-- **Configuración multi-entorno**: Manejo de variables de entorno, secrets y configuraciones específicas por ambiente
+---
 
-**Trabajo en equipo distribuido**
+### 3. Funcionalidades de Curación y Colaboración
 
-La coordinación de seis desarrolladores con diferentes niveles de experiencia ha requerido establecer prácticas claras:
-- Daily standups para sincronización rápida de progreso
-- Documentación exhaustiva en issues y pull requests
-- Comunicación asíncrona efectiva mediante comentarios en GitHub
-- Resolución colaborativa de bloqueos técnicos
+La plataforma mejoró la organización del contenido y el feedback de los usuarios mediante la implementación de módulos clave:
 
-**DevOps y automatización**
+- **Comunidades (WI #74):**
+  Permite a los usuarios crear espacios temáticos o institucionales, similares a Zenodo, donde los datasets pueden ser propuestos y su inclusión queda sujeta a la aprobación de **curadores**, asegurando la calidad y relevancia del contenido.
 
-La implementación del pipeline CI/CD ha demostrado que la automatización no solo ahorra tiempo, sino que reduce errores humanos de forma drástica. Tareas que inicialmente tomaban 15-20 minutos (ejecutar tests, verificar linting, desplegar a staging) ahora ocurren automáticamente en menos de 5 minutos tras cada push a trunk.
+- **Comentarios (WI #101):**
+  Se introdujo un sistema de feedback con un mecanismo de moderación robusto, donde el propietario del dataset actúa como moderador y puede eliminar cualquier comentario asociado a su publicación.
 
-#### Desafíos Superados
+---
 
-**1. Curva de aprendizaje de herramientas**
+### 4. Integración y Robustez de la Carga de Archivos
 
-Varios miembros del equipo no tenían experiencia previa con Flask, SQLAlchemy o pytest. La inversión inicial en formación (primeras dos semanas del proyecto) ha sido compensada por la productividad posterior. La documentación interna creada durante este proceso ha quedado como activo reutilizable.
+Se implementó la subida de colecciones de archivos mediante **ZIP** (**WI #70**, dificultad *High*), garantizando:
 
-**2. Coordinación de dependencias entre módulos**
+- Extracción segura de archivos **GPX** y **UVL**.
+- Validación estricta del contenido.
+- Protecciones críticas contra ataques de **Path Traversal**.
 
-El desarrollo paralelo de módulos interdependientes (por ejemplo, `dataset` y `community`) requirió definir interfaces claras desde el principio. El uso de contratos explícitos (métodos de servicio con docstrings detallados) y mocks para testing ha permitido que los equipos avancen sin bloqueos.
+Además, se logró integrar con éxito:
 
-**3. Gestión de migraciones de base de datos**
+- Las adaptaciones del **formato GPX**.
+- El flujo de **Despliegue Continuo (CD)** desarrollado por el equipo **Track Hub 2**.
 
-Las migraciones de SQLAlchemy en entornos colaborativos generaron conflictos inicialmente cuando varios desarrolladores modificaban modelos simultáneamente. La adopción de una política de "una migración por feature branch" y merges frecuentes redujo este problema significativamente.
+Estas integraciones se gestionaron mediante estrategias de **cherry-pick**, permitiendo manejar la complejidad derivada del trabajo distribuido en múltiples repositorios.
 
-**4. Compatibilidad entre sistemas operativos**
+---
 
-Las diferencias entre Linux y macOS (especialmente en rutas, instalación de PostgreSQL y configuración de servicios) generaron fricción inicial. La creación de scripts de setup automatizados (`scripts/setup.sh`) y documentación específica por plataforma resolvió la mayoría de estos inconvenientes.
+## Trabajo Futuro y Mejoras Propuestas
+- Integrar de forma opcional la **API real de Zenodo** en producción, manteniendo Fakenodo como entorno de testing.
 
-#### Métricas de Éxito
-
-El proyecto ha alcanzado y superado los objetivos cuantitativos establecidos:
-
-- **13.161 líneas de código** producidas por el equipo (excluyendo dependencias)
-- **89+ commits** con mensajes siguiendo estándares de calidad
-- **Cobertura de tests >80%** mantenida consistentemente
-- **4 entornos activos** (desarrollo, staging Render, staging VPS, producción)
-- **0 incidentes críticos** en producción durante las últimas 3 semanas
-- **Tiempo de despliegue reducido** de ~30 minutos manual a <5 minutos automatizado
-- **100% de PRs revisadas** antes de integración
-
-### Trabajo Futuro
-
-A pesar de los logros alcanzados, existen múltiples áreas de mejora y funcionalidades adicionales que quedan fuera del alcance actual pero representan oportunidades valiosas para iteraciones futuras del proyecto.
-
-#### Mejoras de Funcionalidad
-
-**1. Sistema de análisis avanzado de feature models**
-
-Actualmente, la integración con Flamapy proporciona análisis básicos de modelos UVL. Una extensión natural sería:
-
-- **Comparación de versiones de feature models**: Visualización de diferencias entre versiones (features añadidos, eliminados, restricciones modificadas)
-- **Análisis de evolución**: Métricas de cómo ha evolucionado la complejidad de un modelo a lo largo del tiempo
-- **Detección de anomalías**: Alertas automáticas cuando un cambio introduce dead features o configuraciones inválidas
-- **Validación semántica**: Verificación de consistencia entre modelos relacionados dentro de una familia de productos
-
-**2. Colaboración en tiempo real**
-
-Implementar funcionalidades colaborativas inspiradas en herramientas modernas:
-
-- **Editor colaborativo de datasets**: Múltiples usuarios editando metadatos simultáneamente con sincronización en tiempo real (usando WebSockets)
-- **Sistema de anotaciones**: Permitir marcar secciones específicas de archivos UVL con comentarios contextuales
-- **Historial de cambios granular**: Vista diff de cambios específicos en metadatos y archivos, similar a git blame
-- **Resolución de conflictos**: Interface visual para resolver conflictos cuando múltiples usuarios editan el mismo dataset
-
-**3. Dashboard de métricas y analytics**
-
-Crear un módulo de visualización de datos para investigadores y administradores:
-
-- **Estadísticas de uso**: Datasets más descargados, autores más activos, comunidades con mayor crecimiento
-- **Gráficos de evolución temporal**: Visualización de cómo ha crecido la plataforma (usuarios registrados, datasets publicados, DOIs generados)
-- **Métricas de calidad**: Distribución de cobertura de metadatos, tamaño medio de datasets, formatos más utilizados
-- **Análisis de red**: Grafo de colaboración entre autores, identificación de clusters de investigación
-
-**4. Sistema de recomendaciones**
-
-Implementar inteligencia artificial para descubrimiento de contenido:
-
-- **Datasets relacionados**: Algoritmo de similitud basado en metadatos, tags y contenido de archivos
-- **Autores sugeridos para seguir**: Basado en intereses del usuario y colaboraciones previas
-- **Comunidades recomendadas**: Sugerencias de comunidades temáticas según datasets del usuario
-- **Tendencias de investigación**: Detección de tópicos emergentes mediante análisis de palabras clave
-
-#### Mejoras de Infraestructura y DevOps
-
-**5. Containerización completa con Kubernetes**
-
-Actualmente el despliegue usa Render (PaaS) y VPS con Nginx+Gunicorn. Una evolución sería:
-
-- **Orquestación con Kubernetes**: Despliegue en cluster K8s para escalabilidad horizontal automática
-- **Service mesh con Istio**: Gestión avanzada de tráfico, circuit breakers y observabilidad
-- **Auto-scaling basado en métricas**: Escalar pods según carga de CPU, memoria o número de requests
-- **Multi-región**: Despliegues en múltiples regiones geográficas para reducir latencia global
-
-**6. Observabilidad y monitorización avanzada**
-
-Mejorar la capacidad de diagnosticar problemas en producción:
-
-- **Tracing distribuido con Jaeger**: Seguimiento de requests a través de múltiples servicios
-- **Métricas de negocio**: Dashboards con KPIs (datasets publicados/día, tasa de conversión a DOI, etc.)
-- **Alertas proactivas**: Notificaciones antes de que problemas afecten a usuarios (disk space bajo, respuestas lentas)
-- **Logs centralizados con ELK stack**: Elasticsearch + Logstash + Kibana para análisis de logs
-
-**7. Testing avanzado**
-
-Ampliar la suite de tests con técnicas adicionales:
-
-- **Tests de carga con Locust**: Simulación de miles de usuarios concurrentes para identificar cuellos de botella
-- **Tests de seguridad con OWASP ZAP**: Escaneo automático de vulnerabilidades (SQL injection, XSS, CSRF)
-- **Tests de mutación con mutpy**: Verificar que los tests realmente detectan bugs mediante mutaciones del código
-- **Tests de contratos con Pact**: Garantizar compatibilidad entre frontend y backend mediante contratos versionados
-
-**8. Pipeline de despliegue avanzado**
-
-Evolucionar el proceso de deployment actual:
-
-- **Despliegues canary**: Liberar cambios progresivamente (5% usuarios → 25% → 50% → 100%)
-- **Feature flags con LaunchDarkly**: Activar/desactivar funcionalidades sin redesplegar código
-- **Rollback automático inteligente**: Detectar degradación de métricas (error rate, latencia) y revertir automáticamente
-- **Despliegues blue-green**: Mantener dos entornos de producción y switchear tráfico instantáneamente
-
-#### Mejoras de Experiencia de Usuario
-
-**9. Progressive Web App (PWA)**
-
-Convertir la plataforma en una PWA para mejorar la experiencia móvil:
-
-- **Instalable en dispositivos**: Los usuarios pueden "instalar" Track-Hub como app nativa
-- **Modo offline**: Acceso a datasets descargados previamente sin conexión
-- **Notificaciones push**: Alertas de nuevos datasets, comentarios, etc., sin email
-- **Sincronización en background**: Actualización de datos cuando recupera conectividad
-
-**10. Internacionalización (i18n)**
-
-Ampliar el alcance global del sistema:
-
-- **Soporte multi-idioma**: Inglés, español, francés, alemán, chino
-- **Traducción de metadatos**: Permitir que autores proporcionen títulos/descripciones en múltiples idiomas
-- **Detección automática de idioma**: Basado en navegador del usuario o preferencias de perfil
-- **Localización de fechas y números**: Formatos según región del usuario
-
-**11. Accesibilidad (a11y)**
-
-Garantizar que la plataforma sea utilizable por personas con discapacidades:
-
-- **Cumplimiento WCAG 2.1 nivel AA**: Contraste de colores, navegación por teclado, lectores de pantalla
-- **Descripciones alt en imágenes**: Todas las visualizaciones de feature models con texto alternativo
-- **Transcripciones de audio/video**: Si se añade contenido multimedia en datasets
-- **Modo alto contraste**: Para usuarios con baja visión
-
-#### Funcionalidades Avanzadas de Investigación
-
-**12. Reproducibilidad científica**
-
-Herramientas para facilitar la reproducción de experimentos:
-
-- **Containerización de entornos**: Asociar datasets con imágenes Docker que incluyen el software necesario para analizarlos
-- **Notebooks interactivos**: Integración con Jupyter para ejecutar análisis directamente en la plataforma
-- **Provenance tracking**: Registro completo de transformaciones aplicadas a un dataset (pipeline de procesamiento)
-- **Citas automáticas**: Generación de referencias bibliográficas en múltiples formatos (BibTeX, APA, Chicago)
-
-**13. Federación con otras plataformas**
-
-Interoperabilidad con repositorios de datasets existentes:
-
-- **Harvesting OAI-PMH**: Importar metadatos de repositorios compatibles (Dataverse, Figshare, Dryad)
-- **API GraphQL**: Permitir que clientes externos consulten datos de forma flexible
-- **ORCID integration**: Login con ORCID, sincronización automática de publicaciones
-- **DOI minting local**: Convertirse en un DOI Registration Agency para emitir DOIs propios
-
-**14. Machine learning sobre datasets**
-
-Capacidades de análisis automático:
-
-- **Clasificación automática**: Asignar tags/categorías a datasets basándose en contenido
-- **Detección de duplicados**: Identificar datasets similares o idénticos mediante hashing perceptual
-- **Anomaly detection**: Detectar valores atípicos en datasets numéricos
-- **AutoML**: Sugerir modelos de ML apropiados según estructura del dataset
-
-#### Mejoras de Seguridad y Privacidad
-
-**15. Gestión avanzada de permisos**
-
-Sistema de control de acceso más granular:
-
-- **Roles y permisos personalizados**: Más allá de owner/moderator/member, crear roles específicos (reviewer, data curator, etc.)
-- **Compartición selectiva**: Compartir datasets privados con usuarios/grupos específicos mediante enlaces tokenizados
-- **Auditoría de accesos**: Log detallado de quién ha accedido a qué datasets y cuándo
-- **Expiración de accesos**: Permisos temporales que se revocan automáticamente
-
-**16. Cumplimiento legal**
-
-Adecuación a regulaciones de protección de datos:
-
-- **GDPR compliance**: Exportación de datos personales, derecho al olvido, consentimiento explícito
-- **Términos de uso por dataset**: Licencias personalizadas (CC-BY, MIT, GPL, propietaria)
-- **Embargoing**: Posibilidad de publicar metadatos pero mantener archivos privados hasta fecha específica
-- **Data retention policies**: Eliminación automática de datasets tras periodo de inactividad
-
-### Integración con Track-Hub-2
-
-Una línea de trabajo especialmente prometedora es la integración profunda con el sistema desarrollado por el equipo Track-Hub-2. Las oportunidades de colaboración incluyen:
-
-**Interoperabilidad de datos**:
-- Sincronización de usuarios y autenticación compartida (Single Sign-On)
-- Cross-referencing de datasets entre ambos sistemas
-- API común para búsquedas federadas
-
-**Funcionalidades complementarias**:
-- Si Track-Hub-2 implementa visualización avanzada, Track-Hub-1 podría consumir esos servicios
-- Compartir servicios comunes (Fakenodo, webhooks, notificaciones)
-
-**Competencia sana**:
-- Benchmarking de rendimiento y features entre ambos sistemas
-- Adopción de mejores prácticas identificadas por el otro equipo
-
-### Priorización de Trabajo Futuro
-
-Dada la amplitud de mejoras propuestas, se sugiere la siguiente priorización para el curso 2026/2027:
-
-**Prioridad Alta (Trimestre 1)**:
-1. Dashboard de métricas y analytics (alto valor, complejidad media)
-2. Sistema de recomendaciones básico (diferenciador competitivo)
-3. Tests de carga y performance tuning (crítico antes de escalar)
-
-**Prioridad Media (Trimestre 2)**:
-4. Editor colaborativo en tiempo real (alta complejidad, alto valor)
-5. PWA y mejoras de UX móvil (amplía base de usuarios)
-6. Internacionalización a inglés (requisito para adopción internacional)
-
-**Prioridad Baja (Trimestre 3)**:
-7. Kubernetes y auto-scaling (útil solo con tráfico significativo)
-8. ML sobre datasets (requiere expertise especializado)
-9. Federación OAI-PMH (nicho, menor impacto)
-
-### Reflexión Final
-
-El desarrollo de Track-Hub-1 ha demostrado que es posible construir software de calidad profesional en un contexto académico aplicando rigurosamente metodologías modernas de ingeniería. El sistema entregado no es un prototipo descartable, sino una aplicación productiva que podría servir a comunidades reales de investigación.
-
-Los conocimientos adquiridos en gestión de configuración, control de versiones, CI/CD y trabajo colaborativo son directamente transferibles al mundo profesional. El equipo concluye el proyecto con confianza en su capacidad para enfrentar proyectos de software complejos en entornos industriales.
-
-Las propuestas de trabajo futuro reflejan tanto necesidades técnicas reales como oportunidades de explorar tecnologías emergentes. Representan un roadmap ambicioso pero alcanzable para convertir Track-Hub-1 en una plataforma de referencia en gestión de datasets científicos.
-
-**El viaje no termina aquí; apenas comienza.**
+- Introducir **roles adicionales en comunidades** (revisor, editor, administrador) con permisos más granulares.
+- Añadir un sistema de **reacciones** o valoraciones (likes, útil, etc.).
